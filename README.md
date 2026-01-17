@@ -1,4 +1,4 @@
-# 🕵️‍♂️ Social-Hunt v3
+# 🕵️‍♂️ Social-Hunt 
 ### **Advanced Web + CLI OSINT Username Discovery**
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
