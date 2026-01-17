@@ -82,9 +82,16 @@ class GitHubAPIProvider(BaseProvider):
                 "followers": data.get("followers"),
                 "following": data.get("following"),
                 "created_at": data.get("created_at"),
+                "updated_at": data.get("updated_at"),
                 "bio": data.get("bio"),
                 "location": data.get("location"),
+                "company": data.get("company"),
                 "blog": data.get("blog"),
+                "twitter_username": data.get("twitter_username"),
+                "public_repos": data.get("public_repos"),
+                "public_gists": data.get("public_gists"),
+                "user_type": data.get("type"),
+                "hireable": data.get("hireable"),
             }
 
             # If the API succeeds, treat as FOUND.

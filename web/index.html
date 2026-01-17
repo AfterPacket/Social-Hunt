@@ -28,25 +28,40 @@
                     <button id="selectNone">Select None</button>
                 </div>
 
-                <div id="providers" class="providers"></div>
+        <nav class="menu">
+          <button class="menu-btn" data-view="dashboard">Dashboard</button>
+          <button class="menu-btn" data-view="search">Search</button>
+          <button class="menu-btn" data-view="reverse">Reverse Image</button>
+          <button class="menu-btn" data-view="addons">Addons</button>
+          <button class="menu-btn" data-view="plugins">Plugins</button>
+          <button class="menu-btn" data-view="tokens">Token</button>
 
-                <div class="row">
-                    <button id="start">Start Scan</button>
-                    <span id="status" class="muted"></span>
-                </div>
+          <div class="menu-sep"></div>
 
-                <p class="muted tiny">
-                    Tip: if you see <b>blocked</b>, that platform likely
-                    returned a bot-wall (login/CAPTCHA).
-                </p>
-            </div>
+          <button class="menu-btn" data-view="settings">Settings</button>
+          <button class="menu-btn danger" data-action="logout">Logout</button>
+        </nav>
 
-            <div class="card">
-                <h2>Results</h2>
-                <div id="results"></div>
-            </div>
+        <div class="sidebar-footer">
+          <div class="muted">Tip:</div>
+          <div class="muted2">Token is stored in your browser (localStorage).</div>
         </div>
+      </aside>
 
-        <script src="/static/app.js"></script>
-    </body>
+      <main class="main">
+        <header class="topbar">
+          <div id="viewTitle" class="view-title">Dashboard</div>
+          <div class="topbar-right">
+            <span class="pill" id="tokenStatus">Token: not set</span>
+          </div>
+        </header>
+
+        <section id="viewContainer" class="view">
+          <!-- view HTML loads here -->
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js?v=5"></script>
+  </body>
 </html>

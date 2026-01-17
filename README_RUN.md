@@ -64,3 +64,18 @@ Some providers use JSON endpoints/APIs when available:
 - Reddit: `/user/{username}/about.json` commonly exposes `created_utc` and karma fields.
 
 Creation dates are not public on many platforms; treat them as optional.
+
+## Addons (post-scan enrichment)
+
+Social-Hunt can run optional **addons** after the provider scan to enrich results.
+Enabled addons are configured in `addons.yaml`.
+
+Included addons:
+- `bio_links`: extract URLs/domains/@handles from public bios/descriptions.
+- `avatar_fingerprint`: download avatar URLs (with SSRF/size/timeouts) and compute `avatar_sha256` + `avatar_dhash`.
+- `avatar_clusters`: cluster providers when avatars match (exact sha256, or near-match dHash).
+
+API helpers:
+- `GET /api/addons` lists available + enabled addons.
+- `POST /api/reverse_image_links` returns one-click links for common reverse-image search engines (Google Images, Google Lens, Bing, TinEye, Yandex).
+- `POST /api/reverse_image` compares a query image URL against the avatar fingerprints in an existing job (scoped to that job).

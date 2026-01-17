@@ -1,0 +1,17 @@
+<h2>Plugins</h2>
+<p class="muted">Upload provider packs or addon plugins. Web upload is disabled unless the server sets <code>SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD=1</code> and <code>SOCIAL_HUNT_PLUGIN_TOKEN</code>.</p>
+
+<div class="card">
+  <div class="row">
+    <input id="pluginFile" type="file" accept=".zip,.yaml,.yml" />
+    <button id="pluginUpload" class="btn">Upload Plugin</button>
+    <button id="pluginReload" class="btn ghost">Reload</button>
+    <span id="pluginStatus" class="muted"></span>
+  </div>
+
+  <div id="pluginList" class="tiny" style="margin-top:12px;"></div>
+
+  <p class="muted tiny" style="margin-top:12px;">
+    Token used: <span id="pluginTokenUsed">(not set)</span> · Set it under <b>Token</b> in the menu.
+  </p>
+</div>

@@ -32,6 +32,11 @@ def export_results(results: List[ProviderResult], fmt: str = "csv") -> str:
         "following",
         "subscribers",
         "created_at",
+        "bio_domains",
+        "bio_urls",
+        "avatar_sha256",
+        "avatar_dhash",
+        "avatar_cluster_id",
         "timestamp_iso",
         "error",
     ]
@@ -50,6 +55,14 @@ def export_results(results: List[ProviderResult], fmt: str = "csv") -> str:
             row["following"] = profile.get("following")
             row["subscribers"] = profile.get("subscribers")
             row["created_at"] = profile.get("created_at")
+            # New optional addon fields (flattened)
+            bd = profile.get("bio_domains")
+            bu = profile.get("bio_urls")
+            row["bio_domains"] = ",".join(bd) if isinstance(bd, list) else (bd or "")
+            row["bio_urls"] = ",".join(bu) if isinstance(bu, list) else (bu or "")
+            row["avatar_sha256"] = profile.get("avatar_sha256")
+            row["avatar_dhash"] = profile.get("avatar_dhash")
+            row["avatar_cluster_id"] = profile.get("avatar_cluster_id")
             w.writerow(row)
 
     return filename

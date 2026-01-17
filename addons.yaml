@@ -1,0 +1,7 @@
+addons:
+  # Extract links/domains from bios & descriptions (public text only)
+  - bio_links
+  # Download avatar URLs (safe/limited) and compute sha256 + dHash fingerprints
+  - avatar_fingerprint
+  # Cluster providers by matching avatar fingerprints (exact sha256, then near-match dHash)
+  - avatar_clusters

@@ -8,6 +8,8 @@ import yaml
 
 from .providers_yaml import PatternProvider
 from .providers_base import BaseProvider
+from .plugin_loader import load_yaml_plugin_providers, load_python_plugin_providers
+import os
 
 
 def load_yaml_providers(path: str = "providers.yaml") -> Dict[str, BaseProvider]:
@@ -45,7 +47,16 @@ def load_plugin_providers() -> Dict[str, BaseProvider]:
 
 def build_registry(yaml_path: str = "providers.yaml") -> Dict[str, BaseProvider]:
     reg = load_yaml_providers(yaml_path)
-    reg.update(load_plugin_providers())  # plugins override YAML entries if same name
+
+    # Data-only provider packs dropped into ./plugins/providers/*.yaml
+    reg.update(load_yaml_plugin_providers())
+
+    # Optional python plugins dropped into ./plugins/python/providers/*.py
+    allow_py = (os.getenv("SOCIAL_HUNT_ALLOW_PY_PLUGINS", "").strip() == "1")
+    reg.update(load_python_plugin_providers(allow=allow_py))
+
+    # Built-in python providers shipped with the app
+    reg.update(load_plugin_providers())  # built-ins override YAML entries if same name
     return reg
 
 

@@ -1,0 +1,35 @@
+<h2>Search</h2>
+<p class="muted">Username presence checks across mainstream + alternative platforms (public pages only).</p>
+
+<div class="card">
+  <label class="muted tiny">Username</label>
+  <input id="username" class="input" placeholder="e.g. afterpacket" />
+
+  <div class="row" style="margin-top:10px;">
+    <span id="whoami" class="muted tiny"></span>
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <button id="loadProviders" class="btn">Reload Providers</button>
+    <button id="selectAll" class="btn">Select All</button>
+    <button id="selectNone" class="btn">Select None</button>
+    <span id="status" class="muted"></span>
+  </div>
+
+  <div id="providers" class="providers"></div>
+
+  <div class="row" style="margin-top:12px;">
+    <button id="start" class="btn">Start Scan</button>
+    <div class="muted tiny" style="margin-left:auto;display:flex;gap:10px;align-items:center;">
+      <span id="lastJob"></span>
+      <button id="copyJob" class="btn ghost" style="display:none;">Copy Job ID</button>
+    </div>
+  </div>
+
+  <p class="muted tiny" style="margin-top:12px;">Tip: if you see <b>blocked</b>, that platform likely returned a bot-wall (login/CAPTCHA).</p>
+</div>
+
+<div class="card" style="margin-top:12px;">
+  <h2>Results</h2>
+  <div id="results"></div>
+</div>

@@ -9,16 +9,21 @@ from .providers_base import BaseProvider
 from .rate_limit import HostRateLimiter
 from .ua import UA_PROFILES, merge_headers
 from .types import ProviderResult
+from .addons_base import BaseAddon
 
 
 class SocialHuntEngine:
     def __init__(
         self,
         registry: Dict[str, BaseProvider],
+        addons: Optional[Dict[str, BaseAddon]] = None,
+        enabled_addons: Optional[List[str]] = None,
         max_concurrency: int = 6,
         min_host_interval_sec: float = 1.2,
     ):
         self.registry = registry
+        self.addons = addons or {}
+        self.enabled_addons = enabled_addons or []
         self.max_concurrency = int(max_concurrency)
         self.limiter = HostRateLimiter(min_interval_sec=min_host_interval_sec)
 
@@ -47,5 +52,16 @@ class SocialHuntEngine:
 
             tasks = [asyncio.create_task(run_one(p)) for p in chosen]
             results = await asyncio.gather(*tasks)
+
+            # ---- addons (post-processing enrichment) ----
+            for aname in self.enabled_addons:
+                addon = self.addons.get(aname)
+                if not addon:
+                    continue
+                try:
+                    await addon.run(username, results, client, limiter=self.limiter)
+                except Exception as _:
+                    # Addons should never crash a scan; ignore failures.
+                    pass
 
         return sorted(results, key=lambda r: r.provider.lower())

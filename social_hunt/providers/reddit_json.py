@@ -82,12 +82,17 @@ class RedditAboutJSONProvider(BaseProvider):
             if isinstance(created_utc, (int, float)):
                 created_at = datetime.fromtimestamp(created_utc, tz=timezone.utc).isoformat()
 
+            sub = data.get("subreddit") or {}
             profile = {
-                "display_name": (data.get("subreddit") or {}).get("title") or username,
-                "avatar_url": data.get("icon_img") or data.get("snoovatar_img"),
+                "display_name": sub.get("title") or username,
+                "description": sub.get("public_description") or sub.get("description"),
+                "avatar_url": data.get("icon_img") or data.get("snoovatar_img") or sub.get("icon_img"),
                 "comment_karma": data.get("comment_karma"),
                 "link_karma": data.get("link_karma"),
+                "total_karma": data.get("total_karma"),
                 "created_at": created_at,
+                "subscribers": sub.get("subscribers"),
+                "over_18": sub.get("over_18"),
             }
 
             return ProviderResult(
