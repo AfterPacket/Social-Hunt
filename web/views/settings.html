@@ -1,0 +1,24 @@
+<h2>Settings</h2>
+<p class="muted">Add integrations as key/value pairs. Secrets are stored server-side and never shown back.</p>
+
+<div class="row" style="margin:10px 0">
+  <button id="settingsAdd" class="btn" type="button">Add API</button>
+  <button id="settingsSave" class="btn good" type="button">Save</button>
+  <button id="settingsReload" class="btn" type="button">Reload</button>
+</div>
+
+<div class="card">
+  <table id="settingsTable">
+    <thead>
+      <tr>
+        <th style="width:35%">Key</th>
+        <th>Value</th>
+        <th style="width:120px">Secret</th>
+        <th style="width:90px"></th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<pre id="settingsMsg" style="margin-top:12px; display:none;"></pre>

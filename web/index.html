@@ -1,52 +1,49 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Social-Hunt</title>
-        <link rel="stylesheet" href="/static/styles.css" />
-    </head>
-    <body>
-        <div class="wrap">
-            <h1>Social-Hunt</h1>
-            <p class="muted">
-                Username presence checks across mainstream + alternative
-                platforms (public pages only).
-            </p>
-
-            <div class="card">
-                <label>Username</label>
-                <input id="username" placeholder="e.g. Johnn Apple Seed" />
-
-                <div class="row">
-                    <span id="whoami" class="muted tiny"></span>
-                </div>
-
-                <div class="row">
-                    <button id="loadProviders">Reload Providers</button>
-                    <button id="selectAll">Select All</button>
-                    <button id="selectNone">Select None</button>
-                </div>
-
-                <div id="providers" class="providers"></div>
-
-                <div class="row">
-                    <button id="start">Start Scan</button>
-                    <span id="status" class="muted"></span>
-                </div>
-
-                <p class="muted tiny">
-                    Tip: if you see <b>blocked</b>, that platform likely
-                    returned a bot-wall (login/CAPTCHA).
-                </p>
-            </div>
-
-            <div class="card">
-                <h2>Results</h2>
-                <div id="results"></div>
-            </div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Social Hunt</title>
+    <link rel="stylesheet" href="/static/styles.css?v=layout2" />
+  </head>
+  <body>
+    <div id="appShell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-title">Social Hunt</div>
+          <div class="brand-sub">Self-hosted OSINT aggregator</div>
         </div>
 
-        <script src="/static/app.js"></script>
-    </body>
+        <nav class="menu">
+          <button class="menu-btn" data-view="dashboard">Dashboard</button>
+          <button class="menu-btn" data-view="search">Search</button>
+          <button class="menu-btn" data-view="reverse">Reverse Image</button>
+          <button class="menu-btn" data-view="history">History</button>
+          <button class="menu-btn" data-view="plugins">Plugins</button>
+          <button class="menu-btn" data-view="tokens">Token</button>
+          <button class="menu-btn" data-view="settings">Settings</button>
+
+          <div class="menu-sep"></div>
+          <button class="menu-btn danger" data-action="logout">Logout</button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="muted">Tip: set your admin token once in <b>Token</b>.</div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div id="viewTitle" class="view-title">Dashboard</div>
+          <div class="topbar-right">
+            <span class="pill" id="tokenStatus">Token: not set</span>
+          </div>
+        </header>
+
+        <section id="viewContainer" class="view"></section>
+      </main>
+    </div>
+
+    <script src="/static/app.js?v=layout2"></script>
+  </body>
 </html>

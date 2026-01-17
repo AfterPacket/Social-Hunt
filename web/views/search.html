@@ -1,0 +1,26 @@
+<h2>Search</h2>
+<p class="muted">Username presence checks across mainstream + alternative platforms (public pages only).</p>
+
+<div class="card">
+  <label>Username</label>
+  <input id="username" placeholder="e.g. john_doe" />
+
+  <div class="row" style="margin-top:8px">
+    <span id="whoami" class="muted"></span>
+  </div>
+
+  <div class="row" style="margin-top:10px">
+    <button class="btn" id="loadProviders" type="button">Reload Providers</button>
+    <button class="btn" id="selectAll" type="button">Select All</button>
+    <button class="btn" id="selectNone" type="button">Select None</button>
+  </div>
+
+  <div id="providers" class="providers" style="margin-top:12px"></div>
+
+  <div class="row" style="margin-top:12px">
+    <button class="btn good" id="start" type="button">Start Scan</button>
+    <span id="status" class="muted"></span>
+  </div>
+</div>
+
+<div id="results" style="margin-top:14px"></div>

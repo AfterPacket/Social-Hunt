@@ -321,6 +321,21 @@ tr:last-child td { border-bottom: 0; }
 }
 .linkrow a:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.16); }
 
+/* small inline links used in History table */
+.mini-link {
+  display: inline-block;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255,255,255,.02);
+  font-size: 12px;
+  margin-right: 6px;
+}
+.mini-link:hover {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.16);
+}
+
 .toast {
   position: fixed;
   right: 16px;

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
-from pathlib import Path
 from typing import Dict, List
 
 import yaml
@@ -23,32 +22,8 @@ def load_yaml_providers(path: str = "providers.yaml") -> Dict[str, BaseProvider]
     return providers
 
 
-def load_yaml_providers_from_dir(dir_path: str = "plugins/providers") -> Dict[str, BaseProvider]:
-    """Load additional providers from YAML files in plugins/providers/*.yml|*.yaml"""
-    providers: Dict[str, BaseProvider] = {}
-    d = Path(dir_path)
-    if not d.exists() or not d.is_dir():
-        return providers
-
-    for p in sorted(list(d.glob("*.yml")) + list(d.glob("*.yaml"))):
-        try:
-            with p.open("r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            if not isinstance(data, dict):
-                continue
-            for name, cfg in data.items():
-                if not isinstance(cfg, dict) or "url" not in cfg:
-                    continue
-                providers[str(name)] = PatternProvider(str(name), cfg)
-        except Exception:
-            # plugin YAML should never take down the app
-            continue
-
-    return providers
-
-
 def load_plugin_providers() -> Dict[str, BaseProvider]:
-    """Load any providers from social_hunt.providers.* (Python plugins shipped with repo)."""
+    """Load any providers from social_hunt.providers.*"""
     providers: Dict[str, BaseProvider] = {}
     pkg = importlib.import_module("social_hunt.providers")
 
@@ -70,10 +45,7 @@ def load_plugin_providers() -> Dict[str, BaseProvider]:
 
 def build_registry(yaml_path: str = "providers.yaml") -> Dict[str, BaseProvider]:
     reg = load_yaml_providers(yaml_path)
-    # YAML plugin packs from plugins/providers override base YAML if same key
-    reg.update(load_yaml_providers_from_dir("plugins/providers"))
-    # Python plugins override YAML entries if same name
-    reg.update(load_plugin_providers())
+    reg.update(load_plugin_providers())  # plugins override YAML entries if same name
     return reg
 
 
