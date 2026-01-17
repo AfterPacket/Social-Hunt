@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Social-Hunt</title>
+        <link rel="stylesheet" href="/static/styles.css" />
+    </head>
+    <body>
+        <div class="wrap">
+            <h1>Social-Hunt</h1>
+            <p class="muted">
+                Username presence checks across mainstream + alternative
+                platforms (public pages only).
+            </p>
+
+            <div class="card">
+                <label>Username</label>
+                <input id="username" placeholder="e.g. Johnn Apple Seed" />
+
+                <div class="row">
+                    <span id="whoami" class="muted tiny"></span>
+                </div>
+
+                <div class="row">
+                    <button id="loadProviders">Reload Providers</button>
+                    <button id="selectAll">Select All</button>
+                    <button id="selectNone">Select None</button>
+                </div>
+
+                <div id="providers" class="providers"></div>
+
+                <div class="row">
+                    <button id="start">Start Scan</button>
+                    <span id="status" class="muted"></span>
+                </div>
+
+                <p class="muted tiny">
+                    Tip: if you see <b>blocked</b>, that platform likely
+                    returned a bot-wall (login/CAPTCHA).
+                </p>
+            </div>
+
+            <div class="card">
+                <h2>Results</h2>
+                <div id="results"></div>
+            </div>
+        </div>
+
+        <script src="/static/app.js"></script>
+    </body>
+</html>

@@ -1,0 +1,21 @@
+body { font-family: system-ui, Arial, sans-serif; background:#0b0f14; color:#e8eef6; margin:0; }
+.wrap { max-width: 980px; margin: 28px auto; padding: 0 16px; }
+h1 { margin: 0 0 6px 0; }
+.muted { color: #a9b4c2; }
+.tiny { font-size: 12px; }
+.card { background:#121a24; border:1px solid #223045; border-radius:12px; padding:16px; margin: 16px 0; }
+input { width:100%; padding:10px; border-radius:10px; border:1px solid #2b3a53; background:#0b0f14; color:#e8eef6; }
+button { padding:10px 12px; border-radius:10px; border:1px solid #2b3a53; background:#0b0f14; color:#e8eef6; cursor:pointer; }
+button:hover { background:#101826; }
+.row { display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+.providers { margin-top: 12px; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:8px; }
+.provider { display:flex; gap:8px; align-items:center; padding:8px; border:1px solid #223045; border-radius:10px; background:#0b0f14; }
+/* Keep wide result tables inside the card background (scroll instead of spilling out) */
+.tablewrap { width: 100%; overflow-x: auto; overflow-y: hidden; border-radius: 10px; }
+table { width:100%; border-collapse: collapse; min-width: 980px; }
+th, td { border-bottom:1px solid #223045; padding:10px; text-align:left; vertical-align: top; }
+a, td { overflow-wrap: anywhere; word-break: break-word; }
+a { color:#7ab7ff; text-decoration:none; }
+a:hover { text-decoration:underline; }
+.badge { padding:2px 8px; border-radius:999px; border:1px solid #2b3a53; font-size:12px; display:inline-block; }
+.avatar { width: 32px; height: 32px; border-radius: 999px; object-fit: cover; border: 1px solid #223045; }

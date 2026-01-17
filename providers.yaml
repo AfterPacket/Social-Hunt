@@ -1,0 +1,240 @@
+# Social-Hunt providers (data-driven)
+# Add more providers by adding another block below.
+# NOTE: Some platforms may return bot walls (CAPTCHA/Access Denied). Those will be marked as BLOCKED/UNKNOWN.
+
+instagram:
+  url: "https://www.instagram.com/{username}"
+  timeout: 20
+  ua_profile: "instagram_android"
+  success_patterns: ["profile picture", "followers", "following"]
+  error_patterns: ["sorry, this page isn't available", "page not found"]
+
+tiktok:
+  url: "https://www.tiktok.com/@{username}"
+  timeout: 20
+  ua_profile: "mobile_safari"
+  # include a dynamic token the engine fills in for extra signal
+  success_patterns: ["following", "followers", "likes", "@{username}"]
+  error_patterns: ["couldn't find this account", "this account was not found", "account not found"]
+
+twitter:
+  # Using Nitter for a lighter public view (may be down depending on instance health)
+  url: "https://nitter.net/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "tweets"]
+  error_patterns: ["user not found", "this account doesn't exist"]
+
+facebook:
+  url: "https://www.facebook.com/{username}"
+  timeout: 20
+  ua_profile: "desktop_chrome"
+  success_patterns: ["profile", "timeline", "about"]
+  error_patterns: ["page not found", "content not found"]
+
+youtube:
+  url: "https://www.youtube.com/@{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["subscribers", "videos", "channel"]
+  error_patterns: ["this channel does not exist", "404"]
+
+github:
+  url: "https://github.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["repositories", "contributions", "followers"]
+  error_patterns: ["not found", "404"]
+
+reddit:
+  url: "https://www.reddit.com/user/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["karma", "cake day", "posts", "comments"]
+  error_patterns: ["page not found", "nobody on reddit goes by that name"]
+
+telegram:
+  url: "https://t.me/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["subscribers", "members", "online"]
+  error_patterns: ["if you have telegram, you can contact"]
+
+twitch:
+  url: "https://www.twitch.tv/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "videos", "about"]
+  error_patterns: ["page not found", "sorry. unless you've got a time machine"]
+
+pinterest:
+  url: "https://www.pinterest.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "pins"]
+  error_patterns: ["sorry", "couldn't find that page"]
+
+steam:
+  url: "https://steamcommunity.com/id/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["profile", "games", "badges"]
+  error_patterns: ["the specified profile could not be found"]
+
+snapchat:
+  url: "https://www.snapchat.com/add/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["add on snapchat", "snapcode"]
+  error_patterns: ["could not be found", "page not found"]
+
+spotify:
+  url: "https://open.spotify.com/user/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["profile", "following", "followers"]
+  error_patterns: ["page is not available", "something went wrong"]
+
+soundcloud:
+  url: "https://soundcloud.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "tracks", "following"]
+  error_patterns: ["we can't find that user", "404"]
+
+vimeo:
+  url: "https://vimeo.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "videos"]
+  error_patterns: ["page not found", "404"]
+
+onlyfans:
+  url: "https://onlyfans.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["profile", "posts"]
+  error_patterns: ["page not found", "404"]
+
+deviantart:
+  url: "https://www.deviantart.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["watchers", "deviations"]
+  error_patterns: ["this is not the page you are looking for", "404"]
+
+behance:
+  url: "https://www.behance.net/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "appreciations", "projects"]
+  error_patterns: ["page not found", "404"]
+
+patreon:
+  url: "https://www.patreon.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["posts", "about", "patreon"]
+  error_patterns: ["page not found", "404"]
+
+linkedin:
+  url: "https://www.linkedin.com/in/{username}"
+  timeout: 15
+  ua_profile: "desktop_chrome"
+  success_patterns: ["experience", "education", "profile"]
+  error_patterns: ["page not found", "this page doesn't exist", "profile not found"]
+
+gab:
+  url: "https://gab.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "posts"]
+  error_patterns: ["page not found", "404"]
+
+gettr:
+  url: "https://gettr.com/user/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "posts"]
+  error_patterns: ["user not found", "not found"]
+
+parler:
+  url: "https://parler.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "posts"]
+  error_patterns: ["user not found", "404"]
+
+truth:
+  url: "https://truthsocial.com/@{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "truth"]
+  error_patterns: ["page does not exist", "404", "not found"]
+
+rumble:
+  url: "https://rumble.com/user/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "videos"]
+  error_patterns: ["page not found", "404"]
+
+bitchute:
+  url: "https://www.bitchute.com/channel/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["subscribers", "videos", "channel"]
+  error_patterns: ["channel not found", "404"]
+
+odysee:
+  url: "https://odysee.com/@{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "posts"]
+  error_patterns: ["page not found", "404"]
+
+minds:
+  url: "https://www.minds.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["subscribers", "views", "posts"]
+  error_patterns: ["channel not found", "404"]
+
+flickr:
+  url: "https://www.flickr.com/photos/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["photos", "albums", "followers"]
+  error_patterns: ["page not found", "oops"]
+
+threads:
+  url: "https://www.threads.net/@{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "threads", "profile"]
+  error_patterns: ["page isn't available", "content isn't available"]
+
+medium:
+  url: "https://medium.com/@{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["followers", "following", "profile"]
+  error_patterns: ["page not found", "404"]
+
+substack:
+  url: "https://{username}.substack.com"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["subscribe", "archive", "posts"]
+  error_patterns: ["page doesn't exist", "404"]
+
+# Requested alternative platform:
+# This one is not reliably username-addressable without site-specific search.
+# Add a plugin in social_hunt/providers/goyimtv.py if you want keyword or channel discovery logic.
+goyimtv:
+  url: "https://goyimtv.st"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["goyimtv"]
+  error_patterns: []
+  note: "Not directly username-addressable; implement as plugin if needed."
