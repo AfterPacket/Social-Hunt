@@ -1,40 +1,53 @@
 from __future__ import annotations
 
-"""Read runtime settings written by the dashboard.
-
-Settings are stored server-side in a JSON file (default: data/settings.json).
-Python providers can read keys from this file instead of relying on env vars.
-
-This module intentionally does a small file read each time to keep the
-implementation simple and to pick up dashboard changes without restart.
-
-Path handling:
-- If SOCIAL_HUNT_SETTINGS_PATH is absolute, it is used as-is.
-- If it is relative (or unset), it is resolved relative to the project root.
-"""
-
 import json
 import os
-from typing import Any, Dict
-
-from .paths import resolve_path
-
-
-def _settings_path() -> str:
-    return (os.getenv("SOCIAL_HUNT_SETTINGS_PATH") or "data/settings.json").strip() or "data/settings.json"
+from pathlib import Path
+from typing import Any, Optional
 
 
-def load_settings() -> Dict[str, Any]:
-    path = resolve_path(_settings_path())
-    try:
-        with path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, dict) else {}
-    except FileNotFoundError:
-        return {}
-    except Exception:
-        return {}
+def _project_root() -> Path:
+    # Anchor to this file so it works regardless of the process working directory.
+    return Path(__file__).resolve().parent.parent
+
+
+def _settings_path() -> Path:
+    # Allow override; otherwise store in ./data/settings.json
+    env = os.getenv("SOCIAL_HUNT_SETTINGS_PATH", "").strip()
+    if env:
+        p = Path(env)
+        return p if p.is_absolute() else (_project_root() / p)
+    return _project_root() / "data" / "settings.json"
 
 
 def get_setting(key: str, default: Any = None) -> Any:
-    return load_settings().get(key, default)
+    """Get a setting value.
+
+    Resolution order:
+      1) data/settings.json (or SOCIAL_HUNT_SETTINGS_PATH)
+      2) environment variables: KEY, KEY uppercased, SOCIAL_HUNT_<KEY uppercased>
+
+    This is intentionally small so providers can safely read API keys/config.
+    """
+
+    k = (key or "").strip()
+    if not k:
+        return default
+
+    # file
+    try:
+        p = _settings_path()
+        if p.exists():
+            data = json.loads(p.read_text(encoding="utf-8"))
+            if isinstance(data, dict) and k in data:
+                return data.get(k)
+    except Exception:
+        pass
+
+    # env fallbacks
+    for ek in (k, k.upper(), f"SOCIAL_HUNT_{k.upper()}"):
+        v = os.getenv(ek)
+        if v is not None and v != "":
+            return v
+
+    return default
