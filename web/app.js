@@ -36,7 +36,7 @@ async function loadView(name) {
 
   viewTitle.textContent = viewTitles[name] || name;
 
-  const res = await fetch(`/static/views/${name}.html?v=layout2`, {
+  const res = await fetch(`/static/views/${name}.html?v=layout3`, {
     cache: "no-store",
   });
   viewContainer.innerHTML = await res.text();
@@ -741,4 +741,18 @@ document.querySelectorAll(".menu-btn[data-view]").forEach((btn) => {
 });
 
 renderTokenStatus();
-loadView("dashboard");
+
+if (!getToken()) {
+  window.location.replace("/login");
+} else {
+  fetch("/api/auth/verify", { method: "POST", headers: authHeaders() })
+    .then((res) => {
+      if (res.ok) {
+        loadView("dashboard");
+      } else {
+        setToken("");
+        window.location.replace("/login");
+      }
+    })
+    .catch(() => loadView("dashboard"));
+}

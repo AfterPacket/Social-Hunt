@@ -97,6 +97,32 @@ python -m social_hunt.cli username_here --platforms github reddit --format json
 
 ---
 
+## 🔐 Authentication & Configuration
+
+### Login System
+Social-Hunt protects the dashboard with a token-based login system:
+1. **Initial Setup:** You must configure an Admin Token.
+2. **Login:** Accessing the web interface redirects to a login page where you verify your token.
+3. **Session:** The token is stored locally in your browser.
+
+### Setting the Admin Token
+You can set the Admin Token in one of two ways:
+1. **Environment Variable (Recommended):** Set `SOCIAL_HUNT_PLUGIN_TOKEN` before starting the server.
+2. **Bootstrap Mode:** 
+   - Start the server with `SOCIAL_HUNT_ENABLE_TOKEN_BOOTSTRAP=1`.
+   - Go to the **Token** page in the UI to set your token.
+   - Restart the server without the bootstrap flag.
+
+### Environment Variables
+| Variable | Description |
+|----------|-------------|
+| `SOCIAL_HUNT_PLUGIN_TOKEN` | Master admin token (overrides settings.json) |
+| `SOCIAL_HUNT_SETTINGS_PATH` | Path to settings.json (default: data/settings.json) |
+| `SOCIAL_HUNT_ENABLE_TOKEN_BOOTSTRAP` | Allow setting token via UI (Set to `1` to enable) |
+| `SOCIAL_HUNT_BOOTSTRAP_SECRET` | Optional secret for remote bootstrapping |
+
+---
+
 ## 🎯 Face Matcher Addon
 
 The Face Matcher addon enables identification of accounts by comparing avatar images using two complementary methods:
@@ -177,6 +203,7 @@ class NewSiteProvider(BaseProvider):
 
 ## 📝 Recent Improvements
 
+* **Secure Login System:** Token-based authentication for web dashboard
 * **Enhanced Metadata Extraction:** Improved parsing with suppressed false-positive warnings
 * **Dual Avatar Matching:** Face recognition + image hashing for comprehensive profile matching
 * **Better Error Handling:** More descriptive error messages for debugging

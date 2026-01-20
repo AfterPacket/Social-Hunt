@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Login - Social Hunt</title>
+        <link rel="stylesheet" href="/static/styles.css?v=layout3" />
+        <style>
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1rem;
+            }
+            .login-wrapper {
+                width: 100%;
+                max-width: 360px;
+            }
+            .brand {
+                text-align: center;
+                margin-bottom: 1.5rem;
+                padding: 1.5rem 1rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="login-wrapper">
+            <div class="card">
+                <div class="brand">
+                    <div class="brand-title" style="font-size: 1.4em">
+                        Social Hunt
+                    </div>
+                    <div class="brand-sub">Self-hosted OSINT aggregator</div>
+                </div>
+
+                <form id="loginForm">
+                    <div class="row" style="margin-bottom: 1rem">
+                        <input
+                            type="password"
+                            id="token"
+                            placeholder="Enter Admin Token"
+                            required
+                            autofocus
+                        />
+                    </div>
+                    <button type="submit" class="btn good" style="width: 100%">
+                        Sign in
+                    </button>
+                    <div
+                        id="errorMsg"
+                        style="
+                            color: #ffb4b4;
+                            margin-top: 10px;
+                            text-align: center;
+                            display: none;
+                        "
+                    ></div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            const KEY = "socialhunt_token";
+
+            // If we have a token, go to main app
+            if (localStorage.getItem(KEY)) {
+                window.location.replace("/");
+            }
+
+            document.getElementById("loginForm").onsubmit = async (e) => {
+                e.preventDefault();
+                const token = document.getElementById("token").value.trim();
+                const msg = document.getElementById("errorMsg");
+                const btn = e.target.querySelector("button");
+
+                msg.style.display = "none";
+                if (!token) return;
+
+                btn.disabled = true;
+                btn.textContent = "Verifying...";
+
+                try {
+                    const res = await fetch("/api/auth/verify", {
+                        method: "POST",
+                        headers: { "X-Plugin-Token": token },
+                    });
+
+                    if (res.ok) {
+                        localStorage.setItem(KEY, token);
+                        window.location.replace("/");
+                    } else {
+                        msg.textContent = "Invalid token";
+                        msg.style.display = "block";
+                        btn.disabled = false;
+                        btn.textContent = "Sign in";
+                    }
+                } catch (err) {
+                    msg.textContent = "Connection error";
+                    msg.style.display = "block";
+                    btn.disabled = false;
+                    btn.textContent = "Sign in";
+                }
+            };
+        </script>
+    </body>
+</html>

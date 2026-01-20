@@ -475,3 +475,16 @@ app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
 @app.get("/")
 async def root():
     return FileResponse(str(WEB_DIR / "index.html"))
+
+
+@app.post("/api/auth/verify")
+async def api_auth_verify(
+    x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
+):
+    require_admin(x_plugin_token)
+    return {"ok": True}
+
+
+@app.get("/login")
+async def login_page():
+    return FileResponse(str(WEB_DIR / "login.html"))
