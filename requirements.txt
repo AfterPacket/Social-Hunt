@@ -3,9 +3,9 @@ uvicorn[standard]==0.34.0
 httpx==0.28.1
 PyYAML==6.0.2
 beautifulsoup4==4.12.3
-python-multipart
 face_recognition
 dlib
 Pillow
 numpy
 imagehash
+python-multipart
