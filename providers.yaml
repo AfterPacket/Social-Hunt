@@ -15,7 +15,12 @@ tiktok:
   ua_profile: "mobile_safari"
   # include a dynamic token the engine fills in for extra signal
   success_patterns: ["following", "followers", "likes", "@{username}"]
-  error_patterns: ["couldn't find this account", "this account was not found", "account not found"]
+  error_patterns:
+    [
+      "couldn't find this account",
+      "this account was not found",
+      "account not found",
+    ]
 
 twitter:
   # Using Nitter for a lighter public view (may be down depending on instance health)
@@ -142,7 +147,8 @@ linkedin:
   timeout: 15
   ua_profile: "desktop_chrome"
   success_patterns: ["experience", "education", "profile"]
-  error_patterns: ["page not found", "this page doesn't exist", "profile not found"]
+  error_patterns:
+    ["page not found", "this page doesn't exist", "profile not found"]
 
 gab:
   url: "https://gab.com/{username}"
@@ -227,14 +233,3 @@ substack:
   ua_profile: "desktop_chrome"
   success_patterns: ["subscribe", "archive", "posts"]
   error_patterns: ["page doesn't exist", "404"]
-
-# Requested alternative platform:
-# This one is not reliably username-addressable without site-specific search.
-# Add a plugin in social_hunt/providers/goyimtv.py if you want keyword or channel discovery logic.
-goyimtv:
-  url: "https://goyimtv.st"
-  timeout: 10
-  ua_profile: "desktop_chrome"
-  success_patterns: ["goyimtv"]
-  error_patterns: []
-  note: "Not directly username-addressable; implement as plugin if needed."
