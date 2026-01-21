@@ -275,3 +275,11 @@ Twitter Archives:
   success_patterns: ["Showing"]
   error_patterns: ["No URL has been captured for this URL prefix."]
   note: "Twitter archives"
+
+
+chaturbate:
+  url: "https://chaturbate.com/{username}/"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["Room is currently offline."]
+  error_patterns: ["HTTP 404 - Page Not Found","It's probably just a broken link, or perhaps a cancelled broadcaster."]
