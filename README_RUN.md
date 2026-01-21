@@ -6,7 +6,7 @@
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -U pip setuptools
+python -m pip install --upgrade setuptools pip
 pip install -r requirements.txt
 pip install python-multipart
 ```
@@ -15,7 +15,7 @@ pip install python-multipart
 ```powershell
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -U pip setuptools
+python -m pip install --upgrade setuptools pip
 pip install -r requirements.txt
 pip install python-multipart
 ```

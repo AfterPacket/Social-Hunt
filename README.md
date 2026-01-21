@@ -59,7 +59,7 @@ py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
 # Install Dependencies
-python -m pip install -U pip setuptools
+python -m pip install --upgrade setuptools pip
 pip install -r requirements.txt
 pip install python-multipart
 ```
@@ -68,7 +68,7 @@ pip install python-multipart
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -U pip setuptools
+python -m pip install --upgrade setuptools pip
 pip install -r requirements.txt
 pip install python-multipart
 ```
@@ -210,7 +210,7 @@ class NewSiteProvider(BaseProvider):
 * **Dual Avatar Matching:** Face recognition + image hashing for comprehensive profile matching
 * **Better Error Handling:** More descriptive error messages for debugging
 * **Cleaner Logs:** Reduced console spam from HTML parsing warnings
-* **Installation Updates:** Added `python-multipart` and setuptools upgrade (Credit: airborne-commando)
+* **Installation Updates:** Added `python-multipart` and setuptools upgrade (Credit: airborne-commando for finding and testing)
 
 ---
 
