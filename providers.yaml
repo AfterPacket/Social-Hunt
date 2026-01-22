@@ -250,13 +250,16 @@ reddit archive:
   error_patterns: []
   note: "Reddit archive for deleted/active accounts, may not all be archived. Doesn't hurt to see if reddit shows not_found"
 
-
 Linktree:
   url: "https://linktr.ee/{username}"
   timeout: 10
   ua_profile: "desktop_chrome"
   success_patterns: ["{username}"]
-  error_patterns: ["The page you're looking for doesn't exist.","Want this to be your username? Create your Linktree now."]
+  error_patterns:
+    [
+      "The page you're looking for doesn't exist.",
+      "Want this to be your username? Create your Linktree now.",
+    ]
   note: "Linktree links"
 
 allmylinks:
@@ -267,7 +270,6 @@ allmylinks:
   error_patterns: ["404"]
   note: "allmylinks links"
 
-
 Twitter Archives:
   url: "https://web.archive.org/web/*/twitter.com/{username}/status/*"
   timeout: 10
@@ -276,10 +278,83 @@ Twitter Archives:
   error_patterns: ["No URL has been captured for this URL prefix."]
   note: "Twitter archives"
 
-
 chaturbate:
   url: "https://chaturbate.com/{username}/"
   timeout: 10
   ua_profile: "desktop_chrome"
   success_patterns: ["Room is currently offline."]
-  error_patterns: ["HTTP 404 - Page Not Found","It's probably just a broken link, or perhaps a cancelled broadcaster."]
+  error_patterns:
+    [
+      "HTTP 404 - Page Not Found",
+      "It's probably just a broken link, or perhaps a cancelled broadcaster.",
+    ]
+
+vk:
+  url: "https://vk.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["subscribers", "friends", "followers"]
+  error_patterns: ["this page is unavailable", "page not found"]
+
+tinder:
+  url: "https://tinder.com/@{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["profile", "distance", "interests"]
+  error_patterns: ["looking for someone else", "page not found"]
+
+quora:
+  url: "https://www.quora.com/profile/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["answers", "questions", "followers"]
+  error_patterns: ["page doesn't exist", "page not found"]
+
+hacker_news:
+  url: "https://news.ycombinator.com/user?id={username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["karma:", "created:", "submissions"]
+  error_patterns: ["no such user", "user not found"]
+
+last_fm:
+  url: "https://www.last.fm/user/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["scrobbles", "artists", "albums"]
+  error_patterns: ["user not found", "page not found"]
+
+chess_com:
+  url: "https://www.chess.com/member/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["stats", "rating", "joined"]
+  error_patterns: ["page not found", "account closed"]
+
+letterboxd:
+  url: "https://letterboxd.com/{username}/"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["films", "diary", "reviews"]
+  error_patterns: ["sorry, we can't find that page", "page not found"]
+
+kofi:
+  url: "https://ko-fi.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["support", "commission", "gallery"]
+  error_patterns: ["page not found", "couldn't find that page"]
+
+buymeacoffee:
+  url: "https://www.buymeacoffee.com/{username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["buy", "support", "membership"]
+  error_patterns: ["page not found", "user not found"]
+
+cash_app:
+  url: "https://cash.app/${username}"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["pay", "request", "cashtag"]
+  error_patterns: ["not a valid cashtag", "page not found"]
