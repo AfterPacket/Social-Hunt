@@ -1,15 +1,22 @@
 <h2>Breach Search</h2>
 <p class="muted">
-    Search for a username, email, IP, or other term across indexed data breaches.
-    Powered by the Breach.VIP provider.
+    Search for a username, email, IP, or other term across indexed data
+    breaches. Powered by the Breach.VIP provider.
 </p>
 
 <div class="card">
     <label>Search Term</label>
     <input id="breachTerm" placeholder="e.g. john_doe@example.com" />
+    <div class="hint" style="margin-top: 8px">
+        <strong>Example Formats:</strong>
+        Email (<code>user@user.com</code>) • IP (<code>127.0.0.1</code>) • Name
+        (<code>John A Doe</code>) • Phone (<code>0000000000</code>)
+    </div>
 
     <div class="row" style="margin-top: 12px">
-        <button class="btn good" id="startBreachScan" type="button">Start Scan</button>
+        <button class="btn good" id="startBreachScan" type="button">
+            Start Scan
+        </button>
         <span id="breachStatus" class="muted"></span>
     </div>
 </div>

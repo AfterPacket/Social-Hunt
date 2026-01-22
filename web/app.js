@@ -285,7 +285,14 @@ async function initBreachSearchView() {
   const statusEl = document.getElementById("breachStatus");
 
   startBtn.onclick = async () => {
-    const term = (termEl?.value || "").trim();
+    let term = (termEl?.value || "").trim();
+
+    // Auto-normalize phone numbers (strip spaces, dashes, etc. if result is purely numeric)
+    const stripped = term.replace(/[\s\-\(\)\+]/g, "");
+    if (stripped.length >= 7 && /^\d+$/.test(stripped)) {
+      term = stripped;
+    }
+
     if (!term) {
       statusEl.textContent = "Enter a search term.";
       return;
