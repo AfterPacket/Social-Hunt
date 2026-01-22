@@ -22,7 +22,6 @@ function renderTokenStatus() {
 const viewTitles = {
   dashboard: "Dashboard",
   search: "Search",
-  "breach-search": "Breach Search",
   reverse: "Reverse Image",
   history: "History",
   plugins: "Plugins",
@@ -44,7 +43,6 @@ async function loadView(name) {
 
   if (name === "dashboard") initDashboardView();
   if (name === "search") initSearchView();
-  if (name === "breach-search") initBreachSearchView();
   if (name === "reverse") initReverseView();
   if (name === "history") initHistoryView();
   if (name === "plugins") initPluginsView();
@@ -68,6 +66,7 @@ function loadJsonArray(key) {
     return [];
   }
 }
+
 function saveJsonArray(key, arr) {
   const limited = Array.isArray(arr) ? arr.slice(0, HISTORY_MAX) : [];
   localStorage.setItem(key, JSON.stringify(limited));
@@ -118,7 +117,7 @@ function initDashboardView() {
 }
 
 // ----------------------
-// Search
+// Search (existing scan)
 // ----------------------
 function badge(status) {
   return `<span class="badge">${status}</span>`;
@@ -133,7 +132,6 @@ async function fetchProviders() {
 async function fetchWhoami() {
   try {
     const res = await fetch("/api/whoami");
-    if (!res.ok) return null;
     const data = await res.json();
     return data;
   } catch (_) {
@@ -163,14 +161,9 @@ function selectedProviders() {
     .map((x) => x.getAttribute("data-name"));
 }
 
-function renderResults(job, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) {
-    console.error(`renderResults: container #${containerId} not found.`);
-    return;
-  }
-
+function renderResults(job) {
   const results = job.results || [];
+
   const rows = results
     .map((r) => {
       const prof = r.profile || {};
@@ -189,14 +182,13 @@ function renderResults(job, containerId) {
         ? `<div class="muted">${escapeHtml(r.error)}</div>`
         : "";
 
+      // Provider-specific quick notes (e.g. HIBP)
       const notes = [];
       if (typeof prof.breach_count === "number") {
         notes.push(`breaches: ${prof.breach_count}`);
         if (Array.isArray(prof.breaches) && prof.breaches.length) {
           notes.push(
-            `(${prof.breaches.slice(0, 6).join(", ")}${
-              prof.breaches.length > 6 ? "…" : ""
-            })`,
+            `(${prof.breaches.slice(0, 6).join(", ")}${prof.breaches.length > 6 ? "…" : ""})`,
           );
         }
       }
@@ -218,9 +210,7 @@ function renderResults(job, containerId) {
         notes.push(`FACE SEARCH ERROR: ${prof.face_match_error}`);
       }
       const noteHtml = notes.length
-        ? `<div class="muted" style="margin-top:6px">${escapeHtml(
-            notes.join(" "),
-          )}</div>`
+        ? `<div class="muted" style="margin-top:6px">${escapeHtml(notes.join(" "))}</div>`
         : "";
       return `
       <tr>
@@ -239,7 +229,7 @@ function renderResults(job, containerId) {
     })
     .join("");
 
-  container.innerHTML = `
+  document.getElementById("results").innerHTML = `
     <div class="tablewrap">
       <table>
         <thead>
@@ -262,66 +252,6 @@ function renderResults(job, containerId) {
   `;
 }
 
-// ----------------------
-// Breach Search
-// ----------------------
-async function initBreachSearchView() {
-  const termEl = document.getElementById("breachTerm");
-  const startBtn = document.getElementById("startBreachScan");
-  const statusEl = document.getElementById("breachStatus");
-
-  startBtn.onclick = async () => {
-    const term = termEl.value.trim();
-    if (!term) {
-      statusEl.textContent = "Enter a search term.";
-      return;
-    }
-
-    statusEl.textContent = "Starting scan...";
-    document.getElementById("breachResults").innerHTML = "";
-
-    const res = await fetch("/api/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: term,
-        providers: ["breachvip"],
-      }),
-    });
-
-    const data = await res.json().catch(() => ({}));
-    const jobId = data.job_id;
-    if (!jobId) {
-      statusEl.textContent = "Failed to start.";
-      return;
-    }
-
-    statusEl.textContent = `Job ${jobId} running...`;
-
-    for (;;) {
-      await new Promise((r) => setTimeout(r, 1000));
-      const jr = await fetch(`/api/jobs/${jobId}`);
-      const job = await jr.json();
-
-      if (job.state === "done") {
-        statusEl.textContent = "Done.";
-        renderResults(job, "breachResults");
-        return;
-      }
-      if (job.state === "failed") {
-        statusEl.textContent = "Failed: " + (job.error || "unknown");
-        return;
-      }
-      statusEl.textContent = `Running... (${
-        (job.results || []).length
-      } results so far)`;
-      if (job.results && job.results.length > 0) {
-        renderResults(job, "breachResults");
-      }
-    }
-  };
-}
-
 async function monitorJob(jobId) {
   const statusEl = document.getElementById("status");
   for (;;) {
@@ -335,7 +265,7 @@ async function monitorJob(jobId) {
         state: "done",
         results_count: (job.results || []).length,
       });
-      renderResults(job, "results");
+      renderResults(job);
       return;
     }
     if (job.state === "failed") {
@@ -352,7 +282,7 @@ async function monitorJob(jobId) {
         (job.results || []).length
       } results so far)`;
     if (job.results && job.results.length > 0) {
-      renderResults(job, "results");
+      renderResults(job);
     }
   }
 }
@@ -429,10 +359,10 @@ window.loadJob = async function (jobId) {
 
     if (job.state === "running") {
       if (statusEl) statusEl.textContent = `Job ${jobId} running...`;
-      renderResults(job, "results");
+      renderResults(job);
       await monitorJob(jobId);
     } else {
-      renderResults(job, "results");
+      renderResults(job);
       if (statusEl)
         statusEl.textContent = `Loaded job ${jobId} (${job.state}).`;
     }
@@ -825,15 +755,9 @@ function initSettingsView() {
     const displayVal = secret ? (isSet ? "•••••• (set)" : "") : (val ?? "");
     return `
       <tr>
-        <td><input class="input s-key" placeholder="e.g. hibp_api_key" value="${escapeHtml(
-          key,
-        )}"></td>
-        <td><input class="input s-val" placeholder="value" value="${escapeHtml(
-          displayVal,
-        )}"></td>
-        <td style="text-align:center"><input type="checkbox" class="s-secret" ${
-          secret ? "checked" : ""
-        }></td>
+        <td><input class="input s-key" placeholder="e.g. hibp_api_key" value="${escapeHtml(key)}"></td>
+        <td><input class="input s-val" placeholder="value" value="${escapeHtml(displayVal)}"></td>
+        <td style="text-align:center"><input type="checkbox" class="s-secret" ${secret ? "checked" : ""}></td>
         <td><button class="btn danger s-del" type="button">Remove</button></td>
       </tr>
     `;
