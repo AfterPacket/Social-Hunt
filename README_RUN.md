@@ -130,7 +130,7 @@ services:
 
 We are grateful to the following individuals for their contributions to the development and stability of Social-Hunt:
 
-- **Core Architecture:** [Your Name/Handle]
+- **Core Architecture:** **afterpacket**
 - **Dependency & Build Optimization:** **airborne-commando** (Identified and tested critical `python-multipart` and `setuptools` requirements).
 - **Breach Intelligence:** [Contributor Name]
 - **Documentation & Research:** [Contributor Name]

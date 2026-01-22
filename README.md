@@ -88,7 +88,8 @@ See [PLUGINS.md](PLUGINS.md) for more details.
 
 Social-Hunt is a community-driven project. Special thanks to:
 
-*   **Main Developer:** [Your Name/GitHub Handle] – Original architecture and core engine.
+*   **Main Developer:** **afterpacket** – Original architecture and core engine.
+*   **Optimization & Build:** **airborne-commando** – Dependency management and build process optimization.
 *   **OSINT Specialists:** [Contributor Name] – Research and development of provider patterns.
 *   **Security Researchers:** [Contributor Name] – Breach data integration and API security.
 *   **UI/UX Designers:** [Contributor Name] – Dashboard layout and responsiveness.
