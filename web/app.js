@@ -74,7 +74,12 @@ function saveJsonArray(key, arr) {
   localStorage.setItem(key, JSON.stringify(limited));
 }
 
-function addSearchHistoryEntry({ username, providers, job_id }) {
+function addSearchHistoryEntry({
+  username,
+  providers,
+  job_id,
+  type = "search",
+}) {
   const items = loadJsonArray(KEY_SEARCH_HISTORY);
   items.unshift({
     ts: Date.now(),
@@ -83,6 +88,7 @@ function addSearchHistoryEntry({ username, providers, job_id }) {
     job_id,
     results_count: null,
     state: "running",
+    type,
   });
   saveJsonArray(KEY_SEARCH_HISTORY, items);
 }
@@ -309,58 +315,22 @@ async function initBreachSearchView() {
       username: term,
       providers: ["breachvip", "hibp"],
       job_id: jobId,
+      type: "breach",
     });
 
     statusEl.textContent = `Job ${jobId} running...`;
-
-    for (;;) {
-      await new Promise((r) => setTimeout(r, 1000));
-      const jr = await fetch(`/api/jobs/${jobId}`);
-      const job = await jr.json();
-
-      if (job.state === "done") {
-        const results = job.results || [];
-        const foundCount = results.filter((r) => r.status === "found").length;
-        const failedCount = results.filter(
-          (r) =>
-            r.status === "error" ||
-            r.status === "unknown" ||
-            r.status === "blocked",
-        ).length;
-        statusEl.textContent = `Done. (${foundCount} found, ${failedCount} failed)`;
-        markSearchHistory(jobId, {
-          state: "done",
-          results_count: (job.results || []).length,
-        });
-        renderBreachView(job, "breachResults"); // Specialized view for breaches
-        return;
-      }
-      if (job.state === "failed") {
-        statusEl.textContent = "Failed: " + (job.error || "unknown");
-        markSearchHistory(jobId, {
-          state: "failed",
-          error: job.error || "unknown",
-        });
-        return;
-      }
-      const results = job.results || [];
-      const foundCount = results.filter((r) => r.status === "found").length;
-      const failedCount = results.filter(
-        (r) =>
-          r.status === "error" ||
-          r.status === "unknown" ||
-          r.status === "blocked",
-      ).length;
-      statusEl.textContent = `Running... (${foundCount} found, ${failedCount} failed so far)`;
-      if (job.results && job.results.length > 0) {
-        renderBreachView(job, "breachResults"); // Update results as they come
-      }
-    }
+    await monitorJob(jobId, "breachResults", "breachStatus", true);
   };
 }
 
-async function monitorJob(jobId) {
-  const statusEl = document.getElementById("status");
+async function monitorJob(
+  jobId,
+  containerId = "results",
+  statusId = "status",
+  isBreach = false,
+) {
+  const statusEl = document.getElementById(statusId);
+  if (!statusEl) return;
   for (;;) {
     await new Promise((r) => setTimeout(r, 1000));
     const jr = await fetch(`/api/jobs/${jobId}`);
@@ -378,9 +348,12 @@ async function monitorJob(jobId) {
       statusEl.textContent = `Done. (${foundCount} found, ${failedCount} failed)`;
       markSearchHistory(jobId, {
         state: "done",
-        results_count: (job.results || []).length,
+        results_count: results.length,
+        found_count: foundCount,
+        failed_count: failedCount,
       });
-      renderResults(job, "results");
+      if (isBreach) renderBreachView(job, containerId);
+      else renderResults(job, containerId);
       return;
     }
     if (job.state === "failed") {
@@ -401,14 +374,23 @@ async function monitorJob(jobId) {
     ).length;
     statusEl.textContent = `Running... (${foundCount} found, ${failedCount} failed so far)`;
     if (job.results && job.results.length > 0) {
-      renderResults(job, "results");
+      if (isBreach) renderBreachView(job, containerId);
+      else renderResults(job, containerId);
     }
   }
 }
 
 window.loadJob = async function (jobId) {
-  await loadView("search");
-  const statusEl = document.getElementById("status");
+  const items = loadJsonArray(KEY_SEARCH_HISTORY);
+  const entry = items.find((x) => x && x.job_id === jobId);
+  const type = entry?.type || "search";
+  const viewName = type === "breach" ? "breach-search" : "search";
+  const containerId = type === "breach" ? "breachResults" : "results";
+  const statusId = type === "breach" ? "breachStatus" : "status";
+  const isBreach = type === "breach";
+
+  await loadView(viewName);
+  const statusEl = document.getElementById(statusId);
   if (statusEl) statusEl.textContent = `Loading job ${jobId}...`;
 
   try {
@@ -418,10 +400,12 @@ window.loadJob = async function (jobId) {
 
     if (job.state === "running") {
       if (statusEl) statusEl.textContent = `Job ${jobId} running...`;
-      renderResults(job, "results");
-      await monitorJob(jobId);
+      if (isBreach) renderBreachView(job, containerId);
+      else renderResults(job, containerId);
+      await monitorJob(jobId, containerId, statusId, isBreach);
     } else {
-      renderResults(job, "results");
+      if (isBreach) renderBreachView(job, containerId);
+      else renderResults(job, containerId);
       if (statusEl)
         statusEl.textContent = `Loaded job ${jobId} (${job.state}).`;
     }
@@ -483,6 +467,7 @@ async function startScan() {
     username,
     providers: useFaceSearch ? ["face-search"] : selectedProviders(),
     job_id: jobId,
+    type: "search",
   });
 
   statusEl.textContent = `Job ${jobId} running...`;
@@ -876,20 +861,26 @@ function initHistoryView() {
         .map((x) => {
           const providers = x.providers_count ?? "";
           const job = x.job_id ? escapeHtml(x.job_id) : "";
-          const results =
-            (x.results_count ?? "") +
-            (x.state ? ` (${escapeHtml(x.state)})` : "");
-
-          let action = escapeHtml(String(results));
+          let resText =
+            (x.results_count ?? "") + (x.state ? ` (${x.state})` : "");
+          if (x.found_count !== undefined && x.failed_count !== undefined) {
+            resText = `${x.found_count} found, ${x.failed_count} failed`;
+          }
+          let action = escapeHtml(resText);
           if (x.job_id) {
             action += ` <button class="btn small" style="margin-left:10px" onclick="loadJob('${escapeHtml(
               x.job_id,
             )}')">View</button>`;
           }
 
+          const typeBadge =
+            x.type === "breach"
+              ? `<span class="badge" style="color:var(--danger); border-color:rgba(255,100,100,0.2); background:rgba(255,100,100,0.05); margin-right:6px;">Breach</span>`
+              : `<span class="badge" style="margin-right:6px;">Search</span>`;
+
           return `<tr>
           <td>${escapeHtml(fmtWhen(x.ts))}</td>
-          <td>${escapeHtml(x.username || "")}</td>
+          <td>${typeBadge}${escapeHtml(x.username || "")}</td>
           <td>${escapeHtml(String(providers))}</td>
           <td>${job}</td>
           <td>${action}</td>
