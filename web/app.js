@@ -650,14 +650,34 @@ function renderBreachView(job, containerId) {
     }
   }
 
-  if (!html && job.state === "done") {
-    html = `
-      <div class="card" style="text-align: center; padding: 40px;">
-        <div class="muted" style="font-size: 1.1rem;">No breach data found for "<strong>${escapeHtml(
-          job.username,
-        )}</strong>".</div>
+  if (job.state === "running") {
+    html += `
+      <div class="card" style="text-align: center; padding: 20px; border: 1px dashed var(--border);">
+        <div class="muted" style="font-size: 1rem;">
+          <span class="spinner"></span> Still scanning for additional data...
+        </div>
       </div>
     `;
+  }
+
+  if (!html) {
+    if (job.state === "done") {
+      html = `
+        <div class="card" style="text-align: center; padding: 40px;">
+          <div class="muted" style="font-size: 1.1rem;">No breach data found for "<strong>${escapeHtml(
+            job.username,
+          )}</strong>".</div>
+        </div>
+      `;
+    } else {
+      html = `
+        <div class="card" style="text-align: center; padding: 40px;">
+          <div class="muted" style="font-size: 1.1rem;">
+            <span class="spinner"></span> Searching for breach data...
+          </div>
+        </div>
+      `;
+    }
   }
 
   container.innerHTML = html;

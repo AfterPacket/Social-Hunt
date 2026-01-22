@@ -94,6 +94,10 @@ class BreachVIPProvider(BaseProvider):
             if response.status_code == 200:
                 data = response.json() if response.text else []
 
+                # Handle both direct lists and single result objects
+                if isinstance(data, dict):
+                    data = [data]
+
                 if isinstance(data, list) and data:
                     # Found results
                     result_count = len(data)
