@@ -8,8 +8,8 @@ from typing import Dict, List
 import yaml
 
 from .paths import resolve_path
-from .providers_yaml import PatternProvider
 from .providers_base import BaseProvider
+from .providers_yaml import PatternProvider
 
 
 def load_yaml_providers(path: str = "providers.yaml") -> Dict[str, BaseProvider]:
@@ -25,7 +25,9 @@ def load_yaml_providers(path: str = "providers.yaml") -> Dict[str, BaseProvider]
     return providers
 
 
-def load_yaml_providers_from_dir(dir_path: str = "plugins/providers") -> Dict[str, BaseProvider]:
+def load_yaml_providers_from_dir(
+    dir_path: str = "plugins/providers",
+) -> Dict[str, BaseProvider]:
     """Load additional providers from YAML files in plugins/providers/*.yml|*.yaml
 
     Path is resolved relative to the project root unless absolute.

@@ -24,13 +24,15 @@ adl_reports_search:
     - "Read more about"
 
 wikipedia_search:
-  url: "https://en.wikipedia.org/w/index.php?search={username}"
+  url: "https://en.wikipedia.org/wiki/User:{username}"
   timeout: 10
   ua_profile: "desktop_chrome"
   error_patterns:
-    - "There were no results matching the query."
+    - "is not registered"
+    - "does not have a user page"
   success_patterns:
-    - "mw-search-result-heading"
+    - "User page"
+    - "Contributions"
 
 # News / media mention search (JSON) via GDELT DOC 2.0 API
 # Returns a JSON list of articles (rolling window, per GDELT).
@@ -41,10 +43,10 @@ gdelt_news_mentions:
   timeout: 15
   ua_profile: "desktop_chrome"
   error_patterns:
-    - "\"totalarticles\":0"
+    - '"totalarticles":0'
   success_patterns:
-    - "\"totalarticles\":"
-    - "\"articles\":"
+    - '"totalarticles":'
+    - '"articles":'
 
 # Same as above, but biased toward extremism-related coverage.
 # NOTE: this is a *search query* shortcut; it does not label a person.
@@ -55,7 +57,7 @@ gdelt_extremism_context:
   timeout: 15
   ua_profile: "desktop_chrome"
   error_patterns:
-    - "\"totalarticles\":0"
+    - '"totalarticles":0'
   success_patterns:
-    - "\"totalarticles\":"
-    - "\"articles\":"
+    - '"totalarticles":'
+    - '"articles":'

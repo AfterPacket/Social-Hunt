@@ -22,6 +22,7 @@ function renderTokenStatus() {
 const viewTitles = {
   dashboard: "Dashboard",
   search: "Search",
+  "breach-search": "Breach Search", // Added breach search
   reverse: "Reverse Image",
   history: "History",
   plugins: "Plugins",
@@ -43,6 +44,7 @@ async function loadView(name) {
 
   if (name === "dashboard") initDashboardView();
   if (name === "search") initSearchView();
+  if (name === "breach-search") initBreachSearchView(); // Initialize breach search
   if (name === "reverse") initReverseView();
   if (name === "history") initHistoryView();
   if (name === "plugins") initPluginsView();
@@ -117,7 +119,7 @@ function initDashboardView() {
 }
 
 // ----------------------
-// Search (existing scan)
+// Search
 // ----------------------
 function badge(status) {
   return `<span class="badge">${status}</span>`;
@@ -132,6 +134,7 @@ async function fetchProviders() {
 async function fetchWhoami() {
   try {
     const res = await fetch("/api/whoami");
+    if (!res.ok) return null; // Defensive check
     const data = await res.json();
     return data;
   } catch (_) {
@@ -161,9 +164,14 @@ function selectedProviders() {
     .map((x) => x.getAttribute("data-name"));
 }
 
-function renderResults(job) {
-  const results = job.results || [];
+function renderResults(job, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.error(`renderResults: container #${containerId} not found.`);
+    return;
+  }
 
+  const results = job.results || [];
   const rows = results
     .map((r) => {
       const prof = r.profile || {};
@@ -178,11 +186,17 @@ function renderResults(job) {
       const link = r.url
         ? `<a href="${r.url}" target="_blank" rel="noreferrer">${r.url}</a>`
         : "";
-      const err = r.error
-        ? `<div class="muted">${escapeHtml(r.error)}</div>`
-        : "";
+      let errorDisplay = "";
+      if (r.error) {
+        // Special handling for HIBP error/warning to make it prominent
+        if (r.provider === "hibp" && !r.error.includes("API key not set")) {
+          errorDisplay = `<div style="margin-top:6px; font-weight:bold; color: var(--danger);">${escapeHtml(r.error)}</div>`;
+        } else {
+          // Default error display for other providers (and HIBP missing key)
+          errorDisplay = `<div class="muted" style="margin-top:6px; color: var(--warn);">${escapeHtml(r.error)}</div>`;
+        }
+      }
 
-      // Provider-specific quick notes (e.g. HIBP)
       const notes = [];
       if (typeof prof.breach_count === "number") {
         notes.push(`breaches: ${prof.breach_count}`);
@@ -194,9 +208,12 @@ function renderResults(job) {
       }
       if (typeof prof.paste_count === "number")
         notes.push(`pastes: ${prof.paste_count}`);
+      if (prof.breach_error) notes.push(`breach error: ${prof.breach_error}`);
+      if (prof.paste_error) notes.push(`paste error: ${prof.paste_error}`);
       if (prof.note) notes.push(String(prof.note));
       if (prof.pastes_note) notes.push(String(prof.pastes_note));
       if (prof.pastes_error) notes.push(`pastes: ${prof.pastes_error}`);
+      if (r.error) notes.push(`info: ${r.error}`);
       if (prof.face_match) {
         if (prof.face_match.match) {
           notes.push("FACE MATCH");
@@ -210,26 +227,27 @@ function renderResults(job) {
         notes.push(`FACE SEARCH ERROR: ${prof.face_match_error}`);
       }
       const noteHtml = notes.length
-        ? `<div class="muted" style="margin-top:6px">${escapeHtml(notes.join(" "))}</div>`
+        ? `<div class=\"muted\" style=\"margin-top:6px\">${escapeHtml(notes.join(" "))}</div>`
         : "";
+
       return `
-      <tr>
-        <td>${r.provider}</td>
-        <td>${badge(r.status)}</td>
-        <td>${avatar}</td>
-        <td>${name}</td>
-        <td>${followers}</td>
-        <td>${following}</td>
-        <td>${created}</td>
-        <td>${link}${noteHtml}${err}</td>
-        <td>${r.http_status ?? ""}</td>
-        <td>${r.elapsed_ms ?? ""}</td>
-      </tr>
-    `;
+       <tr>
+         <td>${r.provider}</td>
+         <td>${badge(r.status)}</td>
+         <td>${avatar}</td>
+         <td>${name}</td>
+         <td>${followers}</td>
+         <td>${following}</td>
+         <td>${created}</td>
+         <td>${link}${noteHtml}${errorDisplay}</td>
+         <td>${r.http_status ?? ""}</td>
+         <td>${r.elapsed_ms ?? ""}</td>
+       </tr>
+     `;
     })
     .join("");
 
-  document.getElementById("results").innerHTML = `
+  container.innerHTML = `
     <div class="tablewrap">
       <table>
         <thead>
@@ -252,6 +270,95 @@ function renderResults(job) {
   `;
 }
 
+// ----------------------
+// Breach Search
+// ----------------------
+async function initBreachSearchView() {
+  const termEl = document.getElementById("breachTerm");
+  const startBtn = document.getElementById("startBreachScan");
+  const statusEl = document.getElementById("breachStatus");
+
+  startBtn.onclick = async () => {
+    const term = (termEl?.value || "").trim();
+    if (!term) {
+      statusEl.textContent = "Enter a search term.";
+      return;
+    }
+
+    statusEl.textContent = "Starting scan...";
+    document.getElementById("breachResults").innerHTML = "";
+
+    const res = await fetch("/api/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: term,
+        providers: ["breachvip", "hibp"], // Use both breachvip and hibp
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    const jobId = data.job_id;
+    if (!jobId) {
+      statusEl.textContent = "Failed to start.";
+      return;
+    }
+
+    // Add to history right away
+    addSearchHistoryEntry({
+      username: term,
+      providers: ["breachvip", "hibp"],
+      job_id: jobId,
+    });
+
+    statusEl.textContent = `Job ${jobId} running...`;
+
+    for (;;) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const jr = await fetch(`/api/jobs/${jobId}`);
+      const job = await jr.json();
+
+      if (job.state === "done") {
+        const results = job.results || [];
+        const foundCount = results.filter((r) => r.status === "found").length;
+        const failedCount = results.filter(
+          (r) =>
+            r.status === "error" ||
+            r.status === "unknown" ||
+            r.status === "blocked",
+        ).length;
+        statusEl.textContent = `Done. (${foundCount} found, ${failedCount} failed)`;
+        markSearchHistory(jobId, {
+          state: "done",
+          results_count: (job.results || []).length,
+        });
+        renderResults(job, "breachResults"); // Render to its own div
+        return;
+      }
+      if (job.state === "failed") {
+        statusEl.textContent = "Failed: " + (job.error || "unknown");
+        markSearchHistory(jobId, {
+          state: "failed",
+          error: job.error || "unknown",
+        });
+        return;
+      }
+      const results = job.results || [];
+      const foundCount = results.filter((r) => r.status === "found").length;
+      const failedCount = results.filter(
+        (r) =>
+          r.status === "error" ||
+          r.status === "unknown" ||
+          r.status === "blocked",
+      ).length;
+      statusEl.textContent = `Running... (${foundCount} found, ${failedCount} failed so far)`;
+      if (job.results && job.results.length > 0) {
+        renderResults(job, "breachResults"); // Update results as they come
+      }
+    }
+  };
+}
+
 async function monitorJob(jobId) {
   const statusEl = document.getElementById("status");
   for (;;) {
@@ -260,32 +367,68 @@ async function monitorJob(jobId) {
     const job = await jr.json();
 
     if (job.state === "done") {
-      if (statusEl) statusEl.textContent = "Done.";
+      const results = job.results || [];
+      const foundCount = results.filter((r) => r.status === "found").length;
+      const failedCount = results.filter(
+        (r) =>
+          r.status === "error" ||
+          r.status === "unknown" ||
+          r.status === "blocked",
+      ).length;
+      statusEl.textContent = `Done. (${foundCount} found, ${failedCount} failed)`;
       markSearchHistory(jobId, {
         state: "done",
         results_count: (job.results || []).length,
       });
-      renderResults(job);
+      renderResults(job, "results");
       return;
     }
     if (job.state === "failed") {
-      if (statusEl)
-        statusEl.textContent = "Failed: " + (job.error || "unknown");
+      statusEl.textContent = "Failed: " + (job.error || "unknown");
       markSearchHistory(jobId, {
         state: "failed",
         error: job.error || "unknown",
       });
       return;
     }
-    if (statusEl)
-      statusEl.textContent = `Running... (${
-        (job.results || []).length
-      } results so far)`;
+    const results = job.results || [];
+    const foundCount = results.filter((r) => r.status === "found").length;
+    const failedCount = results.filter(
+      (r) =>
+        r.status === "error" ||
+        r.status === "unknown" ||
+        r.status === "blocked",
+    ).length;
+    statusEl.textContent = `Running... (${foundCount} found, ${failedCount} failed so far)`;
     if (job.results && job.results.length > 0) {
-      renderResults(job);
+      renderResults(job, "results");
     }
   }
 }
+
+window.loadJob = async function (jobId) {
+  await loadView("search");
+  const statusEl = document.getElementById("status");
+  if (statusEl) statusEl.textContent = `Loading job ${jobId}...`;
+
+  try {
+    const res = await fetch(`/api/jobs/${jobId}`);
+    if (!res.ok) throw new Error("Job not found");
+    const job = await res.json();
+
+    if (job.state === "running") {
+      if (statusEl) statusEl.textContent = `Job ${jobId} running...`;
+      renderResults(job, "results");
+      await monitorJob(jobId);
+    } else {
+      renderResults(job, "results");
+      if (statusEl)
+        statusEl.textContent = `Loaded job ${jobId} (${job.state}).`;
+    }
+  } catch (e) {
+    if (statusEl) statusEl.textContent = "Error loading job: " + e.message;
+  }
+};
 
 async function startScan() {
   const usernameEl = document.getElementById("username");
@@ -347,30 +490,6 @@ async function startScan() {
   await monitorJob(jobId);
 }
 
-window.loadJob = async function (jobId) {
-  await loadView("search");
-  const statusEl = document.getElementById("status");
-  if (statusEl) statusEl.textContent = `Loading job ${jobId}...`;
-
-  try {
-    const res = await fetch(`/api/jobs/${jobId}`);
-    if (!res.ok) throw new Error("Job not found");
-    const job = await res.json();
-
-    if (job.state === "running") {
-      if (statusEl) statusEl.textContent = `Job ${jobId} running...`;
-      renderResults(job);
-      await monitorJob(jobId);
-    } else {
-      renderResults(job);
-      if (statusEl)
-        statusEl.textContent = `Loaded job ${jobId} (${job.state}).`;
-    }
-  } catch (e) {
-    if (statusEl) statusEl.textContent = "Error loading job: " + e.message;
-  }
-};
-
 async function initSearchView() {
   const loadBtn = document.getElementById("loadProviders");
   const allBtn = document.getElementById("selectAll");
@@ -389,7 +508,9 @@ async function initSearchView() {
 
   loadBtn.onclick = async () => {
     statusEl.textContent = "Loading providers...";
-    const names = await fetchProviders();
+    let names = await fetchProviders();
+    // Exclude breach-specific providers from general search
+    names = names.filter((n) => n !== "hibp" && n !== "breachvip");
     renderProviders(names);
     statusEl.textContent = `Loaded ${names.length} providers.`;
   };
@@ -409,7 +530,9 @@ async function initSearchView() {
   startBtn.onclick = startScan;
 
   // auto-load
-  const names = await fetchProviders();
+  let names = await fetchProviders();
+  // Exclude breach-specific providers from general search
+  names = names.filter((n) => n !== "hibp" && n !== "breachvip");
   renderProviders(names);
 
   const who = await fetchWhoami();
@@ -626,7 +749,7 @@ function initHistoryView() {
 }
 
 // ----------------------
-// Token
+// Tokens
 // ----------------------
 function initTokensView() {
   const input = document.getElementById("tokenInput");
@@ -743,8 +866,8 @@ function initSettingsView() {
   const msgEl = document.getElementById("settingsMsg");
   const publicUrlInput = document.getElementById("public_url");
   const savePublicUrlBtn = document.getElementById("saveSettings");
-  const updateBtn = document.getElementById("updateBtn");
-  const updateLog = document.getElementById("updateLog");
+  const updateBtn = document.getElementById("updateBtn"); // Assuming this exists now
+  const updateLog = document.getElementById("updateLog"); // Assuming this exists now
 
   function showMsg(txt) {
     msgEl.style.display = "block";
@@ -791,7 +914,7 @@ function initSettingsView() {
     }
 
     for (const [k, meta] of Object.entries(settings)) {
-      if (k === "public_url") continue;
+      if (k === "public_url") continue; // Handled separately
       tableBody.insertAdjacentHTML(
         "beforeend",
         rowHtml(k, meta.value, meta.secret, meta.is_set),
@@ -857,6 +980,7 @@ function initSettingsView() {
     };
   }
 
+  // UPDATE SYSTEM (Re-added)
   if (updateBtn) {
     updateBtn.onclick = async () => {
       if (!confirm("Are you sure you want to pull updates from GitHub?"))
@@ -895,6 +1019,9 @@ function initSettingsView() {
   load();
 }
 
+// ----------------------
+// Init
+// ----------------------
 function escapeHtml(s) {
   return String(s ?? "")
     .replaceAll("&", "&amp;")
@@ -904,7 +1031,6 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
-// logout
 const logoutBtn = document.querySelector("[data-action='logout']");
 if (logoutBtn) {
   logoutBtn.onclick = () => {
@@ -913,7 +1039,6 @@ if (logoutBtn) {
   };
 }
 
-// menu clicks
 document.querySelectorAll(".menu-btn[data-view]").forEach((btn) => {
   btn.onclick = () => loadView(btn.dataset.view);
 });
