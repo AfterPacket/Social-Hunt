@@ -634,9 +634,14 @@ function renderBreachView(job, containerId) {
                         src,
                       )}</td>
                       ${headerKeys
-                        .map(
-                          (k) => `<td>${escapeHtml(String(row[k] || ""))}</td>`,
-                        )
+                        .map((k) => {
+                          const val = row[k];
+                          const display =
+                            val && typeof val === "object"
+                              ? JSON.stringify(val)
+                              : String(val || "");
+                          return `<td>${escapeHtml(display)}</td>`;
+                        })
                         .join("")}
                     </tr>
                   `;

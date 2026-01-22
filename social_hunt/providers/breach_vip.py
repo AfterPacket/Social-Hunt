@@ -92,13 +92,35 @@ class BreachVIPProvider(BaseProvider):
             elapsed = int((time.monotonic() - start) * 1000)
 
             if response.status_code == 200:
-                data = response.json() if response.text else []
+                raw_json = response.json() if response.text else []
+                data = []
 
-                # Handle both direct lists and single result objects
-                if isinstance(data, dict):
-                    data = [data]
+                # Handle different API response shapes
+                if isinstance(raw_json, dict):
+                    # If the API wraps records in a 'results' or 'data' key, unwrap them
+                    if "results" in raw_json and isinstance(raw_json["results"], list):
+                        data = raw_json["results"]
+                    elif "data" in raw_json and isinstance(raw_json["data"], list):
+                        data = raw_json["data"]
+                    else:
+                        data = [raw_json]
+                elif isinstance(raw_json, list):
+                    data = raw_json
 
-                if isinstance(data, list) and data:
+                # Further refine flattening: if we have a list containing a single object
+                # that itself contains 'results' or 'data', unwrap it.
+                if (
+                    isinstance(data, list)
+                    and len(data) == 1
+                    and isinstance(data[0], dict)
+                ):
+                    inner = data[0]
+                    if "results" in inner and isinstance(inner["results"], list):
+                        data = inner["results"]
+                    elif "data" in inner and isinstance(inner["data"], list):
+                        data = inner["data"]
+
+                if data:
                     # Found results
                     result_count = len(data)
 
