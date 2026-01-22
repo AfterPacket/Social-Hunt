@@ -50,9 +50,19 @@ class BreachVIPProvider(BaseProvider):
                 timestamp_iso=ts,
             )
 
-        # Prepare request headers
+        # Prepare request headers to mimic a browser/AJAX request
         breachvip_headers = dict(headers)
-        breachvip_headers["Content-Type"] = "application/json"
+        breachvip_headers.update(
+            {
+                "Content-Type": "application/json",
+                "Origin": "https://breach.vip",
+                "Referer": "https://breach.vip/",
+                "Accept": "application/json, text/plain, */*",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+            }
+        )
 
         # Determine which fields to search based on the input
         fields_to_search = self._determine_search_fields(search_term)
@@ -101,12 +111,24 @@ class BreachVIPProvider(BaseProvider):
                     if breach_sources:
                         profile["breach_sources"] = list(breach_sources)
 
-                    # Get a summary of what types of data were found
+                    # Store raw results (up to 100) for detailed rendering
+                    profile["raw_results"] = data[:100]
+
+                    # Aggregate data types found across all results
                     data_types_found = {}
-                    for result in data[:10]:  # Check first 10 results
+                    for result in data:
                         if isinstance(result, dict):
                             for key, value in result.items():
-                                if value and key not in ["_id", "id", "index"]:
+                                # Filter out metadata/structural keys
+                                if value and key not in (
+                                    "_id",
+                                    "id",
+                                    "index",
+                                    "source",
+                                    "breach",
+                                    "database",
+                                    "origin",
+                                ):
                                     data_types_found[key] = (
                                         data_types_found.get(key, 0) + 1
                                     )
@@ -154,6 +176,20 @@ class BreachVIPProvider(BaseProvider):
                     evidence=evidence,
                     profile=profile,
                     error="Bad request - check search parameters",
+                    timestamp_iso=ts,
+                )
+
+            elif response.status_code == 403:
+                return ProviderResult(
+                    provider=self.name,
+                    username=username,
+                    url=self.build_url(username),
+                    status=ResultStatus.BLOCKED,
+                    http_status=response.status_code,
+                    elapsed_ms=elapsed,
+                    evidence=evidence,
+                    profile=profile,
+                    error="Access Denied (Cloudflare). Your server IP might be flagged. Try searching manually at breach.vip.",
                     timestamp_iso=ts,
                 )
 

@@ -332,7 +332,7 @@ async function initBreachSearchView() {
           state: "done",
           results_count: (job.results || []).length,
         });
-        renderResults(job, "breachResults"); // Render to its own div
+        renderBreachView(job, "breachResults"); // Specialized view for breaches
         return;
       }
       if (job.state === "failed") {
@@ -353,7 +353,7 @@ async function initBreachSearchView() {
       ).length;
       statusEl.textContent = `Running... (${foundCount} found, ${failedCount} failed so far)`;
       if (job.results && job.results.length > 0) {
-        renderResults(job, "breachResults"); // Update results as they come
+        renderBreachView(job, "breachResults"); // Update results as they come
       }
     }
   };
@@ -488,6 +488,179 @@ async function startScan() {
   statusEl.textContent = `Job ${jobId} running...`;
 
   await monitorJob(jobId);
+}
+
+/**
+ * Renders a specialized, detailed view for breach search results.
+ * Handles both HIBP (breach list) and BreachVIP (detailed records).
+ */
+function renderBreachView(job, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const results = job.results || [];
+  let html = "";
+
+  // 0. Top Summary Stats
+  const hibpCount =
+    results.find((r) => r.provider === "hibp")?.profile?.breach_count || 0;
+  const bvipCount =
+    results.find((r) => r.provider === "breachvip")?.profile?.result_count || 0;
+
+  if (hibpCount > 0 || bvipCount > 0) {
+    html += `
+      <div class="row" style="margin-bottom: 20px; gap: 15px;">
+        ${
+          hibpCount > 0
+            ? `
+          <div class="card" style="flex: 1; text-align: center; border-bottom: 3px solid var(--danger);">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--danger);">${hibpCount}</div>
+            <div class="muted">Known Breaches (HIBP)</div>
+          </div>
+        `
+            : ""
+        }
+        ${
+          bvipCount > 0
+            ? `
+          <div class="card" style="flex: 1; text-align: center; border-bottom: 3px solid var(--good);">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--good);">${bvipCount}</div>
+            <div class="muted">Detailed Records (BreachVIP)</div>
+          </div>
+        `
+            : ""
+        }
+      </div>
+    `;
+  }
+
+  // 1. Provider Errors / Skips (General)
+  results.forEach((r) => {
+    if (r.status !== "found" && r.status !== "not_found") {
+      const isCloudflare =
+        r.http_status === 403 || (r.error && r.error.includes("Cloudflare"));
+      const color =
+        r.status === "blocked" || (r.error && r.error.includes("API key"))
+          ? "var(--warn)"
+          : "var(--danger)";
+
+      let manualLink = "";
+      if (r.provider === "breachvip" && isCloudflare) {
+        manualLink = `
+          <div style="margin-top: 10px;">
+            <a href="https://breach.vip/" target="_blank" class="btn small good" style="display: inline-block;">
+              Open Breach.VIP (Manual Search)
+            </a>
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="card" style="margin-bottom: 15px; border-left: 5px solid ${color}; padding: 12px 14px;">
+          <div class="muted"><strong>${r.provider.toUpperCase()}:</strong> ${escapeHtml(r.error || `Status: ${r.status}`)}</div>
+          ${manualLink}
+        </div>
+      `;
+    }
+  });
+
+  // 2. Have I Been Pwned Matches
+  const hibpResult = results.find((r) => r.provider === "hibp");
+  if (hibpResult && hibpResult.status === "found") {
+    const prof = hibpResult.profile || {};
+    html += `
+      <div class="card" style="margin-bottom: 20px; border-left: 5px solid var(--danger);">
+        <div style="font-size: 1.2rem; font-weight: 800; color: var(--danger); margin-bottom: 8px;">
+          ⚠️ Have I Been Pwned: ${prof.breach_count || 0} Breaches
+        </div>
+        <div class="muted" style="line-height: 1.6;">
+          ${(prof.breaches || []).join(" • ")}
+        </div>
+      </div>
+    `;
+  }
+
+  // 3. BreachVIP Detailed Records
+  const bvip = results.find((r) => r.provider === "breachvip");
+  if (bvip && bvip.status === "found") {
+    const prof = bvip.profile || {};
+    const raw = prof.raw_results || [];
+
+    if (raw.length > 0) {
+      // Determine columns dynamically from data
+      const exclude = [
+        "_id",
+        "id",
+        "index",
+        "source",
+        "breach",
+        "database",
+        "origin",
+      ];
+      const keys = new Set();
+      raw.forEach((row) => {
+        Object.keys(row).forEach((k) => {
+          if (!exclude.includes(k) && row[k]) keys.add(k);
+        });
+      });
+      const headerKeys = Array.from(keys).sort();
+
+      html += `
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div style="font-size: 1.1rem; font-weight: 800;">Detailed Breach Records</div>
+            <div class="badge">${bvipCount} Results</div>
+          </div>
+          <div class="tablewrap">
+            <table style="font-size: 13px; border-radius: 8px;">
+              <thead>
+                <tr>
+                  <th>Source / Origin</th>
+                  ${headerKeys.map((k) => `<th>${escapeHtml(k)}</th>`).join("")}
+                </tr>
+              </thead>
+              <tbody>
+                ${raw
+                  .map((row) => {
+                    const src =
+                      row.source ||
+                      row.breach ||
+                      row.database ||
+                      row.origin ||
+                      "Unknown";
+                    return `
+                    <tr>
+                      <td style="font-weight:bold; color: var(--good);">${escapeHtml(
+                        src,
+                      )}</td>
+                      ${headerKeys
+                        .map(
+                          (k) => `<td>${escapeHtml(String(row[k] || ""))}</td>`,
+                        )
+                        .join("")}
+                    </tr>
+                  `;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  if (!html && job.state === "done") {
+    html = `
+      <div class="card" style="text-align: center; padding: 40px;">
+        <div class="muted" style="font-size: 1.1rem;">No breach data found for "<strong>${escapeHtml(
+          job.username,
+        )}</strong>".</div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
 }
 
 async function initSearchView() {
