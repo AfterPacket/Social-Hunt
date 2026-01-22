@@ -1,106 +1,141 @@
-# Social-Hunt Quick Start
+# 🏃‍♂️ Social-Hunt: Execution & Configuration Guide
 
-## Installation
+This guide provides detailed instructions on how to set up, configure, and run **Social-Hunt** in various environments.
 
-### Linux/Mac
+---
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+- **Python 3.9 or higher**
+- **Git**
+- **Docker & Docker Compose** (Optional, for containerized deployment)
+
+---
+
+## 🛠️ Manual Installation
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-repo/Social-Hunt.git
+cd Social-Hunt
+```
+
+### 2. Set Up a Virtual Environment (Recommended)
+**Windows:**
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+```
+
+**Linux/macOS:**
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade setuptools pip
+```
+
+### 3. Install Dependencies
+```bash
+python -m pip install --upgrade pip setuptools
 pip install -r requirements.txt
-pip install python-multipart
-```
-
-### Windows (PowerShell)
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade setuptools pip
-pip install -r requirements.txt
-pip install python-multipart
-```
-
-**If activation blocked:**
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
 ---
 
-## Usage
+## ⚙️ Configuration Detail
 
-### CLI Mode
+Social-Hunt uses a combination of environment variables and a JSON settings file (`data/settings.json`).
+
+### 1. Security & Tokens
+To access the Dashboard, you need an **Admin Token**. You can set this in two ways:
+
+#### A. Environment Variable (Highest Priority)
+Set the token before launching the app:
 ```bash
-# Basic scan
-python -m social_hunt.cli username_here
-
-# Specific platforms with JSON output
-python -m social_hunt.cli username_here --platforms github reddit instagram --format json
+export SOCIAL_HUNT_PLUGIN_TOKEN="your_secure_token_here"
 ```
 
-### Web Interface (Recommended)
-```bash
-# Start server
-uvicorn api.main:app --host 127.0.0.1 --port 8000
+#### B. Bootstrap Mode (Initial Setup)
+If you don't want to use environment variables, enable bootstrap mode once:
+1. Run with `SOCIAL_HUNT_ENABLE_TOKEN_BOOTSTRAP=1`.
+2. Open the browser to the **Token** page.
+3. Set your token and save.
+4. Restart the app without the bootstrap flag.
 
-# Or bind to network interface
-uvicorn api.main:app --host 0.0.0.0 --port 8000
-```
-
-**Access:** http://127.0.0.1:8000/
+### 2. Settings Registry (`data/settings.json`)
+| Key | Description |
+| :--- | :--- |
+| `hibp_api_key` | Required for Have I Been Pwned searches. |
+| `public_url` | Your instance's URL (e.g., `https://osint.example.com`). Required for reverse image search to work with external engines. |
+| `admin_token` | The fallback token if no environment variable is set. |
 
 ---
 
-## Configuration
+## 🚀 Running Social-Hunt
 
-### Admin Token (Required for Settings)
-Protected endpoints require an admin token:
-
+### Web Dashboard (FastAPI)
+Launch the server using the provided runner:
 ```bash
-# Production: Set via environment variable
-export SOCIAL_HUNT_PLUGIN_TOKEN="your-secure-token-here"
-
-# Development: Enable bootstrap mode to set via web UI
-export SOCIAL_HUNT_ENABLE_TOKEN_BOOTSTRAP=1
+python run.py
 ```
-
-### Enable Plugin Uploads
+Alternatively, use Uvicorn directly:
 ```bash
-export SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD=1
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
+**Access:** Open [http://localhost:8000](http://localhost:8000)
 
-### HIBP (Have I Been Pwned) Integration
-Configure in **Dashboard → Settings**:
-- `hibp_api_key` - Your HIBP API key (required)
-- `hibp_user_agent` - Identifying string for your app (required)
-- `hibp_allow_non_email` - Set to `1` to check non-email usernames
+### Command Line Interface (CLI)
+Perform a quick scan without starting the web server:
+```bash
+python -m social_hunt.cli <username> --platforms github twitter reddit
+```
 
 ---
 
-## Notes
+## 🐳 Docker Deployment
 
-- **Bot Walls:** Some platforms (LinkedIn, TikTok) may return CAPTCHAs. Results show as `blocked` or `unknown`.
-- **Metadata:** Results include `display_name`, `avatar_url`, `bio`, `followers` when available (extracted from Open Graph/JSON APIs).
-- **IP Check:** Use `/api/whoami` to verify your public IP (useful when behind a proxy).
-- **Privacy:** All searches run locally from your machine. No data sent to third parties.
+Social-Hunt is fully containerized for easy deployment.
+
+### 1. Build and Start
+```bash
+docker-compose up -d --build
+```
+
+### 2. Docker Compose Configuration (`docker-compose.yml`)
+```yaml
+services:
+  social-hunt:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - SOCIAL_HUNT_PLUGIN_TOKEN=your_secure_token
+      - SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD=1
+    volumes:
+      - ./data:/app/data
+      - ./plugins:/app/plugins
+```
 
 ---
 
-## Troubleshooting
+## 🔍 Troubleshooting
 
-**Import Errors:** Make sure virtual environment is activated
-```bash
-source .venv/bin/activate  # Linux/Mac
-.\.venv\Scripts\Activate.ps1  # Windows
-```
-
-**Port in Use:** Change port number
-```bash
-uvicorn api.main:app --host 127.0.0.1 --port 8080
-```
-
-**Face Matcher Issues:** Ensure target images contain clear faces or use image hash matching for default avatars
+- **403 Forbidden on BreachVIP:** This is usually a Cloudflare block. Ensure your server IP is not on a known data center blacklist, or use the "Manual Search" button added to the UI.
+- **HIBP Not Found:** Ensure your API key is active and has credits.
+- **Missing Plugins:** Ensure `SOCIAL_HUNT_ALLOW_PY_PLUGINS=1` is set in your environment if using Python-based providers.
 
 ---
 
-For detailed documentation, see [README.md](README.md)
+## 🤝 Contributor Credits
+
+We are grateful to the following individuals for their contributions to the development and stability of Social-Hunt:
+
+- **Core Architecture:** [Your Name/Handle]
+- **Dependency & Build Optimization:** **airborne-commando** (Identified and tested critical `python-multipart` and `setuptools` requirements).
+- **Breach Intelligence:** [Contributor Name]
+- **Documentation & Research:** [Contributor Name]
+
+---
+
+## 📄 License
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
