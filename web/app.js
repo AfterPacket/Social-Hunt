@@ -743,6 +743,8 @@ function initSettingsView() {
   const msgEl = document.getElementById("settingsMsg");
   const publicUrlInput = document.getElementById("public_url");
   const savePublicUrlBtn = document.getElementById("saveSettings");
+  const updateBtn = document.getElementById("updateBtn");
+  const updateLog = document.getElementById("updateLog");
 
   function showMsg(txt) {
     msgEl.style.display = "block";
@@ -851,6 +853,41 @@ function initSettingsView() {
         load();
       } else {
         alert("Failed to save.");
+      }
+    };
+  }
+
+  if (updateBtn) {
+    updateBtn.onclick = async () => {
+      if (!confirm("Are you sure you want to pull updates from GitHub?"))
+        return;
+
+      updateBtn.disabled = true;
+      updateLog.style.display = "block";
+      updateLog.textContent = "Updating...";
+
+      try {
+        const r = await fetch("/api/admin/update", {
+          method: "POST",
+          headers: authHeaders(),
+        });
+        const j = await r.json();
+
+        if (j.ok) {
+          updateLog.textContent =
+            (j.stdout || "") + "\n" + (j.message || "Update finished.");
+          alert(
+            "Update successful. Please restart the server manually if necessary.",
+          );
+        } else {
+          updateLog.textContent =
+            (j.stderr || "") + "\n" + (j.error || "Update failed.");
+          alert("Update failed.");
+        }
+      } catch (e) {
+        updateLog.textContent = "Error: " + e.message;
+      } finally {
+        updateBtn.disabled = false;
       }
     };
   }

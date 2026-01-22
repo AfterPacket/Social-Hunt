@@ -11,6 +11,29 @@
         <button class="btn good" id="saveSettings" type="button">Save</button>
     </div>
 </div>
+
+<div class="card">
+    <h3>System Update</h3>
+    <p class="muted">
+        Pull the latest updates from GitHub. Your local settings and data are
+        protected.
+    </p>
+    <button class="btn" id="updateBtn" type="button">Update System</button>
+    <pre
+        id="updateLog"
+        style="
+            margin-top: 10px;
+            display: none;
+            background: #111;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow: auto;
+        "
+    ></pre>
+</div>
+
 <p class="muted">
     Add integrations as key/value pairs. Secrets are stored server-side and
     never shown back.

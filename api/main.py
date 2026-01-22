@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import re
+import subprocess
 import time
 import uuid
 import zipfile
@@ -168,6 +169,37 @@ async def api_admin_set_token(
     data["admin_token"] = new_token
     settings_store.save(data)
     return {"ok": True}
+
+
+@app.post("/api/admin/update")
+async def api_admin_update(
+    x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
+):
+    """
+    Perform a git pull to update the application.
+    Local changes to 'data/' are protected by .gitignore.
+    """
+    require_admin(x_plugin_token)
+    try:
+        # Ensure data/settings.json is ignored if it exists in the index
+        subprocess.run(
+            ["git", "update-index", "--assume-unchanged", "data/settings.json"],
+            cwd=str(APP_ROOT),
+            capture_output=True,
+        )
+
+        proc = subprocess.run(
+            ["git", "pull"], cwd=str(APP_ROOT), capture_output=True, text=True
+        )
+
+        return {
+            "ok": proc.returncode == 0,
+            "stdout": proc.stdout,
+            "stderr": proc.stderr,
+            "message": "Update successful" if proc.returncode == 0 else "Update failed",
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 # ---- core engine ----

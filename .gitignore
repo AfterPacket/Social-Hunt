@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 *.log
 .env
+
+# Local Data & Persistence
+data/
+temp/
+web/temp_uploads/
