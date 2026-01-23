@@ -1873,12 +1873,11 @@ document.querySelectorAll(".menu-btn[data-view]").forEach((btn) => {
 renderTokenStatus();
 
 // Load theme on init
-fetch("/api/settings", { headers: authHeaders() })
+fetch("/api/public/theme")
   .then((res) => res.json())
   .then((j) => {
-    const theme = j.settings?.theme?.value;
-    if (theme && theme !== "default") {
-      document.body.setAttribute("data-theme", theme);
+    if (j.theme && j.theme !== "default") {
+      document.body.setAttribute("data-theme", j.theme);
     } else {
       document.body.removeAttribute("data-theme");
     }

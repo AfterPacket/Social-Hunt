@@ -4,7 +4,7 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Login - Social Hunt</title>
-        <link rel="stylesheet" href="/static/styles.css?v=layout3" />
+        <link rel="stylesheet" href="/static/styles.css?v=2.2.1" />
         <style>
             body {
                 display: flex;
@@ -49,7 +49,7 @@
                     <div
                         id="errorMsg"
                         style="
-                            color: #ffb4b4;
+                            color: var(--danger);
                             margin-top: 10px;
                             text-align: center;
                             display: none;
@@ -60,6 +60,16 @@
         </div>
 
         <script>
+            // Apply theme
+            fetch("/api/public/theme")
+                .then((res) => res.json())
+                .then((j) => {
+                    if (j.theme && j.theme !== "default") {
+                        document.body.setAttribute("data-theme", j.theme);
+                    }
+                })
+                .catch(() => {});
+
             const KEY = "socialhunt_token";
 
             // If we have a token, go to main app

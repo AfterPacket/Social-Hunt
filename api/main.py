@@ -875,6 +875,16 @@ async def api_auth_verify(
     return {"ok": True}
 
 
+@app.get("/api/public/theme")
+async def api_public_theme():
+    """Returns the current theme name without requiring authentication."""
+    data = settings_store.load()
+    theme = data.get("theme")
+    if isinstance(theme, dict):
+        return {"theme": theme.get("value") or "default"}
+    return {"theme": theme or "default"}
+
+
 @app.get("/login")
 async def login_page():
     return FileResponse(str(WEB_DIR / "login.html"))
