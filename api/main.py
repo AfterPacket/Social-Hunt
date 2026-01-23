@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import os
 import re
@@ -12,8 +13,9 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import httpx
 from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -680,6 +682,179 @@ async def api_plugin_upload(
         "installed": installed,
         "providers": list_provider_names(registry),
     }
+
+
+@app.post("/api/demask")
+async def api_demask(
+    file: UploadFile = File(...),
+    x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
+):
+    """
+    AI demasking using Replicate library for automatic version management.
+    Performs mask removal followed by face restoration for forensic clarity.
+    """
+    require_admin(x_plugin_token)
+
+    # 1. Get Replicate API Token
+    settings = settings_store.load()
+    replicate_token = (os.getenv("REPLICATE_API_TOKEN") or "").strip() or settings.get(
+        "replicate_api_token"
+    )
+    if isinstance(replicate_token, dict):
+        replicate_token = replicate_token.get("value")
+
+    if not replicate_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Replicate API Token not configured. Set it in Settings.",
+        )
+
+    try:
+        # 2. Prepare the image
+        content = await file.read()
+        print(f"[DEBUG] Demasking: processing {file.filename}")
+
+        # Upload to Catbox for reliability (Replicate handles URLs better)
+        file_url = ""
+        try:
+            async with httpx.AsyncClient() as hc:
+                files = {"fileToUpload": (file.filename, content, file.content_type)}
+                data = {"reqtype": "fileupload", "userhash": ""}
+                cres = await hc.post(
+                    "https://catbox.moe/user/api.php", data=data, files=files
+                )
+                if cres.status_code == 200:
+                    file_url = cres.text.strip()
+                    print(f"[DEBUG] Demasking: uploaded to {file_url}")
+        except Exception as e:
+            print(f"[WARN] Demasking: Catbox upload failed: {e}")
+
+        image_input = file_url if file_url else BytesIO(content)
+
+        # 3. Step 1: Remove the mask using Pix2Pix
+        # Using raw HTTP to match the working curl example exactly
+        print("[DEBUG] Demasking: step 1 (instruct-pix2pix)...")
+
+        async with httpx.AsyncClient() as client:
+            headers = {
+                "Authorization": f"Token {replicate_token}",
+                "Content-Type": "application/json",
+            }
+
+            # Use the exact payload structure from the working curl
+            payload = {
+                "version": "30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f",
+                "input": {
+                    "image": file_url
+                    if file_url
+                    else f"data:{file.content_type};base64,{base64.b64encode(content).decode()}",
+                    "prompt": "remove the face mask, reveal the underlying face, forensic detail, high quality",
+                    "negative_prompt": "blurry, distorted, mask remains",
+                    "num_inference_steps": 30,
+                },
+            }
+
+            res = await client.post(
+                "https://api.replicate.com/v1/predictions",
+                headers=headers,
+                json=payload,
+                timeout=60.0,
+            )
+            if res.status_code != 201:
+                print(f"[ERROR] Demasking Step 1 failed: {res.text}")
+                raise HTTPException(
+                    status_code=res.status_code,
+                    detail=f"Replicate API Error: {res.text}",
+                )
+
+            prediction = res.json()
+            poll_url = prediction["urls"]["get"]
+
+            # Poll for result
+            inpainted_url = ""
+            start_time = time.time()
+            while time.time() - start_time < 90:
+                poll_res = await client.get(poll_url, headers=headers)
+                status_data = poll_res.json()
+                status = status_data["status"]
+
+                if status == "succeeded":
+                    out = status_data["output"]
+                    inpainted_url = out[0] if isinstance(out, list) else out
+                    break
+                elif status == "failed":
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"AI Step 1 failed: {status_data.get('error')}",
+                    )
+
+                await asyncio.sleep(2)
+
+            if not inpainted_url:
+                raise HTTPException(status_code=504, detail="AI Step 1 timed out.")
+        print(f"[DEBUG] Demasking: step 1 complete, url: {inpainted_url}")
+
+        # 4. Step 2: Face Restoration (CodeFormer)
+        print("[DEBUG] Demasking: step 2 (codeformer)...")
+        try:
+            payload_cf = {
+                "version": "7de2ea4a352033cfa2f21683c7a9511da922ec5ad9f9e61298d0b3dd16742617",
+                "input": {
+                    "image": inpainted_url,
+                    "upscale": 1,
+                    "face_upsample": True,
+                    "codeformer_fidelity": 0.7,
+                },
+            }
+
+            async with httpx.AsyncClient() as client:
+                res_cf = await client.post(
+                    "https://api.replicate.com/v1/predictions",
+                    headers=headers,
+                    json=payload_cf,
+                    timeout=60.0,
+                )
+                if res_cf.status_code == 201:
+                    pred_cf = res_cf.json()
+                    poll_url_cf = pred_cf["urls"]["get"]
+
+                    final_output_url = ""
+                    start_time = time.time()
+                    while time.time() - start_time < 90:
+                        p_res = await client.get(poll_url_cf, headers=headers)
+                        s_data = p_res.json()
+                        if s_data["status"] == "succeeded":
+                            final_output_url = s_data["output"]
+                            break
+                        elif s_data["status"] == "failed":
+                            break
+                        await asyncio.sleep(2)
+
+                    if final_output_url:
+                        img_res = await client.get(final_output_url)
+                        return StreamingResponse(
+                            BytesIO(img_res.content), media_type="image/png"
+                        )
+
+            # Fallback to step 1 result
+            async with httpx.AsyncClient() as hc:
+                img_res = await hc.get(inpainted_url)
+                return StreamingResponse(
+                    BytesIO(img_res.content), media_type="image/png"
+                )
+        except Exception as e:
+            print(f"[WARN] Demasking Step 2 failed: {e}. Returning Step 1 result.")
+            async with httpx.AsyncClient() as hc:
+                img_res = await hc.get(inpainted_url)
+                return StreamingResponse(
+                    BytesIO(img_res.content), media_type="image/png"
+                )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Demasking failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---- UI ----

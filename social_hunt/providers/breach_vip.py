@@ -67,13 +67,21 @@ class BreachVIPProvider(BaseProvider):
         # Determine which fields to search based on the input
         fields_to_search = self._determine_search_fields(search_term)
 
+        # Enable wildcard if '*' is present in the search term
+        is_wildcard = "*" in search_term
+
         request_body = {
             "term": search_term,
             "fields": fields_to_search,
-            "categories": None,  # Only minecraft supported for now
-            "wildcard": False,
+            "categories": [],  # Only minecraft supported for now
+            "wildcard": is_wildcard,
             "case_sensitive": False,
         }
+
+        # Logging for debugging wildcard and search issues
+        print(
+            f"[DEBUG] BreachVIP search: term='{search_term}', fields={fields_to_search}, wildcard={is_wildcard}"
+        )
 
         profile: Dict[str, Any] = {
             "account": search_term,
@@ -90,6 +98,11 @@ class BreachVIPProvider(BaseProvider):
             )
 
             elapsed = int((time.monotonic() - start) * 1000)
+
+            if response.status_code != 200:
+                print(
+                    f"[ERROR] BreachVIP API returned {response.status_code}: {response.text}"
+                )
 
             if response.status_code == 200:
                 raw_json = response.json() if response.text else []
@@ -292,6 +305,20 @@ class BreachVIPProvider(BaseProvider):
 
     def _determine_search_fields(self, search_term: str) -> List[str]:
         """Determine which fields to search based on the input type."""
+        # If a wildcard is present, broaden the search to all major text fields
+        # as patterns like 'user@*' might be stored in username or other fields in some breaches.
+        if "*" in search_term:
+            if "@" in search_term:
+                # For email-like wildcards, restrict to relevant fields to avoid API errors
+                return ["email", "username", "name"]
+            return [
+                "username",
+                "email",
+                "name",
+                "domain",
+                "password",
+            ]
+
         # Start with the most common fields
         fields = ["username", "email", "name"]
 

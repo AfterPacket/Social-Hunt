@@ -59,6 +59,16 @@ class HIBPProvider(BaseProvider):
             )
 
         # 2. Input Validation (must be an email)
+        if "*" in username:
+            return ProviderResult(
+                provider=self.name,
+                username=username,
+                url=url,
+                status=ResultStatus.ERROR,
+                error="HIBP does not support wildcard searches.",
+                timestamp_iso=ts,
+            )
+
         if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", username):
             return ProviderResult(
                 provider=self.name,

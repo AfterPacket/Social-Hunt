@@ -16,3 +16,6 @@ temp/*
 
 web/temp_uploads/*
 !web/temp_uploads/.gitkeep
+
+# Ignore Demasking view until ready for commit
+web/views/demask.html

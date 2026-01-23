@@ -26,6 +26,7 @@ const viewTitles = {
   reverse: "Reverse Image",
   history: "History",
   "secure-notes": "Secure Notes",
+  demask: "Demasking",
   plugins: "Plugins",
   tokens: "Token",
   settings: "Settings",
@@ -38,7 +39,7 @@ async function loadView(name) {
 
   viewTitle.textContent = viewTitles[name] || name;
 
-  const res = await fetch(`/static/views/${name}.html?v=2.2.0`, {
+  const res = await fetch(`/static/views/${name}.html?v=2.2.1`, {
     cache: "no-store",
   });
   viewContainer.innerHTML = await res.text();
@@ -52,6 +53,7 @@ async function loadView(name) {
   if (name === "tokens") initTokensView();
   if (name === "settings") initSettingsView();
   if (name === "secure-notes") initSecureNotesView();
+  if (name === "demask") initDemaskView();
 }
 
 // ----------------------
@@ -1619,6 +1621,104 @@ async function initSecureNotesView() {
     notes.unshift({ id, title, content, ts: new Date().getTime() });
     await saveToDisk();
     alert("Saved to Secure Notes!");
+  };
+}
+
+// ----------------------
+// Demasking
+// ----------------------
+async function initDemaskView() {
+  const uploadInput = document.getElementById("demaskUpload");
+  const previewContainer = document.getElementById("demaskPreviewContainer");
+  const originalPreview = document.getElementById("demaskOriginalPreview");
+  const startBtn = document.getElementById("startDemaskBtn");
+  const statusEl = document.getElementById("demaskStatus");
+  const resultContainer = document.getElementById("demaskResultContainer");
+  const placeholder = document.getElementById("demaskPlaceholder");
+  const resultImg = document.getElementById("demaskResultImg");
+  const actions = document.getElementById("demaskActions");
+  const downloadBtn = document.getElementById("downloadDemaskBtn");
+  const saveToNotesBtn = document.getElementById("saveDemaskToNotesBtn");
+
+  if (!uploadInput) return;
+
+  uploadInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      originalPreview.src = ev.target.result;
+      previewContainer.style.display = "block";
+      startBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  startBtn.onclick = async () => {
+    const file = uploadInput.files[0];
+    if (!file) return;
+
+    statusEl.textContent = "Processing... (This may take a minute)";
+    startBtn.disabled = true;
+    placeholder.innerHTML =
+      '<span class="spinner"></span> Analyzing and Inpainting...';
+    resultImg.style.display = "none";
+    actions.style.display = "none";
+
+    const fd = new FormData();
+    fd.append("file", file);
+
+    try {
+      const res = await fetch("/api/demask", {
+        method: "POST",
+        headers: authHeaders(),
+        body: fd,
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = "Demasking failed";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.detail || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      resultImg.src = url;
+      resultImg.style.display = "block";
+      placeholder.style.display = "none";
+      actions.style.display = "flex";
+      statusEl.textContent = "Processing complete.";
+
+      downloadBtn.onclick = () => {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `demasked_${new Date().getTime()}.png`;
+        a.click();
+      };
+
+      saveToNotesBtn.onclick = () => {
+        if (window.addNoteDirectly) {
+          const noteText = `Demasking Result\nOriginal: ${file.name}\nProcessed: AI generated reconstruction of facial features.`;
+          window.addNoteDirectly("Demasking Analysis", noteText);
+        } else {
+          alert("Please unlock your Secure Notes first.");
+        }
+      };
+    } catch (e) {
+      statusEl.textContent = "Error: " + e.message;
+      placeholder.innerHTML =
+        '<div class="danger">Failed to process image.</div>';
+      placeholder.style.display = "block";
+    } finally {
+      startBtn.disabled = false;
+    }
   };
 }
 
