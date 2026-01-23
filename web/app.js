@@ -253,7 +253,18 @@ function renderResults(job, containerId) {
     })
     .join("");
 
+  const dlBtn =
+    job.state === "done"
+      ? `
+    <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+      <button class="btn" id="dl-btn-csv-${job.job_id}">Download CSV</button>
+      <button class="btn" id="dl-btn-${job.job_id}">Download JSON</button>
+    </div>
+  `
+      : "";
+
   container.innerHTML = `
+    ${dlBtn}
     <div class="tablewrap">
       <table>
         <thead>
@@ -274,6 +285,21 @@ function renderResults(job, containerId) {
       </table>
     </div>
   `;
+
+  const btn = document.getElementById(`dl-btn-${job.job_id}`);
+  if (btn) {
+    btn.onclick = () => {
+      job.type = "search";
+      downloadJob(job, "json");
+    };
+  }
+  const btnCsv = document.getElementById(`dl-btn-csv-${job.job_id}`);
+  if (btnCsv) {
+    btnCsv.onclick = () => {
+      job.type = "search";
+      downloadJob(job, "csv");
+    };
+  }
 }
 
 // ----------------------
@@ -401,7 +427,7 @@ window.loadJob = async function (jobId) {
   if (statusEl) statusEl.textContent = `Loading job ${jobId}...`;
 
   try {
-    const res = await fetch(`/api/jobs/${jobId}`);
+    const res = await fetch(`/api/jobs/${jobId}`, { headers: authHeaders() });
     if (!res.ok) throw new Error("Job not found");
     const job = await res.json();
 
@@ -492,6 +518,15 @@ function renderBreachView(job, containerId) {
 
   const results = job.results || [];
   let html = "";
+
+  if (job.state === "done" && results.length > 0) {
+    html += `
+      <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="btn" id="dl-breach-csv-${job.job_id}">Download CSV</button>
+        <button class="btn" id="dl-breach-${job.job_id}">Download JSON</button>
+      </div>
+    `;
+  }
 
   // 0. Top Summary Stats
   const hibpCount =
@@ -678,6 +713,21 @@ function renderBreachView(job, containerId) {
   }
 
   container.innerHTML = html;
+
+  const btn = document.getElementById(`dl-breach-${job.job_id}`);
+  if (btn) {
+    btn.onclick = () => {
+      job.type = "breach-search";
+      downloadJob(job, "json");
+    };
+  }
+  const btnCsv = document.getElementById(`dl-breach-csv-${job.job_id}`);
+  if (btnCsv) {
+    btnCsv.onclick = () => {
+      job.type = "breach-search";
+      downloadJob(job, "csv");
+    };
+  }
 }
 
 async function initSearchView() {
@@ -1218,6 +1268,85 @@ function initSettingsView() {
 // ----------------------
 // Init
 // ----------------------
+function downloadJob(job, format = "json") {
+  const type = job.type || "search";
+  const name = job.username || job.term || "results";
+  const baseName = `${type}_${name}_${new Date().getTime()}`;
+  let blob;
+  let filename;
+
+  if (format === "csv") {
+    filename = `${baseName}.csv`;
+    let csvContent = "";
+    if (type === "breach-search") {
+      const results = job.results || [];
+      // 1. HIBP Summary
+      const hibp = results.find((r) => r.provider === "hibp");
+      if (hibp && hibp.profile?.breaches?.length) {
+        csvContent += "--- HIBP Breaches ---\n";
+        csvContent += hibp.profile.breaches.join("\n") + "\n\n";
+      }
+
+      // 2. BreachVIP Detailed
+      const bvip = results.find((r) => r.provider === "breachvip");
+      const raw = bvip?.profile?.raw_results || [];
+      if (raw.length > 0) {
+        csvContent += "--- Detailed Records ---\n";
+        const allKeys = new Set();
+        raw.forEach((row) => Object.keys(row).forEach((k) => allKeys.add(k)));
+        const keys = Array.from(allKeys);
+        csvContent += keys.join(",") + "\n";
+        raw.forEach((row) => {
+          csvContent +=
+            keys
+              .map((k) => `"${String(row[k] ?? "").replace(/"/g, '""')}"`)
+              .join(",") + "\n";
+        });
+      }
+      if (!csvContent) csvContent = "No breach data found.";
+    } else {
+      const rows = job.results || [];
+      csvContent =
+        "Provider,Status,URL,Display Name,Followers,Following,Created,Notes\n";
+      rows.forEach((r) => {
+        const p = r.profile || {};
+        const notes = [];
+        if (p.note) notes.push(p.note);
+        if (r.error) notes.push(r.error);
+        if (p.face_match)
+          notes.push(p.face_match.match ? "FACE MATCH" : "NO FACE MATCH");
+
+        csvContent +=
+          [
+            r.provider,
+            r.status,
+            r.url || "",
+            p.display_name || "",
+            p.followers ?? "",
+            p.following ?? "",
+            p.created_at ?? "",
+            notes.join(" | "),
+          ]
+            .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+            .join(",") + "\n";
+      });
+    }
+    blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  } else {
+    filename = `${baseName}.json`;
+    blob = new Blob([JSON.stringify(job, null, 2)], {
+      type: "application/json",
+    });
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function escapeHtml(s) {
   return String(s ?? "")
     .replaceAll("&", "&amp;")
