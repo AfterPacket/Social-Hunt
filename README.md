@@ -14,6 +14,7 @@
 ### 🛡️ Breach Intelligence
 *   **HIBP Integration:** Seamlessly check Have I Been Pwned for account exposure across thousands of known leaks.
 *   **Detailed Records:** Deep integration with providers like Breach.VIP to retrieve specific leaked data (passwords, salts, IPs) directly on the dashboard.
+*   **Wildcard Support:** Perform advanced queries using wildcards (e.g., `user@*.com`).
 *   **Unified Reporting:** Consolidates breach data into a specialized, easy-to-read table.
 
 ### 👤 Advanced Face Matcher
@@ -21,6 +22,15 @@
     *   **Facial Recognition:** Compares custom avatars using high-accuracy facial landmarks.
     *   **Image Hashing:** Uses perceptual hashing (pHash) to identify default or generic avatars.
 *   **Visual Evidence:** Provides match confidence scores to help verify identity across platforms.
+
+### 🎭 AI Demasking
+*   **Face Reconstruction:** Use generative AI to predict and reconstruct facial features from masked subjects.
+*   **Forensic Restoration:** Automatically sharpen and enhance generated results for better identification leads.
+
+### 🔐 Secure Notes
+*   **End-to-End Encryption:** Store sensitive investigation notes locally using AES-256-GCM encryption.
+*   **Zero-Knowledge:** Your master password is never stored or sent to the server.
+*   **Import/Export:** Securely backup or transfer your encrypted notes database.
 
 ### 🖼️ Reverse Image OSINT
 *   **One-Click Search:** Perform reverse image searches via Google Lens, Bing, Yandex, and specialized engines like PimEyes or FaceCheck.ID.
@@ -81,6 +91,7 @@ Social-Hunt stores its settings in `data/settings.json`. You can configure these
 | Setting | Description |
 | :--- | :--- |
 | `hibp_api_key` | Your Have I Been Pwned API key (required for HIBP scans). |
+| `replicate_api_token` | Your Replicate API token (required for AI Demasking). |
 | `admin_token` | A security token used to protect privileged operations (like plugin uploads). |
 | `public_url` | The base URL of your instance (used for generating reverse image links). |
 
