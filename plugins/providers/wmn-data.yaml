@@ -1,3 +1,22 @@
+#     "Copyright (C) Micah Hoffman",
+#     "This work is licensed under the Creative Commons Attribution-ShareAlike",
+#     "4.0 International License. To view a copy of this license, visit",
+#     "http://creativecommons.org/licenses/by-sa/4.0/ or send a letter to",
+#     "Creative Commons, PO Box 1866, Mountain View, CA 94042, USA."
+#  authors
+#     3xp0rt
+#     AlexisPradoOficial
+#     balestek
+#     C3n7ral051nt4g3ncy
+#     degun-osint
+#     funnyzak
+#     janhelendk
+#     jankoksik
+#     mbiesiad
+#     Micah Hoffman
+#     paulmockford
+#     SorkoPiko
+#     TURROKS
 21buttons:
   url: https://www.21buttons.com/buttoner/{username}
   timeout: 20
@@ -3539,16 +3558,6 @@ line:
   error_patterns:
   - '404'
   - 404 Not Found
-linktree:
-  url: https://linktr.ee/{username}
-  timeout: 20
-  ua_profile: linktree_android
-  success_patterns:
-  - '200'
-  - '"uuid":'
-  error_patterns:
-  - '404'
-  - '"statusCode":404'
 linux.org.ru:
   url: https://www.linux.org.ru/people/{username}/profile
   timeout: 20
