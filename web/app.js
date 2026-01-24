@@ -64,6 +64,7 @@ const KEY_SEARCH_HISTORY = "socialhunt_search_history";
 const KEY_REVERSE_HISTORY = "socialhunt_reverse_history";
 const RESULTS_RENDER_LIMIT = 300;
 const RESULTS_RENDER_INTERVAL_MS = 2000;
+const RESULTS_POLL_INTERVAL_MS = 2000;
 
 function loadJsonArray(key) {
   try {
@@ -143,6 +144,18 @@ async function fetchProviders() {
   return data.providers || [];
 }
 
+async function fetchJob(jobId, opts = {}) {
+  const params = new URLSearchParams();
+  if (typeof opts.limit === "number" && opts.limit >= 0) {
+    params.set("limit", String(opts.limit));
+  }
+  const qs = params.toString();
+  const url = qs ? `/api/jobs/${jobId}?${qs}` : `/api/jobs/${jobId}`;
+  const res = await fetch(url, opts.headers ? { headers: opts.headers } : {});
+  if (!res.ok) throw new Error("Job not found");
+  return await res.json();
+}
+
 async function fetchWhoami() {
   try {
     const res = await fetch("/api/whoami");
@@ -184,12 +197,16 @@ function renderResults(job, containerId, opts = {}) {
   }
 
   const results = job.results || [];
+  const total =
+    typeof opts.total === "number" && opts.total >= 0
+      ? opts.total
+      : results.length;
   const limit =
     typeof opts.limit === "number" && opts.limit >= 0
       ? opts.limit
       : results.length;
   const renderResults = results.slice(0, limit);
-  const isPartial = renderResults.length < results.length;
+  const isPartial = renderResults.length < total;
   const rows = renderResults
     .map((r) => {
       const prof = r.profile || {};
@@ -279,7 +296,7 @@ function renderResults(job, containerId, opts = {}) {
   const partialNote = isPartial
     ? `
       <div class="muted" style="margin-bottom: 10px;">
-        Showing first ${renderResults.length} of ${results.length} results while scan is running.
+        Showing first ${renderResults.length} of ${total} results while scan is running.
         Full results will render when done. You can also download JSON/CSV after completion.
       </div>
     `
@@ -287,7 +304,6 @@ function renderResults(job, containerId, opts = {}) {
 
   container.innerHTML = `
     ${dlBtn}
-    ${partialNote}
     <div class="tablewrap">
       <table>
         <thead>
@@ -307,11 +323,7 @@ function renderResults(job, containerId, opts = {}) {
         <tbody>${rows}</tbody>
       </table>
     </div>
-    ${
-      results.length > 500
-        ? `<div class="muted" style="text-align:center; padding: 10px;">Showing first 500 of ${results.length} results. Export for full data.</div>`
-        : ""
-    }
+    ${partialNote}
   `;
 
   const btn = document.getElementById(`dl-btn-${job.job_id}`);
@@ -411,17 +423,15 @@ async function monitorJob(
   if (!statusEl) return;
   let lastRenderAt = 0;
   let lastRenderCount = -1;
+  let pollMs = RESULTS_POLL_INTERVAL_MS;
+  let errorCount = 0;
   for (;;) {
-    // Poll every 1.5s to reduce thread contention
-    await new Promise((r) => setTimeout(r, 1500));
-
+    await new Promise((r) => setTimeout(r, pollMs));
     if (!document.body.contains(statusEl)) break;
 
     let job;
     try {
-      const res = await fetch(`/api/jobs/${jobId}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      job = await res.json();
+      job = await fetchJob(jobId, { limit: RESULTS_RENDER_LIMIT });
       errorCount = 0;
     } catch (e) {
       if (++errorCount > 5) {
@@ -431,18 +441,22 @@ async function monitorJob(
       continue;
     }
 
-    // Safety: If job data is missing or corrupted
     if (!job || !job.state) continue;
 
     if (job.state === "done") {
-      const results = job.results || [];
-      const foundCount = results.filter((r) => r.status === "found").length;
-      const failedCount = results.filter(
-        (r) =>
-          r.status === "error" ||
-          r.status === "unknown" ||
-          r.status === "blocked",
-      ).length;
+      const finalJob = await fetchJob(jobId);
+      const results = finalJob.results || [];
+      const foundCount =
+        finalJob.found_count ??
+        results.filter((r) => r.status === "found").length;
+      const failedCount =
+        finalJob.failed_count ??
+        results.filter(
+          (r) =>
+            r.status === "error" ||
+            r.status === "unknown" ||
+            r.status === "blocked",
+        ).length;
       statusEl.textContent = `Done. (${foundCount} found, ${failedCount} failed)`;
       markSearchHistory(jobId, {
         state: "done",
@@ -450,8 +464,8 @@ async function monitorJob(
         found_count: foundCount,
         failed_count: failedCount,
       });
-      if (isBreach) renderBreachView(job, containerId);
-      else renderResults(job, containerId);
+      if (isBreach) renderBreachView(finalJob, containerId);
+      else renderResults(finalJob, containerId);
       return;
     }
     if (job.state === "failed") {
@@ -462,18 +476,31 @@ async function monitorJob(
       });
       return;
     }
+
     const results = job.results || [];
-    const foundCount = results.filter((r) => r.status === "found").length;
-    const failedCount = results.filter(
-      (r) =>
-        r.status === "error" ||
-        r.status === "unknown" ||
-        r.status === "blocked",
-    ).length;
-    statusEl.textContent = `Running... (${foundCount} found, ${failedCount} failed so far)`;
-    if (job.results && job.results.length > 0) {
+    const resultsCount =
+      job.results_count ??
+      job.results_total ??
+      (Array.isArray(results) ? results.length : 0);
+    const foundCount =
+      job.found_count ?? results.filter((r) => r.status === "found").length;
+    const failedCount =
+      job.failed_count ??
+      results.filter(
+        (r) =>
+          r.status === "error" ||
+          r.status === "unknown" ||
+          r.status === "blocked",
+      ).length;
+    const totalProviders = job.providers_count;
+    const progressText =
+      typeof totalProviders === "number" && totalProviders > 0
+        ? ` (${resultsCount}/${totalProviders} done)`
+        : "";
+    statusEl.textContent = `Running... (${foundCount} found, ${failedCount} failed so far)${progressText}`;
+    if (results.length > 0) {
       const now = Date.now();
-      const count = job.results.length;
+      const count = resultsCount;
       const shouldRender =
         count !== lastRenderCount &&
         now - lastRenderAt >= RESULTS_RENDER_INTERVAL_MS;
@@ -481,15 +508,25 @@ async function monitorJob(
         if (isBreach) renderBreachView(job, containerId);
         else {
           const limit =
-            count > RESULTS_RENDER_LIMIT ? RESULTS_RENDER_LIMIT : count;
-          renderResults(job, containerId, { limit });
+            results.length > RESULTS_RENDER_LIMIT
+              ? RESULTS_RENDER_LIMIT
+              : results.length;
+          const total =
+            job.results_total ??
+            job.results_count ??
+            (Array.isArray(results) ? results.length : 0);
+          renderResults(job, containerId, { limit, total });
         }
         lastRenderAt = now;
         lastRenderCount = count;
       }
     }
 
-    // Stop loop if job is terminal
+    pollMs =
+      typeof totalProviders === "number" && totalProviders > 500
+        ? 3000
+        : RESULTS_POLL_INTERVAL_MS;
+
     if (job.state !== "running" && job.state !== "pending") break;
   }
 }
@@ -508,25 +545,32 @@ window.loadJob = async function (jobId) {
   if (statusEl) statusEl.textContent = `Loading job ${jobId}...`;
 
   try {
-    const res = await fetch(`/api/jobs/${jobId}`, { headers: authHeaders() });
-    if (!res.ok) throw new Error("Job not found");
-    const job = await res.json();
+    const job = await fetchJob(jobId, {
+      headers: authHeaders(),
+      limit: RESULTS_RENDER_LIMIT,
+    });
 
     if (job.state === "running") {
       if (statusEl) statusEl.textContent = `Job ${jobId} running...`;
       if (isBreach) renderBreachView(job, containerId);
       else {
-        const count = (job.results || []).length;
+        const count = job.results_total ?? (job.results || []).length;
         const limit =
-          count > RESULTS_RENDER_LIMIT ? RESULTS_RENDER_LIMIT : count;
-        renderResults(job, containerId, { limit });
+          (job.results || []).length > RESULTS_RENDER_LIMIT
+            ? RESULTS_RENDER_LIMIT
+            : (job.results || []).length;
+        renderResults(job, containerId, { limit, total: count });
       }
       await monitorJob(jobId, containerId, statusId, isBreach);
     } else {
-      if (isBreach) renderBreachView(job, containerId);
-      else renderResults(job, containerId);
+      const finalJob =
+        job.state === "done"
+          ? await fetchJob(jobId, { headers: authHeaders() })
+          : job;
+      if (isBreach) renderBreachView(finalJob, containerId);
+      else renderResults(finalJob, containerId);
       if (statusEl)
-        statusEl.textContent = `Loaded job ${jobId} (${job.state}).`;
+        statusEl.textContent = `Loaded job ${jobId} (${finalJob.state}).`;
     }
   } catch (e) {
     if (statusEl) statusEl.textContent = "Error loading job: " + e.message;

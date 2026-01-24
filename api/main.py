@@ -237,6 +237,19 @@ def reload_registry() -> None:
 JOBS: Dict[str, Dict[str, Any]] = {}
 
 
+def _summarize_results(results: List[Dict[str, Any]]) -> Dict[str, int]:
+    total = len(results)
+    found = 0
+    failed = 0
+    for r in results:
+        status = (r or {}).get("status")
+        if status == "found":
+            found += 1
+        elif status in ("error", "unknown", "blocked"):
+            failed += 1
+    return {"results_count": total, "found_count": found, "failed_count": failed}
+
+
 def _save_job_to_disk(job_id: str):
     job = JOBS.get(job_id)
     if not job:
@@ -313,6 +326,11 @@ async def api_search(req: SearchRequest):
     if len(username) > 64:
         raise HTTPException(status_code=400, detail="username too long")
 
+    if req.providers:
+        chosen = [p for p in req.providers if p in registry]
+    else:
+        chosen = list(registry.keys())
+
     job_id = str(uuid.uuid4())
     JOBS[job_id] = {
         "id": job_id,
@@ -320,19 +338,33 @@ async def api_search(req: SearchRequest):
         "state": "running",
         "results": [],
         "username": username,
+        "providers_count": len(chosen),
+        "results_count": 0,
+        "found_count": 0,
+        "failed_count": 0,
     }
 
     def progress(res):
         if job_id in JOBS:
-            JOBS[job_id]["results"].append(res.to_dict())
+            job = JOBS[job_id]
+            job["results"].append(res.to_dict())
+            job["results_count"] = int(job.get("results_count", 0)) + 1
+            status = getattr(res, "status", None)
+            status_val = status.value if status is not None else None
+            if status_val == "found":
+                job["found_count"] = int(job.get("found_count", 0)) + 1
+            elif status_val in ("error", "unknown", "blocked"):
+                job["failed_count"] = int(job.get("failed_count", 0)) + 1
 
     async def runner():
         try:
             final_res = await engine.scan_username(
                 username, req.providers, progress_callback=progress
             )
-            JOBS[job_id]["results"] = [r.to_dict() for r in final_res]
+            final_dicts = [r.to_dict() for r in final_res]
+            JOBS[job_id]["results"] = final_dicts
             JOBS[job_id]["state"] = "done"
+            JOBS[job_id].update(_summarize_results(final_dicts))
         except Exception as e:
             JOBS[job_id]["state"] = "failed"
             JOBS[job_id]["error"] = str(e)
@@ -366,7 +398,7 @@ async def api_face_unmask(file: UploadFile = File(...), strength: float = Form(0
 
 
 @app.get("/api/jobs/{job_id}")
-async def api_job(job_id: str):
+async def api_job(job_id: str, limit: Optional[int] = None):
     job = JOBS.get(job_id)
     if not job:
         # try disk
@@ -376,7 +408,28 @@ async def api_job(job_id: str):
 
     if not job:
         raise HTTPException(status_code=404, detail="job not found")
-    return job
+    job_out = dict(job)
+    results = job_out.get("results") or []
+    summary = _summarize_results(results)
+    job_out.setdefault("results_count", summary["results_count"])
+    job_out.setdefault("found_count", summary["found_count"])
+    job_out.setdefault("failed_count", summary["failed_count"])
+    total = summary["results_count"]
+
+    if limit is not None:
+        try:
+            limit_val = int(limit)
+        except Exception:
+            limit_val = None
+        if limit_val is not None and limit_val >= 0 and total > limit_val:
+            job_out["results"] = results[:limit_val]
+            job_out["results_total"] = total
+        else:
+            job_out["results_total"] = total
+    else:
+        job_out["results_total"] = total
+
+    return job_out
 
 
 @app.post("/api/face-search")
@@ -397,6 +450,10 @@ async def api_face_search(
         "state": "running",
         "results": [],
         "username": username,
+        "providers_count": len(list(registry.keys())),
+        "results_count": 0,
+        "found_count": 0,
+        "failed_count": 0,
     }
 
     # Create a temporary directory for the uploaded images
@@ -424,7 +481,15 @@ async def api_face_search(
 
     def progress(res):
         if job_id in JOBS:
-            JOBS[job_id]["results"].append(res.to_dict())
+            job = JOBS[job_id]
+            job["results"].append(res.to_dict())
+            job["results_count"] = int(job.get("results_count", 0)) + 1
+            status = getattr(res, "status", None)
+            status_val = status.value if status is not None else None
+            if status_val == "found":
+                job["found_count"] = int(job.get("found_count", 0)) + 1
+            elif status_val in ("error", "unknown", "blocked"):
+                job["failed_count"] = int(job.get("failed_count", 0)) + 1
 
     async def runner():
         try:
@@ -433,8 +498,10 @@ async def api_face_search(
                 dynamic_addons=[face_matcher_addon],
                 progress_callback=progress,
             )
-            JOBS[job_id]["results"] = [r.to_dict() for r in final_res]
+            final_dicts = [r.to_dict() for r in final_res]
+            JOBS[job_id]["results"] = final_dicts
             JOBS[job_id]["state"] = "done"
+            JOBS[job_id].update(_summarize_results(final_dicts))
         except Exception as e:
             JOBS[job_id]["state"] = "failed"
             JOBS[job_id]["error"] = str(e)

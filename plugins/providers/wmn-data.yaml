@@ -859,7 +859,7 @@ carbonmade:
     - site not found
 career.habr:
   url: https://career.habr.com/{username}
-  timeout: 20
+  timeout: 5
   ua_profile: career.habr_android
   success_patterns:
     - "200"
@@ -2625,7 +2625,7 @@ habbo.nl:
     - 'error": "not-found'
 habr:
   url: https://habr.com/ru/users/{username}/
-  timeout: 20
+  timeout: 5
   ua_profile: habr_android
   success_patterns:
     - "200"
@@ -2635,7 +2635,7 @@ habr:
     - tm-error-message
 habr employer:
   url: https://freelance.habr.com/freelancers/{username}/employer
-  timeout: 20
+  timeout: 5
   ua_profile: habr employer_android
   success_patterns:
     - "200"
@@ -2645,7 +2645,7 @@ habr employer:
     - icon_user_locked
 habr freelancer:
   url: https://freelance.habr.com/freelancers/{username}
-  timeout: 20
+  timeout: 5
   ua_profile: habr freelancer_android
   success_patterns:
     - "200"
@@ -2655,7 +2655,7 @@ habr freelancer:
     - icon_user_locked
 habr q&a:
   url: https://qna.habr.com/user/{username}
-  timeout: 20
+  timeout: 5
   ua_profile: habr q&a_android
   success_patterns:
     - "200"
