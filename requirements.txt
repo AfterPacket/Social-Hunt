@@ -10,3 +10,9 @@ numpy
 imagehash
 python-multipart
 replicate
+opencv_python
+torchvision
+torch
+matplotlib
+tensorboardX
+scikit-image
