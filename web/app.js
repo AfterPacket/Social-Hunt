@@ -174,15 +174,6 @@ function selectedProviders() {
     .map((x) => x.getAttribute("data-name"));
 }
 
-window.loadMoreResults = function (jobId, containerId) {
-  window.resultViewLimits = window.resultViewLimits || {};
-  const current = window.resultViewLimits[jobId] || 150;
-  window.resultViewLimits[jobId] = current + 50;
-  fetch(`/api/jobs/${jobId}`)
-    .then((r) => r.json())
-    .then((job) => renderResults(job, containerId));
-};
-
 function renderResults(job, containerId) {
   const container = document.getElementById(containerId);
   if (!container) {
@@ -192,11 +183,9 @@ function renderResults(job, containerId) {
 
   const results = job.results || [];
 
-  // Virtual pagination for standard results
-  window.resultViewLimits = window.resultViewLimits || {};
-  const currentLimit = window.resultViewLimits[job.job_id] || 150;
-  const resultsToRender = results.slice(0, currentLimit);
-  const hasMore = results.length > currentLimit;
+  // Optimization: limit visible rows to prevent DOM bloat if results are massive
+  const resultsToRender =
+    results.length > 500 ? results.slice(0, 500) : results;
 
   const rows = resultsToRender
     .map((r) => {
@@ -306,11 +295,8 @@ function renderResults(job, containerId) {
       </table>
     </div>
     ${
-      hasMore
-        ? `<div style="text-align:center; padding: 10px;">
-             <div class="muted" style="margin-bottom:10px">Showing ${resultsToRender.length} of ${results.length} results</div>
-             <button class="btn" onclick="loadMoreResults('${job.job_id}', '${containerId}')">Load 50 More</button>
-           </div>`
+      results.length > 500
+        ? `<div class="muted" style="text-align:center; padding: 10px;">Showing first 500 of ${results.length} results. Export for full data.</div>`
         : ""
     }
   `;
@@ -593,14 +579,6 @@ async function startScan() {
  * Renders a specialized, detailed view for breach search results.
  * Handles both HIBP (breach list) and BreachVIP (detailed records).
  */
-window.loadMoreBreach = function (jobId, containerId) {
-  window.breachViewLimits = window.breachViewLimits || {};
-  const current = window.breachViewLimits[jobId] || 150;
-  window.breachViewLimits[jobId] = current + 50;
-  fetch(`/api/jobs/${jobId}`)
-    .then((r) => r.json())
-    .then((job) => renderBreachView(job, containerId));
-};
 
 function renderBreachView(job, containerId) {
   const container = document.getElementById(containerId);
@@ -733,11 +711,8 @@ function renderBreachView(job, containerId) {
       });
       const headerKeys = Array.from(keys).sort();
 
-      // Virtual pagination
-      window.breachViewLimits = window.breachViewLimits || {};
-      const currentLimit = window.breachViewLimits[job.job_id] || 150;
-      const displayRows = raw.slice(0, currentLimit);
-      const hasMore = raw.length > currentLimit;
+      const isTruncated = raw.length > 500;
+      const displayRows = isTruncated ? raw.slice(0, 500) : raw;
 
       html += `
         <div class="card">
@@ -790,11 +765,8 @@ function renderBreachView(job, containerId) {
             </table>
           </div>
           ${
-            hasMore
-              ? `<div style="text-align:center; padding: 10px;">
-                   <div class="muted" style="margin-bottom:10px">Showing ${displayRows.length} of ${raw.length} records</div>
-                   <button class="btn" onclick="loadMoreBreach('${job.job_id}', '${containerId}')">Load 50 More</button>
-                 </div>`
+            isTruncated
+              ? `<div class="muted" style="text-align:center; padding: 10px;">Showing first 500 of ${raw.length} results. Export for full data.</div>`
               : ""
           }
         </div>

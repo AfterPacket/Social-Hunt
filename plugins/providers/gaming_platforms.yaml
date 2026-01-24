@@ -1,0 +1,136 @@
+# --- Gaming Platforms Provider Pack ---
+# A curated list of gaming platforms, communities, and stat trackers.
+
+247ctf:
+  url: https://247ctf.com/progress/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "property=\"og:url\""
+  error_patterns:
+    - "Redirecting..."
+
+armorgames:
+  url: https://armorgames.com/user/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Profile"
+    - "Member Since"
+  error_patterns:
+    - "404: Oh Noes!"
+    - "Page Not Found"
+
+chess_com:
+  url: https://api.chess.com/pub/player/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "player_id"
+  error_patterns:
+    - "Not Found"
+
+lichess_org:
+  url: https://lichess.org/api/user/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - '"id":'
+    - '"username":'
+  error_patterns:
+    - '"error": "Not found"'
+
+roblox:
+  url: https://www.roblox.com/users/profile?username={username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  # The API returns a user ID if the user exists
+  success_patterns:
+    - '"id":'
+  error_patterns:
+    - "User not found"
+    - "Page cannot be found"
+
+steam:
+  url: https://steamcommunity.com/id/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "g_rgProfileData"
+    - "profile_header"
+  error_patterns:
+    - "The specified profile could not be found"
+    - "Error"
+
+xbox_gamertag:
+  url: https://www.xboxgamertag.com/search/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Gamerscore"
+    - "Games Played"
+  error_patterns:
+    - "Could not find gamer"
+    - "No gamer found"
+
+playstation_network:
+  url: https://psnprofiles.com/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "PSN Profile"
+    - "Level"
+  error_patterns:
+    - "Not Found"
+    - "user not found"
+
+minecraft_playerdb:
+  url: https://playerdb.co/api/player/minecraft/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - '"code": "player.found"'
+    - '"success": true'
+  error_patterns:
+    - "player.not_found"
+
+fortnite_tracker:
+  url: https://fortnitetracker.com/profile/all/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Platform"
+    - "TRN Rating"
+  error_patterns:
+    - "We could not find the account"
+
+apex_legends_tracker:
+  url: https://api.tracker.gg/api/v2/apex/standard/profile/origin/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "platformInfo"
+    - "stats"
+  error_patterns:
+    - "CollectorResultStatus::NotFound"
+
+gog:
+  url: https://www.gog.com/u/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "User profile"
+    - "Games owned"
+  error_patterns:
+    - "Page not found"
+
+twitch:
+  url: https://twitchtracker.com/{username}
+  timeout: 15
+  ua_profile: twitch_android
+  success_patterns:
+    - "Followers"
+    - "Stream history"
+  error_patterns:
+    - "doesn't exist"
+    - "Page not found"

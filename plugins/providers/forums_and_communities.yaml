@@ -1,0 +1,106 @@
+# --- Forums & Communities Provider Pack ---
+# A curated list of various online forums and community platforms.
+
+3dnews_forum:
+  url: https://forum.3dnews.tech/member.php?username={username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - 'Просмотр профиля:'
+  error_patterns:
+    - 'Пользователь не зарегистрирован'
+
+advfn_forum:
+  url: https://uk.advfn.com/forum/profile/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Profile | ADVFN"
+  error_patterns:
+    - "Page Not Found"
+
+arduino_forum:
+  url: https://forum.arduino.cc/u/{username}.json
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - '"id":'
+  error_patterns:
+    - '"error_type":"not_found"'
+
+babypips_forum:
+  url: https://forums.babypips.com/u/{username}.json
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "user_badges"
+  error_patterns:
+    - "The requested URL or resource could not be found"
+
+cloudflare_community:
+  url: https://community.cloudflare.com/u/{username}.json
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - 'user_avatar'
+  error_patterns:
+    - 'The requested URL or resource could not be found'
+
+digitalspy_forum:
+  url: https://forums.digitalspy.com/profile/discussions/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "About"
+  error_patterns:
+    - "User not found"
+
+ixbt_forum:
+  url: https://forum.ixbt.com/users.cgi?id=info:{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "участника" # "participant" in Russian
+  error_patterns:
+    - "участник не найден" # "participant not found"
+
+scammer_info_forum:
+  url: https://scammer.info/u/{username}.json
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - '"id":'
+  error_patterns:
+    - "The requested URL or resource could not be found."
+
+spiceworks_community:
+  url: https://community.spiceworks.com/people/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Member Since"
+    - "Spice Level"
+  error_patterns:
+    - "user not found"
+    - "Page not found"
+
+warrior_forum:
+  url: https://www.warriorforum.com/members/{username}.html
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Statistics"
+    - "Member Since"
+  error_patterns:
+    - "Invalid User specified"
+
+xda_developers:
+  url: https://xdaforums.com/m/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Member"
+    - "Joined"
+  error_patterns:
+    - "Oops! We ran into some problems."
+    - "The specified member cannot be found."
