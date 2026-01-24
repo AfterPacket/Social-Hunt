@@ -62,6 +62,8 @@ async function loadView(name) {
 const HISTORY_MAX = 200;
 const KEY_SEARCH_HISTORY = "socialhunt_search_history";
 const KEY_REVERSE_HISTORY = "socialhunt_reverse_history";
+const RESULTS_RENDER_LIMIT = 300;
+const RESULTS_RENDER_INTERVAL_MS = 2000;
 
 function loadJsonArray(key) {
   try {
@@ -174,7 +176,7 @@ function selectedProviders() {
     .map((x) => x.getAttribute("data-name"));
 }
 
-function renderResults(job, containerId) {
+function renderResults(job, containerId, opts = {}) {
   const container = document.getElementById(containerId);
   if (!container) {
     console.error(`renderResults: container #${containerId} not found.`);
@@ -182,12 +184,13 @@ function renderResults(job, containerId) {
   }
 
   const results = job.results || [];
-
-  // Optimization: limit visible rows to prevent DOM bloat if results are massive
-  const resultsToRender =
-    results.length > 500 ? results.slice(0, 500) : results;
-
-  const rows = resultsToRender
+  const limit =
+    typeof opts.limit === "number" && opts.limit >= 0
+      ? opts.limit
+      : results.length;
+  const renderResults = results.slice(0, limit);
+  const isPartial = renderResults.length < results.length;
+  const rows = renderResults
     .map((r) => {
       const prof = r.profile || {};
       const avatar =
@@ -273,8 +276,18 @@ function renderResults(job, containerId) {
   `
       : "";
 
+  const partialNote = isPartial
+    ? `
+      <div class="muted" style="margin-bottom: 10px;">
+        Showing first ${renderResults.length} of ${results.length} results while scan is running.
+        Full results will render when done. You can also download JSON/CSV after completion.
+      </div>
+    `
+    : "";
+
   container.innerHTML = `
     ${dlBtn}
+    ${partialNote}
     <div class="tablewrap">
       <table>
         <thead>
@@ -396,10 +409,8 @@ async function monitorJob(
 ) {
   const statusEl = document.getElementById(statusId);
   if (!statusEl) return;
-
-  let lastLen = -1;
-  let errorCount = 0;
-
+  let lastRenderAt = 0;
+  let lastRenderCount = -1;
   for (;;) {
     // Poll every 1.5s to reduce thread contention
     await new Promise((r) => setTimeout(r, 1500));
@@ -460,19 +471,22 @@ async function monitorJob(
         r.status === "blocked",
     ).length;
     statusEl.textContent = `Running... (${foundCount} found, ${failedCount} failed so far)`;
-
-    // Performance: Only trigger heavy DOM re-rendering if the number of results has changed
-    const currentResults = job.results || [];
-    if (currentResults.length !== lastLen) {
-      lastLen = currentResults.length;
-
-      // Use a timeout to de-prioritize rendering over the main thread
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          if (isBreach) renderBreachView(job, containerId);
-          else renderResults(job, containerId);
-        });
-      }, 0);
+    if (job.results && job.results.length > 0) {
+      const now = Date.now();
+      const count = job.results.length;
+      const shouldRender =
+        count !== lastRenderCount &&
+        now - lastRenderAt >= RESULTS_RENDER_INTERVAL_MS;
+      if (shouldRender) {
+        if (isBreach) renderBreachView(job, containerId);
+        else {
+          const limit =
+            count > RESULTS_RENDER_LIMIT ? RESULTS_RENDER_LIMIT : count;
+          renderResults(job, containerId, { limit });
+        }
+        lastRenderAt = now;
+        lastRenderCount = count;
+      }
     }
 
     // Stop loop if job is terminal
@@ -501,7 +515,12 @@ window.loadJob = async function (jobId) {
     if (job.state === "running") {
       if (statusEl) statusEl.textContent = `Job ${jobId} running...`;
       if (isBreach) renderBreachView(job, containerId);
-      else renderResults(job, containerId);
+      else {
+        const count = (job.results || []).length;
+        const limit =
+          count > RESULTS_RENDER_LIMIT ? RESULTS_RENDER_LIMIT : count;
+        renderResults(job, containerId, { limit });
+      }
       await monitorJob(jobId, containerId, statusId, isBreach);
     } else {
       if (isBreach) renderBreachView(job, containerId);
