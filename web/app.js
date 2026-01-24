@@ -39,7 +39,7 @@ async function loadView(name) {
 
   viewTitle.textContent = viewTitles[name] || name;
 
-  const res = await fetch(`/static/views/${name}.html?v=2.2.1`, {
+  const res = await fetch(`/static/views/${name}.html?v=2.2.2`, {
     cache: "no-store",
   });
   viewContainer.innerHTML = await res.text();
@@ -182,7 +182,12 @@ function renderResults(job, containerId) {
   }
 
   const results = job.results || [];
-  const rows = results
+
+  // Optimization: limit visible rows to prevent DOM bloat if results are massive
+  const resultsToRender =
+    results.length > 500 ? results.slice(0, 500) : results;
+
+  const rows = resultsToRender
     .map((r) => {
       const prof = r.profile || {};
       const avatar =
@@ -289,6 +294,11 @@ function renderResults(job, containerId) {
         <tbody>${rows}</tbody>
       </table>
     </div>
+    ${
+      results.length > 500
+        ? `<div class="muted" style="text-align:center; padding: 10px;">Showing first 500 of ${results.length} results. Export for full data.</div>`
+        : ""
+    }
   `;
 
   const btn = document.getElementById(`dl-btn-${job.job_id}`);
@@ -386,10 +396,32 @@ async function monitorJob(
 ) {
   const statusEl = document.getElementById(statusId);
   if (!statusEl) return;
+
+  let lastLen = -1;
+  let errorCount = 0;
+
   for (;;) {
-    await new Promise((r) => setTimeout(r, 1000));
-    const jr = await fetch(`/api/jobs/${jobId}`);
-    const job = await jr.json();
+    // Poll every 1.5s to reduce thread contention
+    await new Promise((r) => setTimeout(r, 1500));
+
+    if (!document.body.contains(statusEl)) break;
+
+    let job;
+    try {
+      const res = await fetch(`/api/jobs/${jobId}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      job = await res.json();
+      errorCount = 0;
+    } catch (e) {
+      if (++errorCount > 5) {
+        statusEl.textContent = "Error: Connection lost.";
+        break;
+      }
+      continue;
+    }
+
+    // Safety: If job data is missing or corrupted
+    if (!job || !job.state) continue;
 
     if (job.state === "done") {
       const results = job.results || [];
@@ -428,10 +460,23 @@ async function monitorJob(
         r.status === "blocked",
     ).length;
     statusEl.textContent = `Running... (${foundCount} found, ${failedCount} failed so far)`;
-    if (job.results && job.results.length > 0) {
-      if (isBreach) renderBreachView(job, containerId);
-      else renderResults(job, containerId);
+
+    // Performance: Only trigger heavy DOM re-rendering if the number of results has changed
+    const currentResults = job.results || [];
+    if (currentResults.length !== lastLen) {
+      lastLen = currentResults.length;
+
+      // Use a timeout to de-prioritize rendering over the main thread
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          if (isBreach) renderBreachView(job, containerId);
+          else renderResults(job, containerId);
+        });
+      }, 0);
     }
+
+    // Stop loop if job is terminal
+    if (job.state !== "running" && job.state !== "pending") break;
   }
 }
 
@@ -534,6 +579,7 @@ async function startScan() {
  * Renders a specialized, detailed view for breach search results.
  * Handles both HIBP (breach list) and BreachVIP (detailed records).
  */
+
 function renderBreachView(job, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -637,6 +683,16 @@ function renderBreachView(job, containerId) {
     const raw = prof.raw_results || [];
 
     if (raw.length > 0) {
+      if (prof.demo_mode) {
+        html += `
+          <div class="card" style="border-left: 4px solid var(--warn); background: rgba(255, 193, 7, 0.05);">
+            <div style="color: var(--warn); font-weight: 800; margin-bottom: 5px;">DEMO MODE ACTIVE</div>
+            <div class="muted" style="font-size: 0.9rem;">
+              Personal information has been censored and results are limited to 5 records for demonstration purposes.
+            </div>
+          </div>
+        `;
+      }
       // Determine columns dynamically from data
       const exclude = [
         "_id",
@@ -655,6 +711,9 @@ function renderBreachView(job, containerId) {
       });
       const headerKeys = Array.from(keys).sort();
 
+      const isTruncated = raw.length > 500;
+      const displayRows = isTruncated ? raw.slice(0, 500) : raw;
+
       html += `
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -670,7 +729,7 @@ function renderBreachView(job, containerId) {
                 </tr>
               </thead>
               <tbody>
-                ${raw
+                ${displayRows
                   .map((row) => {
                     const src =
                       row.source ||
@@ -686,10 +745,15 @@ function renderBreachView(job, containerId) {
                       ${headerKeys
                         .map((k) => {
                           const val = row[k];
-                          const display =
+                          let display =
                             val && typeof val === "object"
                               ? JSON.stringify(val)
                               : String(val || "");
+
+                          // Data truncation to prevent UI hangs on massive fields
+                          if (display.length > 256) {
+                            display = display.substring(0, 253) + "...";
+                          }
                           return `<td>${escapeHtml(display)}</td>`;
                         })
                         .join("")}
@@ -700,6 +764,11 @@ function renderBreachView(job, containerId) {
               </tbody>
             </table>
           </div>
+          ${
+            isTruncated
+              ? `<div class="muted" style="text-align:center; padding: 10px;">Showing first 500 of ${raw.length} results. Export for full data.</div>`
+              : ""
+          }
         </div>
       `;
     }
@@ -1898,3 +1967,11 @@ if (!getToken()) {
     })
     .catch(() => loadView("dashboard"));
 }
+
+// Check for demo mode
+fetchWhoami().then((data) => {
+  if (data && data.demo_mode) {
+    const badge = document.getElementById("demoBadge");
+    if (badge) badge.style.display = "inline-flex";
+  }
+});

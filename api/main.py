@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from api.settings_store import SettingsStore, mask_for_client
 from social_hunt.engine import SocialHuntEngine
+from social_hunt.face_utils import image_to_base64_uri, restore_face
 from social_hunt.registry import build_registry, list_provider_names
 
 app = FastAPI(title="Social-Hunt API", version="2.2.0")
@@ -292,10 +293,13 @@ async def api_whoami(request: Request):
     else:
         ip = client_host
 
+    from social_hunt.demo import is_demo_mode
+
     return {
         "client_ip": ip,
         "via": "x-forwarded-for" if xff else ("x-real-ip" if xri else "socket"),
         "user_agent": request.headers.get("user-agent", ""),
+        "demo_mode": is_demo_mode(),
     }
 
 
@@ -337,6 +341,28 @@ async def api_search(req: SearchRequest):
 
     asyncio.create_task(runner())
     return {"job_id": job_id}
+
+
+@app.post("/api/face/unmask")
+async def api_face_unmask(file: UploadFile = File(...), strength: float = Form(0.5)):
+    """
+    Experimental: Unmask/Restore a face using an external AI service.
+    Requires SOCIAL_HUNT_FACE_AI_URL to be pointing to a compatible AI worker
+    running a model like CodeFormer or GFPGAN.
+    """
+    try:
+        content = await file.read()
+        restored_bytes = await restore_face(content, strength=strength)
+
+        if not restored_bytes:
+            raise HTTPException(
+                status_code=500,
+                detail="Face restoration failed. Ensure the AI service is running and accessible.",
+            )
+
+        return {"success": True, "image": image_to_base64_uri(restored_bytes)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/jobs/{job_id}")
@@ -704,9 +730,21 @@ async def api_demask(
         replicate_token = replicate_token.get("value")
 
     if not replicate_token:
+        try:
+            content = await file.read()
+            restored_bytes = await restore_face(content, strength=0.7)
+            if restored_bytes:
+                from fastapi.responses import StreamingResponse
+
+                return StreamingResponse(
+                    BytesIO(restored_bytes), media_type="image/png"
+                )
+        except Exception as e:
+            print(f"[DEBUG] Local demask fallback failed: {e}")
+
         raise HTTPException(
             status_code=400,
-            detail="Replicate API Token not configured. Set it in Settings.",
+            detail="AI service unavailable. Configure REPLICATE_API_TOKEN or SOCIAL_HUNT_FACE_AI_URL.",
         )
 
     try:

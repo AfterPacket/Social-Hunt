@@ -1,0 +1,78 @@
+# --- Professional & Development Networks Provider Pack ---
+# A curated list of sites for professional networking, coding, and bug bounties.
+
+github:
+  url: https://api.github.com/users/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - '"id":'
+    - '"type": "User"'
+  error_patterns:
+    - '"message": "Not Found"'
+
+gitlab:
+  url: https://gitlab.com/api/v4/users?username={username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  # Success is a JSON array that is not empty
+  success_patterns:
+    - '"id":'
+  # Error is an empty JSON array
+  error_patterns:
+    - '[]'
+
+bitbucket:
+  url: https://bitbucket.org/{username}/
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Repositories"
+    - "profile"
+  error_patterns:
+    - "Page not found"
+    - "No workspace with identifier"
+
+stackoverflow:
+  url: https://stackoverflow.com/users/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Profile for"
+    - "Member for"
+  error_patterns:
+    - "Page Not Found"
+    - "User not found"
+
+dev_to:
+  url: https://dev.to/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "crayons-avatar" # Class for user avatar
+    - "Joined on"
+  error_patterns:
+    - "isn't a user"
+    - "Page not found"
+
+hackerone:
+  url: https://hackerone.com/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Hacker, filtering by"
+    - "profile-stats"
+  error_patterns:
+    - "Page not found"
+    - "This page does not exist"
+
+hackerrank:
+  url: https://www.hackerrank.com/profile/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "hacker-card"
+    - "badges"
+  error_patterns:
+    - "Something went wrong"
+    - "No such user found"

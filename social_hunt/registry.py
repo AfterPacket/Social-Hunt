@@ -76,7 +76,13 @@ def load_plugin_providers() -> Dict[str, BaseProvider]:
 
 
 def build_registry(yaml_path: str = "providers.yaml") -> Dict[str, BaseProvider]:
-    reg = load_yaml_providers(yaml_path)
+    reg = {}
+    # Load from the base providers.yaml file first, if it exists
+    try:
+        reg.update(load_yaml_providers(yaml_path))
+    except FileNotFoundError:
+        pass  # It's okay if the base file doesn't exist
+
     # YAML plugin packs from plugins/providers override base YAML if same key
     reg.update(load_yaml_providers_from_dir("plugins/providers"))
     # Python providers override YAML entries if same name

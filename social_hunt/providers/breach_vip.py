@@ -4,6 +4,7 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+from ..demo import censor_breach_data, is_demo_mode
 from ..providers_base import BaseProvider
 from ..types import ProviderResult, ResultStatus
 
@@ -151,7 +152,13 @@ class BreachVIPProvider(BaseProvider):
                         profile["breach_sources"] = list(breach_sources)
 
                     # Store raw results (up to 100) for detailed rendering
-                    profile["raw_results"] = data[:100]
+                    # In demo mode, this is limited and censored
+                    display_data = data[:100]
+                    if is_demo_mode():
+                        display_data = censor_breach_data(data)
+                        profile["demo_mode"] = True
+
+                    profile["raw_results"] = display_data
 
                     # Aggregate data types found across all results
                     data_types_found = {}

@@ -55,7 +55,13 @@ Set the token before launching the app:
 export SOCIAL_HUNT_PLUGIN_TOKEN="your_secure_token_here"
 ```
 
-#### B. Bootstrap Mode (Initial Setup)
+#### B. Demo Mode (Optional)
+Enable demo mode to showcase functionality while protecting personal data (censors results and limits output):
+```bash
+export SOCIAL_HUNT_DEMO_MODE="1"
+```
+
+#### C. Bootstrap Mode (Initial Setup)
 If you don't want to use environment variables, enable bootstrap mode once:
 1. Run with `SOCIAL_HUNT_ENABLE_TOKEN_BOOTSTRAP=1`.
 2. Open the browser to the **Token** page.

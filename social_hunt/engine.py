@@ -56,6 +56,37 @@ class SocialHuntEngine:
 
                 async with sem:
                     res = await prov.check(username, client, headers)
+
+                    # Demo mode censorship
+                    from .demo import censor_value, is_demo_mode
+
+                    if is_demo_mode():
+                        if res.profile:
+                            censored_prof = {}
+                            for k, v in res.profile.items():
+                                if k == "raw_results" and isinstance(v, list):
+                                    from .demo import censor_breach_data
+
+                                    censored_prof[k] = censor_breach_data(v)
+                                elif isinstance(v, dict):
+                                    censored_prof[k] = {
+                                        ik: censor_value(iv, ik) for ik, iv in v.items()
+                                    }
+                                else:
+                                    censored_prof[k] = censor_value(v, k)
+                            res.profile = censored_prof
+
+                        if res.evidence:
+                            censored_ev = {}
+                            for k, v in res.evidence.items():
+                                if isinstance(v, dict):
+                                    censored_ev[k] = {
+                                        ik: censor_value(iv, ik) for ik, iv in v.items()
+                                    }
+                                else:
+                                    censored_ev[k] = censor_value(v, k)
+                            res.evidence = censored_ev
+
                     if progress_callback:
                         progress_callback(res)
                     return res

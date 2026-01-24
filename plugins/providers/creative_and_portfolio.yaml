@@ -1,0 +1,129 @@
+# --- Creative & Portfolio Provider Pack ---
+# A curated list of platforms for artists, designers, photographers, and musicians.
+
+artstation:
+  url: https://www.artstation.com/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Portfolio"
+    - "profile-sidebar"
+  error_patterns:
+    - "Page not found"
+
+deviantart:
+  url: https://www.deviantart.com/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "data-username=\"{username}\""
+    - "Watch"
+  error_patterns:
+    - "Deviant not found"
+    - "Page Not Found"
+
+dribbble:
+  url: https://dribbble.com/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - 'og:title" content="'
+    - "Profile"
+  error_patterns:
+    - "Whoops, that page is gone"
+    - "The page you were looking for doesn't exist"
+
+behance:
+  url: https://www.behance.net/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Appreciate"
+    - "Follow"
+  error_patterns:
+    - "Page Not Found"
+    - "The page you are looking for cannot be found"
+
+carbonmade:
+  url: https://{username}.carbonmade.com/
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "s online portfolio"
+    - "Projects"
+  error_patterns:
+    - "site not found"
+    - "This page could not be found"
+
+carrd_co:
+  url: https://{username}.carrd.co
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "( Made with Carrd )"
+  error_patterns:
+    - "Sorry, the requested page could not be found."
+
+adobe_portfolio:
+  url: https://{username}.myportfolio.com/
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "pf-project-wrap"
+    - "Work"
+  error_patterns:
+    - "Page Not Found"
+    - "This page can't be found"
+
+smugmug:
+  url: https://{username}.smugmug.com
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "sm-user-profile"
+    - "sm-engine-page-title"
+  error_patterns:
+    - "Page Not Found"
+    - "doesn't have a SmugMug account"
+
+soundcloud:
+  url: https://soundcloud.com/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "sound--profile"
+    - "Follow"
+  error_patterns:
+    - "We can't find that user"
+    - "Page not found"
+
+bandcamp:
+  url: https://bandcamp.com/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "collection | Bandcamp"
+    - "Follow"
+  error_patterns:
+    - "Sorry, that something isn’t here"
+
+vimeo:
+  url: https://vimeo.com/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "profile"
+    - "Follow"
+  error_patterns:
+    - "The page you were looking for could not be found"
+
+flickr:
+  url: https://www.flickr.com/photos/{username}/
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - "Follow"
+    - "photo-name-line-1"
+  error_patterns:
+    - "Page Not Found"
+    - "The page you're looking for can't be found"

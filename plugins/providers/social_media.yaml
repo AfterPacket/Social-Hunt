@@ -1,0 +1,84 @@
+# --- Social Media Provider Pack ---
+# A curated list of major social media platforms for OSINT investigations.
+
+facebook:
+  url: https://www.facebook.com/{username}/
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - __isProfile
+  error_patterns:
+    - <title>Facebook</title>
+    - content not found
+
+instagram:
+  url: https://www.instagram.com/{username}/
+  timeout: 15
+  ua_profile: instagram_android
+  # This pattern checks for a JSON object that only appears on valid profiles
+  success_patterns:
+    - '"is_private":'
+  error_patterns:
+    - Sorry, this page isn't available
+    - Page Not Found
+
+tiktok:
+  url: https://www.tiktok.com/oembed?url=https://www.tiktok.com/@{username}
+  timeout: 15
+  ua_profile: tiktok_android
+  success_patterns:
+    - author_url
+  error_patterns:
+    - "Couldn't find this account"
+    - Something went wrong
+
+reddit:
+  url: https://www.reddit.com/user/{username}/about/.json
+  timeout: 15
+  ua_profile: reddit_android
+  success_patterns:
+    - total_karma
+  error_patterns:
+    - Not Found
+    - "nobody on reddit goes by that name"
+
+x_twitter:
+  url: https://api.x.com/i/users/username_available.json?username={username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - '"valid":false'
+  error_patterns:
+    - '"valid":true'
+
+linkedin:
+  url: https://www.linkedin.com/in/{username}
+  timeout: 15
+  ua_profile: desktop_chrome
+  success_patterns:
+    - public-profile-card
+    - "authwall-join-form" # This appears on valid profiles when not logged in
+  error_patterns:
+    - "Profile not found"
+    - "could not be found"
+
+pinterest:
+  url: https://www.pinterest.com/{username}/
+  timeout: 15
+  ua_profile: pinterest_android
+  success_patterns:
+    - ' - Profile | Pinterest'
+    - 'Followers'
+  error_patterns:
+    - "couldn't find that page"
+    - "page not found"
+
+snapchat:
+  url: https://www.snapchat.com/@{username}
+  timeout: 15
+  ua_profile: snapchat_android
+  success_patterns:
+    - is on Snapchat!
+  error_patterns:
+    - NOT_FOUND
+    - could not be found

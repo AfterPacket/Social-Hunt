@@ -1,38 +1,135 @@
-<h2>AI Demasking</h2>
-<div class="card" style="text-align: center; padding: 60px 20px">
-    <div style="font-size: 4rem; margin-bottom: 20px">🎭</div>
-    <h3>Feature Coming Soon</h3>
-    <p class="muted" style="max-width: 500px; margin: 0 auto 20px">
-        We are currently refining the AI generative models to provide the most
-        accurate forensic facial reconstructions. This feature will be available
-        in a future update.
+<h2>Forensic AI Demasking</h2>
+<div class="card">
+    <p class="muted" style="margin-bottom: 20px">
+        This tool uses a multi-stage AI pipeline to reconstruct facial features.
+        First, <b>Pix2Pix</b> is used to attempt to remove physical masks or
+        coverings. Second, <b>CodeFormer</b> is applied to restore facial
+        details and clarity.
     </p>
-    <div
-        class="badge"
-        style="
-            background: rgba(var(--accent-rgb), 0.1);
-            border-color: var(--accent);
-            color: var(--accent);
-            padding: 8px 16px;
-        "
-    >
-        Status: In Development
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap">
+        <!-- Upload & Controls -->
+        <div style="flex: 1; min-width: 320px">
+            <div class="form-group">
+                <label>Target Image</label>
+                <div
+                    style="
+                        border: 2px dashed rgba(255, 255, 255, 0.1);
+                        padding: 20px;
+                        border-radius: 8px;
+                        text-align: center;
+                    "
+                >
+                    <input
+                        type="file"
+                        id="demaskUpload"
+                        accept="image/*"
+                        style="display: none"
+                    />
+                    <button
+                        class="btn"
+                        onclick="
+                            document.getElementById('demaskUpload').click()
+                        "
+                    >
+                        Choose Photo
+                    </button>
+                    <div
+                        id="demaskPreviewContainer"
+                        style="display: none; margin-top: 15px"
+                    >
+                        <img
+                            id="demaskOriginalPreview"
+                            src=""
+                            style="
+                                max-width: 100%;
+                                border-radius: 4px;
+                                border: 1px solid var(--border);
+                            "
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div
+                id="demaskStatus"
+                class="muted"
+                style="margin: 15px 0; font-size: 0.9rem"
+            >
+                Ready for analysis.
+            </div>
+
+            <button
+                id="startDemaskBtn"
+                class="btn good"
+                style="width: 100%"
+                disabled
+            >
+                Start AI Reconstruction
+            </button>
+        </div>
+
+        <!-- Result View -->
+        <div
+            style="
+                flex: 1;
+                min-width: 320px;
+                display: flex;
+                flex-direction: column;
+            "
+        >
+            <div
+                id="demaskResultContainer"
+                class="tablewrap"
+                style="
+                    flex: 1;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    min-height: 300px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(0, 0, 0, 0.2);
+                "
+            >
+                <div
+                    id="demaskPlaceholder"
+                    class="muted"
+                    style="text-align: center; padding: 20px"
+                >
+                    Processed image will appear here.
+                </div>
+                <img
+                    id="demaskResultImg"
+                    src=""
+                    style="display: none; max-width: 100%; border-radius: 4px"
+                />
+            </div>
+
+            <div
+                id="demaskActions"
+                style="display: none; gap: 10px; margin-top: 15px"
+            >
+                <button id="downloadDemaskBtn" class="btn" style="flex: 1">
+                    Download PNG
+                </button>
+                <button id="saveDemaskToNotesBtn" class="btn" style="flex: 1">
+                    Save to Notes
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="card" style="margin-top: 20px">
-    <h3>What to expect:</h3>
-    <ul
-        class="muted"
-        style="
-            line-height: 1.6;
-            font-size: 0.9em;
-            text-align: left;
-            display: inline-block;
-        "
-    >
-        <li>Generative facial inpainting for masked subjects.</li>
-        <li>Automated facial feature sharpening (CodeFormer).</li>
-        <li>Direct integration with Secure Notes for investigation logs.</li>
-    </ul>
+<div class="card" style="margin-top: 20px; border-left: 4px solid var(--warn)">
+    <div style="font-weight: 800; color: var(--warn); margin-bottom: 5px">
+        Forensic Disclaimer
+    </div>
+    <div class="muted" style="font-size: 0.85rem; line-height: 1.4">
+        Reconstructions are generated by neural networks and may contain
+        artifacts or "hallucinated" details. Always verify AI findings against
+        primary source material. This feature requires a
+        <code>REPLICATE_API_TOKEN</code>
+        configured in your system settings.
+    </div>
 </div>
