@@ -506,6 +506,57 @@ tr:last-child td {
     }
 }
 
+@media (max-width: 700px) {
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .topbar-right {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+    .menu {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .btn,
+    .input,
+    input[type="text"],
+    input[type="password"],
+    input[type="url"],
+    textarea,
+    select {
+        max-width: 100%;
+    }
+    .btn {
+        width: 100%;
+    }
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        padding: 10px;
+    }
+    .view {
+        padding: 10px;
+    }
+    .card {
+        padding: 12px;
+    }
+    .menu {
+        grid-template-columns: 1fr;
+    }
+}
+
 .spinner {
     display: inline-block;
     width: 14px;
