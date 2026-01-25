@@ -63,7 +63,17 @@
 
             <main class="main">
                 <header class="topbar">
-                    <div id="viewTitle" class="view-title">Dashboard</div>
+                    <div class="topbar-left">
+                        <button
+                            class="btn menu-toggle"
+                            id="menuToggle"
+                            type="button"
+                            aria-label="Toggle menu"
+                        >
+                            Menu
+                        </button>
+                        <div id="viewTitle" class="view-title">Dashboard</div>
+                    </div>
                     <div class="topbar-right">
                         <span
                             id="demoBadge"
@@ -85,6 +95,7 @@
                 <section id="viewContainer" class="view"></section>
             </main>
         </div>
+        <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
         <script src="/static/app.js?v=2.2.2"></script>
     </body>

@@ -488,15 +488,52 @@ tr:last-child td {
     z-index: 50;
 }
 
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.menu-toggle {
+    display: none;
+}
+
+.sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 7, 10, 0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 9;
+}
+
 @media (max-width: 900px) {
     #appShell {
         grid-template-columns: 1fr;
         height: auto;
     }
     .sidebar {
-        position: sticky;
-        top: 0;
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 260px;
+        max-width: 85vw;
+        transform: translateX(-110%);
+        transition: transform 0.2s ease;
         z-index: 10;
+        box-shadow: var(--shadow);
+    }
+    body.sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+    body.sidebar-open .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .menu-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
     .view {
         padding: 12px;

@@ -1,6 +1,8 @@
 const viewContainer = document.getElementById("viewContainer");
 const viewTitle = document.getElementById("viewTitle");
 const tokenStatus = document.getElementById("tokenStatus");
+const menuToggle = document.getElementById("menuToggle");
+const sidebarBackdrop = document.getElementById("sidebarBackdrop");
 
 // ---- token helpers ----
 function getToken() {
@@ -2068,9 +2070,26 @@ if (logoutBtn) {
   };
 }
 
+function closeSidebar() {
+  document.body.classList.remove("sidebar-open");
+}
+
 document.querySelectorAll(".menu-btn[data-view]").forEach((btn) => {
-  btn.onclick = () => loadView(btn.dataset.view);
+  btn.onclick = () => {
+    loadView(btn.dataset.view);
+    closeSidebar();
+  };
 });
+
+if (menuToggle) {
+  menuToggle.onclick = () => {
+    document.body.classList.toggle("sidebar-open");
+  };
+}
+
+if (sidebarBackdrop) {
+  sidebarBackdrop.onclick = closeSidebar;
+}
 
 renderTokenStatus();
 
