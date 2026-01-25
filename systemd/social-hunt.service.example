@@ -1,0 +1,15 @@
+[Unit]
+Description=Social-Hunt (manual Python)
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/path/to/Social-Hunt
+EnvironmentFile=-/path/to/Social-Hunt/.env
+ExecStart=/usr/bin/python3 -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

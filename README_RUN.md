@@ -90,6 +90,28 @@ python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 **Access:** Open [http://localhost:8000](http://localhost:8000)
 
+### Systemd (Auto-Restart for Restart Button)
+The Settings page "Restart Server" button exits the process. To bring it back
+up automatically, run under a supervisor such as systemd.
+
+Manual Python (recommended):
+```bash
+sudo cp systemd/social-hunt.service.example /etc/systemd/system/social-hunt.service
+sudo nano /etc/systemd/system/social-hunt.service
+sudo systemctl daemon-reload
+sudo systemctl enable social-hunt
+sudo systemctl start social-hunt
+```
+
+Docker Compose (optional):
+```bash
+sudo cp systemd/social-hunt-docker.service.example /etc/systemd/system/social-hunt-docker.service
+sudo nano /etc/systemd/system/social-hunt-docker.service
+sudo systemctl daemon-reload
+sudo systemctl enable social-hunt-docker
+sudo systemctl start social-hunt-docker
+```
+
 ### Command Line Interface (CLI)
 Perform a quick scan without starting the web server:
 ```bash
