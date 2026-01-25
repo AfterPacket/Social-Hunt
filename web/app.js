@@ -1313,10 +1313,95 @@ function initPluginsView() {
   const uploadBtn = document.getElementById("pluginUpload");
   const reloadBtn = document.getElementById("pluginReload");
   const outEl = document.getElementById("pluginOut");
+  const listContainer = document.getElementById("installedPlugins");
+  const refreshListBtn = document.getElementById("pluginRefreshList");
 
   function setOut(msg) {
     if (outEl) outEl.textContent = msg;
   }
+
+  async function refreshList() {
+    if (!listContainer) return;
+    if (!getToken()) {
+      listContainer.innerHTML = '<p class="muted">Admin token required.</p>';
+      return;
+    }
+    listContainer.innerHTML = '<p class="muted">Loading...</p>';
+    try {
+      const r = await fetch("/api/plugin/list", { headers: authHeaders() });
+      const j = await r.json();
+      if (!r.ok) {
+        listContainer.innerHTML = `<p class="error">${
+          j.detail || "Failed to load"
+        }</p>`;
+        return;
+      }
+      renderList(j);
+    } catch (e) {
+      listContainer.innerHTML = `<p class="error">Error: ${e.message}</p>`;
+    }
+  }
+
+  function renderList(data) {
+    let html = "";
+
+    const groups = [
+      {
+        title: "YAML Providers",
+        items: data.yaml_providers || [],
+      },
+      {
+        title: "Python Providers",
+        items: data.python_providers || [],
+      },
+      {
+        title: "Python Addons",
+        items: data.python_addons || [],
+      },
+    ];
+
+    groups.forEach((g) => {
+      if (g.items.length === 0) return;
+      html += `<h4>${g.title}</h4><ul style="list-style:none; padding:0;">`;
+      g.items.forEach((item) => {
+        html += `
+             <li style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; padding:8px; border-bottom:1px solid var(--border);">
+                <span style="font-family:monospace;">${escapeHtml(item)}</span>
+                <button class="btn danger small delete-plugin-btn" data-name="${escapeHtml(
+                  item,
+                )}">Delete</button>
+             </li>`;
+      });
+      html += `</ul>`;
+    });
+
+    if (!html) html = '<p class="muted">No plugins installed.</p>';
+    listContainer.innerHTML = html;
+
+    listContainer.querySelectorAll(".delete-plugin-btn").forEach((btn) => {
+      btn.onclick = async () => {
+        const name = btn.getAttribute("data-name");
+        if (!confirm(`Delete plugin "${name}"? This cannot be undone.`)) return;
+
+        const r = await fetch(
+          `/api/plugin/delete?name=${encodeURIComponent(name)}`,
+          {
+            method: "DELETE",
+            headers: authHeaders(),
+          },
+        );
+        const j = await r.json().catch(() => ({}));
+        if (r.ok) {
+          refreshList();
+        } else {
+          alert(j.detail || "Delete failed");
+        }
+      };
+    });
+  }
+
+  if (refreshListBtn) refreshListBtn.onclick = refreshList;
+  if (getToken()) refreshList();
 
   uploadBtn.onclick = async () => {
     if (!getToken()) return alert("Set token first (Token page).");
@@ -1335,6 +1420,7 @@ function initPluginsView() {
     if (!r.ok) return alert(j.detail || `Upload failed (${r.status})`);
 
     setOut(JSON.stringify(j, null, 2));
+    refreshList();
   };
 
   reloadBtn.onclick = async () => {
@@ -1346,6 +1432,7 @@ function initPluginsView() {
     const j = await r.json().catch(() => ({}));
     if (!r.ok) return alert(j.detail || `Reload failed (${r.status})`);
     setOut(JSON.stringify(j, null, 2));
+    refreshList();
   };
 }
 
