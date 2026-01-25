@@ -222,6 +222,26 @@ async def api_admin_update(
         return {"ok": False, "error": str(e)}
 
 
+@app.post("/api/admin/restart")
+async def api_admin_restart(
+    x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
+):
+    """
+    Exit the current process so a supervisor (systemd, Docker, etc.) can restart it.
+    """
+    require_admin(x_plugin_token)
+
+    async def _restart() -> None:
+        await asyncio.sleep(0.75)
+        os._exit(0)
+
+    asyncio.create_task(_restart())
+    return {
+        "ok": True,
+        "message": "Restarting server process. Reconnect in a few seconds.",
+    }
+
+
 # ---- core engine ----
 registry = build_registry(str(PROVIDERS_YAML))
 engine = SocialHuntEngine(registry, max_concurrency=6)

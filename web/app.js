@@ -1297,6 +1297,7 @@ function initSettingsView() {
   const saveThemeBtn = document.getElementById("saveTheme");
   const updateBtn = document.getElementById("updateBtn"); // Assuming this exists now
   const updateLog = document.getElementById("updateLog"); // Assuming this exists now
+  const restartBtn = document.getElementById("restartBtn");
 
   function showMsg(txt) {
     msgEl.style.display = "block";
@@ -1483,6 +1484,42 @@ function initSettingsView() {
         updateLog.textContent = "Error: " + e.message;
       } finally {
         updateBtn.disabled = false;
+      }
+    };
+  }
+
+  if (restartBtn) {
+    restartBtn.onclick = async () => {
+      if (
+        !confirm("Restart the server now? This will disconnect your session.")
+      )
+        return;
+
+      restartBtn.disabled = true;
+      if (updateLog) {
+        updateLog.style.display = "block";
+        updateLog.textContent = "Restarting server...";
+      }
+
+      try {
+        const r = await fetch("/api/admin/restart", {
+          method: "POST",
+          headers: authHeaders(),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || !j.ok) {
+          const msg = j.detail || j.error || `Restart failed (${r.status})`;
+          if (updateLog) updateLog.textContent = msg;
+          alert(msg);
+          restartBtn.disabled = false;
+          return;
+        }
+        if (updateLog) {
+          updateLog.textContent = j.message || "Restarting server...";
+        }
+      } catch (e) {
+        if (updateLog) updateLog.textContent = "Error: " + e.message;
+        restartBtn.disabled = false;
       }
     };
   }
