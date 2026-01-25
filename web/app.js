@@ -330,32 +330,66 @@ function renderResults(job, containerId, opts = {}) {
 
   const btn = document.getElementById(`dl-btn-${job.job_id}`);
   if (btn) {
-    btn.onclick = () => {
-      job.type = "search";
-      downloadJob(job, "json");
+    btn.onclick = async () => {
+      btn.textContent = "Downloading...";
+      btn.disabled = true;
+      try {
+        const fullJob = await fetchJob(job.job_id);
+        fullJob.type = "search";
+        downloadJob(fullJob, "json");
+      } catch (e) {
+        alert("Error downloading: " + e.message);
+      } finally {
+        btn.textContent = "Download JSON";
+        btn.disabled = false;
+      }
     };
   }
   const btnCsv = document.getElementById(`dl-btn-csv-${job.job_id}`);
   if (btnCsv) {
-    btnCsv.onclick = () => {
-      job.type = "search";
-      downloadJob(job, "csv");
+    btnCsv.onclick = async () => {
+      btnCsv.textContent = "Downloading...";
+      btnCsv.disabled = true;
+      try {
+        const fullJob = await fetchJob(job.job_id);
+        fullJob.type = "search";
+        downloadJob(fullJob, "csv");
+      } catch (e) {
+        alert("Error downloading: " + e.message);
+      } finally {
+        btnCsv.textContent = "Download CSV";
+        btnCsv.disabled = false;
+      }
     };
   }
   const btnNote = document.getElementById(`note-btn-${job.job_id}`);
   if (btnNote) {
-    btnNote.onclick = () => {
-      const text = (job.results || [])
-        .map((r) => {
-          const p = r.profile || {};
-          return `[${r.provider}] ${r.status} - ${r.url || "No URL"}\n   Name: ${p.display_name || ""}\n   Note: ${p.note || r.error || ""}`;
-        })
-        .join("\n\n");
-      const title = `Search: ${job.username || "results"}`;
-      if (window.addNoteDirectly) {
-        window.addNoteDirectly(title, text);
-      } else {
-        alert("Please go to Secure Notes and unlock them first.");
+    btnNote.onclick = async () => {
+      btnNote.textContent = "Saving...";
+      btnNote.disabled = true;
+      try {
+        let fullJob = job;
+        // If results seem truncated, fetch full
+        if ((job.results || []).length < (job.results_count || 0)) {
+          fullJob = await fetchJob(job.job_id);
+        }
+        const text = (fullJob.results || [])
+          .map((r) => {
+            const p = r.profile || {};
+            return `[${r.provider}] ${r.status} - ${r.url || "No URL"}\n   Name: ${p.display_name || ""}\n   Note: ${p.note || r.error || ""}`;
+          })
+          .join("\n\n");
+        const title = `Search: ${fullJob.username || "results"}`;
+        if (window.addNoteDirectly) {
+          window.addNoteDirectly(title, text);
+        } else {
+          alert("Please go to Secure Notes and unlock them first.");
+        }
+      } catch (e) {
+        alert("Error saving note: " + e.message);
+      } finally {
+        btnNote.textContent = "Save to Notes";
+        btnNote.disabled = false;
       }
     };
   }
@@ -873,41 +907,72 @@ function renderBreachView(job, containerId) {
 
   const btn = document.getElementById(`dl-breach-${job.job_id}`);
   if (btn) {
-    btn.onclick = () => {
-      job.type = "breach-search";
-      downloadJob(job, "json");
+    btn.onclick = async () => {
+      btn.textContent = "Downloading...";
+      btn.disabled = true;
+      try {
+        const fullJob = await fetchJob(job.job_id);
+        fullJob.type = "breach-search";
+        downloadJob(fullJob, "json");
+      } catch (e) {
+        alert("Error downloading: " + e.message);
+      } finally {
+        btn.textContent = "Download JSON";
+        btn.disabled = false;
+      }
     };
   }
   const btnCsv = document.getElementById(`dl-breach-csv-${job.job_id}`);
   if (btnCsv) {
-    btnCsv.onclick = () => {
-      job.type = "breach-search";
-      downloadJob(job, "csv");
+    btnCsv.onclick = async () => {
+      btnCsv.textContent = "Downloading...";
+      btnCsv.disabled = true;
+      try {
+        const fullJob = await fetchJob(job.job_id);
+        fullJob.type = "breach-search";
+        downloadJob(fullJob, "csv");
+      } catch (e) {
+        alert("Error downloading: " + e.message);
+      } finally {
+        btnCsv.textContent = "Download CSV";
+        btnCsv.disabled = false;
+      }
     };
   }
   const btnNote = document.getElementById(`note-breach-${job.job_id}`);
   if (btnNote) {
-    btnNote.onclick = () => {
-      let text = `Breach Search: ${job.username || job.term}\n\n`;
-      const hibp = (job.results || []).find((r) => r.provider === "hibp");
-      if (hibp && hibp.profile?.breaches) {
-        text += `HIBP Breaches:\n- ${hibp.profile.breaches.join("\n- ")}\n\n`;
-      }
-      const bvip = (job.results || []).find((r) => r.provider === "breachvip");
-      if (bvip && bvip.profile?.raw_results) {
-        text += `BreachVIP Detailed Records:\n`;
-        bvip.profile.raw_results.forEach((row) => {
-          text += `--- ${row.source || row.breach || "Record"} ---\n`;
-          Object.entries(row).forEach(([k, v]) => {
-            if (v && typeof v !== "object") text += `${k}: ${v}\n`;
+    btnNote.onclick = async () => {
+      btnNote.textContent = "Saving...";
+      btnNote.disabled = true;
+      try {
+        let text = `Breach Search: ${job.username || job.term}\n\n`;
+        const hibp = (job.results || []).find((r) => r.provider === "hibp");
+        if (hibp && hibp.profile?.breaches) {
+          text += `HIBP Breaches:\n- ${hibp.profile.breaches.join("\n- ")}\n\n`;
+        }
+        const bvip = (job.results || []).find(
+          (r) => r.provider === "breachvip",
+        );
+        if (bvip && bvip.profile?.raw_results) {
+          text += `BreachVIP Detailed Records:\n`;
+          bvip.profile.raw_results.forEach((row) => {
+            text += `--- ${row.source || row.breach || "Record"} ---\n`;
+            Object.entries(row).forEach(([k, v]) => {
+              if (v && typeof v !== "object") text += `${k}: ${v}\n`;
+            });
+            text += "\n";
           });
-          text += "\n";
-        });
-      }
-      if (window.addNoteDirectly) {
-        window.addNoteDirectly(`Breach: ${job.username || job.term}`, text);
-      } else {
-        alert("Please go to Secure Notes and unlock them first.");
+        }
+        if (window.addNoteDirectly) {
+          window.addNoteDirectly(`Breach: ${job.username || job.term}`, text);
+        } else {
+          alert("Please go to Secure Notes and unlock them first.");
+        }
+      } catch (e) {
+        alert("Error saving note: " + e.message);
+      } finally {
+        btnNote.textContent = "Save to Notes";
+        btnNote.disabled = false;
       }
     };
   }

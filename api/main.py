@@ -20,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from api.settings_store import SettingsStore, mask_for_client
+from social_hunt.addons_registry import build_addon_registry, load_enabled_addons
 from social_hunt.engine import SocialHuntEngine
 from social_hunt.face_utils import image_to_base64_uri, restore_face
 from social_hunt.registry import build_registry, list_provider_names
@@ -251,6 +252,8 @@ def reload_registry() -> None:
     global registry
     registry = build_registry(str(PROVIDERS_YAML))
     engine.registry = registry
+    engine.addon_registry = build_addon_registry()
+    engine.enabled_addon_names = load_enabled_addons()
 
 
 # ---- simple in-memory job store (swap to Redis for production) ----
@@ -737,8 +740,25 @@ def _install_yaml_bytes(filename: str, data: bytes) -> str:
     return str(out_path)
 
 
-def _extract_yaml_from_zip(zbytes: bytes) -> List[str]:
+def _install_py_bytes(category: str, filename: str, data: bytes) -> str:
+    # category is "providers" or "addons"
+    # target: plugins/python/{category}
+    target_dir = APP_ROOT / "plugins" / "python" / category
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    out_name = _safe_name(Path(filename).name)
+    if not out_name.endswith(".py"):
+        out_name += ".py"
+
+    out_path = target_dir / out_name
+    out_path.write_bytes(data)
+    return str(out_path)
+
+
+def _extract_plugins_from_zip(zbytes: bytes) -> List[str]:
     installed: List[str] = []
+    allow_py = os.getenv("SOCIAL_HUNT_ALLOW_PY_PLUGINS", "").strip() == "1"
+
     with zipfile.ZipFile(BytesIO(zbytes)) as z:
         for info in z.infolist():
             if info.is_dir():
@@ -748,10 +768,19 @@ def _extract_yaml_from_zip(zbytes: bytes) -> List[str]:
             if name.startswith("/") or ".." in name:
                 continue
             lower = name.lower()
-            if not (lower.endswith(".yaml") or lower.endswith(".yml")):
-                continue
             data = z.read(info)
-            installed.append(_install_yaml_bytes(Path(name).name, data))
+            fname = Path(name).name
+
+            if lower.endswith(".yaml") or lower.endswith(".yml"):
+                installed.append(_install_yaml_bytes(fname, data))
+
+            elif allow_py and lower.endswith(".py"):
+                # Expect python/providers/*.py or python/addons/*.py
+                if "python/providers/" in name:
+                    installed.append(_install_py_bytes("providers", fname, data))
+                elif "python/addons/" in name:
+                    installed.append(_install_py_bytes("addons", fname, data))
+
     return installed
 
 
@@ -782,7 +811,7 @@ async def api_plugin_upload(
         raise HTTPException(status_code=413, detail="upload too large")
 
     if lower.endswith(".zip"):
-        installed = _extract_yaml_from_zip(raw)
+        installed = _extract_plugins_from_zip(raw)
     elif lower.endswith(".yaml") or lower.endswith(".yml"):
         installed = [_install_yaml_bytes(fname, raw)]
     else:
@@ -795,6 +824,44 @@ async def api_plugin_upload(
         "installed": installed,
         "providers": list_provider_names(registry),
     }
+
+
+@app.delete("/api/plugin/delete")
+async def api_plugin_delete(
+    name: str,
+    x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
+):
+    if (os.getenv("SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD") or "0").strip() != "1":
+        raise HTTPException(
+            status_code=403,
+            detail="Plugin management is disabled",
+        )
+    require_admin(x_plugin_token)
+
+    # Basic path safety
+    if ".." in name or name.startswith("/") or name.startswith("\\"):
+        raise HTTPException(status_code=400, detail="Invalid plugin name")
+
+    plugins_root = _resolve_env_path("SOCIAL_HUNT_PLUGINS_DIR", "plugins")
+    target = (plugins_root / name).resolve()
+
+    if not str(target).startswith(str(plugins_root)):
+        raise HTTPException(status_code=400, detail="Path traversal detected")
+
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="Plugin not found")
+
+    if not target.is_file():
+        raise HTTPException(status_code=400, detail="Target is not a file")
+
+    try:
+        os.remove(target)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    reload_registry()
+
+    return {"ok": True, "deleted": name}
 
 
 @app.post("/api/demask")

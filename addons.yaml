@@ -5,3 +5,5 @@ addons:
   - avatar_fingerprint
   # Cluster providers by matching avatar fingerprints (exact sha256, then near-match dHash)
   - avatar_clusters
+  # Hello World plugin
+  - hello_world

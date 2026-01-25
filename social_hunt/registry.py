@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 import pkgutil
 from pathlib import Path
 from typing import Dict, List
@@ -8,6 +9,7 @@ from typing import Dict, List
 import yaml
 
 from .paths import resolve_path
+from .plugin_loader import load_python_plugin_providers
 from .providers_base import BaseProvider
 from .providers_yaml import PatternProvider
 
@@ -87,6 +89,11 @@ def build_registry(yaml_path: str = "providers.yaml") -> Dict[str, BaseProvider]
     reg.update(load_yaml_providers_from_dir("plugins/providers"))
     # Python providers override YAML entries if same name
     reg.update(load_plugin_providers())
+
+    # Load optional python provider plugins
+    allow_py = os.getenv("SOCIAL_HUNT_ALLOW_PY_PLUGINS", "").strip() == "1"
+    reg.update(load_python_plugin_providers(allow=allow_py))
+
     return reg
 
 
