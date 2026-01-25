@@ -44,16 +44,16 @@
 #     - "Page Not Found"
 #     - "User not found"
 
-dev_to:
-  url: https://dev.to/{username}
-  timeout: 15
-  ua_profile: desktop_chrome
-  success_patterns:
-    - "crayons-avatar" # Class for user avatar
-    - "Joined on"
-  error_patterns:
-    - "isn't a user"
-    - "Page not found"
+# dev_to:
+#   url: https://dev.to/{username}
+#   timeout: 15
+#   ua_profile: desktop_chrome
+#   success_patterns:
+#     - "crayons-avatar" # Class for user avatar
+#     - "Joined on"
+#   error_patterns:
+#     - "isn't a user"
+#     - "Page not found"
 
 # hackerone:
 #   url: https://hackerone.com/{username}
