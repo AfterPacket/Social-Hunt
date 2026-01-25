@@ -865,7 +865,7 @@ async def api_plugin_delete(
 
     # Basic path safety
     name = name.replace("\\", "/")
-    if ".." in name or name.startswith("/"):
+    if ".." in name:
         raise HTTPException(status_code=400, detail="Invalid plugin name")
 
     plugins_root = _resolve_env_path("SOCIAL_HUNT_PLUGINS_DIR", "plugins").resolve()
