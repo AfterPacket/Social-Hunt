@@ -851,9 +851,13 @@ async def api_plugin_upload(
     }
 
 
-@app.delete("/api/plugin/delete")
+class PluginDeleteReq(BaseModel):
+    name: str
+
+
+@app.post("/api/plugin/delete")
 async def api_plugin_delete(
-    name: str,
+    req: PluginDeleteReq,
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
     if (os.getenv("SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD") or "0").strip() != "1":
@@ -864,7 +868,7 @@ async def api_plugin_delete(
     require_admin(x_plugin_token)
 
     # Basic path safety
-    name = name.replace("\\", "/")
+    name = req.name.replace("\\", "/")
     if ".." in name:
         raise HTTPException(status_code=400, detail="Invalid plugin name")
 

@@ -1383,13 +1383,11 @@ function initPluginsView() {
         const name = btn.getAttribute("data-name");
         if (!confirm(`Delete plugin "${name}"? This cannot be undone.`)) return;
 
-        const r = await fetch(
-          `/api/plugin/delete?name=${encodeURIComponent(name)}`,
-          {
-            method: "DELETE",
-            headers: authHeaders(),
-          },
-        );
+        const r = await fetch("/api/plugin/delete", {
+          method: "POST",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ name }),
+        });
         const j = await r.json().catch(() => ({}));
         if (r.ok) {
           refreshList();
