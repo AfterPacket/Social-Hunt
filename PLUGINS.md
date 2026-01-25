@@ -89,4 +89,7 @@ Accepted zip paths:
 - `python/providers/*.py` (only if `SOCIAL_HUNT_ALLOW_PY_PLUGINS=1`)
 - `python/addons/*.py` (only if `SOCIAL_HUNT_ALLOW_PY_PLUGINS=1`)
 
+**Important**: Python files **must** be placed inside the `python/providers/` or `python/addons/` folders within the zip file.
+Files placed at the root of the zip (e.g. `my_addon.py`) will be ignored/skipped for security reasons.
+
 After upload, the server hot-reloads providers/addons so they appear immediately.
