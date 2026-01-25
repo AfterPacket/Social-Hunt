@@ -23,6 +23,7 @@ from api.settings_store import SettingsStore, mask_for_client
 from social_hunt.addons_registry import build_addon_registry, load_enabled_addons
 from social_hunt.engine import SocialHuntEngine
 from social_hunt.face_utils import image_to_base64_uri, restore_face
+from social_hunt.plugin_loader import list_installed_plugins
 from social_hunt.registry import build_registry, list_provider_names
 
 app = FastAPI(title="Social-Hunt API", version="2.2.0")
@@ -782,6 +783,19 @@ def _extract_plugins_from_zip(zbytes: bytes) -> List[str]:
                     installed.append(_install_py_bytes("addons", fname, data))
 
     return installed
+
+
+@app.get("/api/plugin/list")
+async def api_plugin_list(
+    x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
+):
+    if (os.getenv("SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD") or "0").strip() != "1":
+        raise HTTPException(
+            status_code=403,
+            detail="Plugin management is disabled",
+        )
+    require_admin(x_plugin_token)
+    return list_installed_plugins()
 
 
 @app.post("/api/plugin/upload")

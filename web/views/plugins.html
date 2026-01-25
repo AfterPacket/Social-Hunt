@@ -1,12 +1,36 @@
 <h2>Plugins</h2>
-<p class="muted">Upload YAML provider packs (.yaml/.yml) or a zip containing YAML files. Requires admin token.</p>
+<p class="muted">
+    Upload YAML provider packs (.yaml/.yml) or a zip containing YAML files.
+    Requires admin token.
+</p>
 
 <div class="card">
-  <div class="row">
-    <input id="pluginFile" type="file" />
-    <button class="btn good" id="pluginUpload" type="button">Upload</button>
-    <button class="btn" id="pluginReload" type="button">Reload Providers</button>
-  </div>
+    <div class="row">
+        <input id="pluginFile" type="file" />
+        <button class="btn good" id="pluginUpload" type="button">Upload</button>
+        <button class="btn" id="pluginReload" type="button">
+            Reload Providers
+        </button>
+    </div>
 
-  <pre id="pluginOut" style="margin-top:12px"></pre>
+    <pre id="pluginOut" style="margin-top: 12px"></pre>
+</div>
+
+<div class="card" style="margin-top: 20px">
+    <div
+        class="row"
+        style="
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        "
+    >
+        <h3>Installed Plugins</h3>
+        <button class="btn" id="pluginRefreshList" type="button">
+            Refresh List
+        </button>
+    </div>
+    <div id="installedPlugins">
+        <p class="muted">Loading...</p>
+    </div>
 </div>
