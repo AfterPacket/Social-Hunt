@@ -20,7 +20,7 @@
 21buttons:
   url: https://www.21buttons.com/buttoner/{username}
   timeout: 20
-  ua_profile: 21buttons_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile-info__profile-data__name
@@ -39,7 +39,7 @@
 247sports:
   url: https://247sports.com/User/{username}/
   timeout: 20
-  ua_profile: 247sports_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <meta property=
@@ -49,7 +49,7 @@
 35photo:
   url: https://35photo.pro/@{username}/
   timeout: 20
-  ua_profile: 35photo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <span title="Total photos
@@ -59,7 +59,7 @@
 3dnews:
   url: https://forum.3dnews.tech/member.php?username={username}
   timeout: 20
-  ua_profile: 3dnews_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Просмотр профиля:"
@@ -69,7 +69,7 @@
 3dtoday:
   url: https://3dtoday.ru/blogs/{username}
   timeout: 20
-  ua_profile: 3dtoday_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Блог владельца 3d-принтера
@@ -79,7 +79,7 @@
 7cup:
   url: https://www.7cups.com/@{username}
   timeout: 20
-  ua_profile: 7cup_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Profile - 7 Cups
@@ -89,7 +89,7 @@
 7dach:
   url: https://7dach.ru/profile/{username}
   timeout: 20
-  ua_profile: 7dach_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Информация / Профиль
@@ -99,7 +99,7 @@
 about.me:
   url: https://about.me/{username}
   timeout: 20
-  ua_profile: about.me_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " | about.me"
@@ -109,7 +109,7 @@ about.me:
 acf:
   url: https://support.advancedcustomfields.com/forums/users/{username}/
   timeout: 20
-  ua_profile: acf_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>ACF Support
@@ -119,7 +119,7 @@ acf:
 admireme.vip:
   url: https://admireme.vip/{username}/
   timeout: 20
-  ua_profile: admireme.vip_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - creator-stat subscriber
@@ -129,7 +129,7 @@ admireme.vip:
 adult_forum:
   url: https://adultforum.gr/{username}-glamour-escorts/
   timeout: 20
-  ua_profile: adult_forum_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Glamour Escorts "
@@ -139,7 +139,7 @@ adult_forum:
 adultism:
   url: https://www.adultism.com/profile/{username}
   timeout: 20
-  ua_profile: adultism_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Last login:"
@@ -149,7 +149,7 @@ adultism:
 advfn:
   url: https://uk.advfn.com/forum/profile/{username}
   timeout: 20
-  ua_profile: advfn_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Profile | ADVFN
@@ -159,7 +159,7 @@ advfn:
 airline_pilot_life:
   url: https://airlinepilot.life/u/{username}.json
   timeout: 20
-  ua_profile: airline_pilot_life_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - primary_group_name
@@ -169,7 +169,7 @@ airline_pilot_life:
 airliners:
   url: https://www.airliners.net/user/{username}/profile
   timeout: 20
-  ua_profile: airliners_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "'s Profile | Airliners Members | Airliners.net"
@@ -179,7 +179,7 @@ airliners:
 akniga:
   url: https://akniga.org/profile/{username}
   timeout: 20
-  ua_profile: akniga_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " - Аудиокниги Клуб</title"
@@ -190,7 +190,7 @@ akniga:
 albicla:
   url: https://albicla.com/{username}/post/1
   timeout: 20
-  ua_profile: albicla_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "500"
     - 500 Post tymczasowo niedostępny
@@ -200,7 +200,7 @@ albicla:
 alik:
   url: https://www.alik.cz/u/{username}
   timeout: 20
-  ua_profile: alik_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Vizitka – Alík.cz</title>
@@ -210,7 +210,7 @@ alik:
 allmylinks:
   url: https://allmylinks.com/{username}
   timeout: 20
-  ua_profile: allmylinks_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="site-profile guest"
@@ -220,7 +220,7 @@ allmylinks:
 alura:
   url: https://cursos.alura.com.br/user/{username}
   timeout: 20
-  ua_profile: alura_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Perfil de
@@ -230,7 +230,7 @@ alura:
 ameblo:
   url: https://ameblo.jp/{username}
   timeout: 20
-  ua_profile: ameblo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 画像一覧
@@ -240,7 +240,7 @@ ameblo:
 americanthinker:
   url: https://www.americanthinker.com/author/{username}/
   timeout: 20
-  ua_profile: americanthinker_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Articles &amp;
@@ -250,7 +250,7 @@ americanthinker:
 anilist:
   url: https://graphql.anilist.co
   timeout: 20
-  ua_profile: anilist_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -260,7 +260,7 @@ anilist:
 anime-planet:
   url: https://www.anime-planet.com/api/validation/username
   timeout: 20
-  ua_profile: anime-planet_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "400"
     - '"msg":"Username is unavailable"'
@@ -270,7 +270,7 @@ anime-planet:
 anonup:
   url: https://anonup.com/@{username}
   timeout: 20
-  ua_profile: anonup_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Show followings
@@ -280,7 +280,7 @@ anonup:
 aparat:
   url: https://www.aparat.com/api/fa/v1/user/user/information/username/{username}
   timeout: 20
-  ua_profile: aparat_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -299,7 +299,7 @@ apex_legends_tracker:
 appian:
   url: https://community.appian.com/members/{username}
   timeout: 20
-  ua_profile: appian_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - User Profile
@@ -309,7 +309,7 @@ appian:
 arch linux gitlab:
   url: https://gitlab.archlinux.org/api/v4/users?username={username}
   timeout: 20
-  ua_profile: arch linux gitlab_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -319,7 +319,7 @@ arch linux gitlab:
 archive of our own account:
   url: https://archiveofourown.org/users/{username}
   timeout: 20
-  ua_profile: archive of our own account_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user home"
@@ -329,7 +329,7 @@ archive of our own account:
 archwiki:
   url: https://wiki.archlinux.org/api.php?action=query&format=json&list=users&ususers={username}&usprop=cancreate&formatversion=2&errorformat=html&errorsuselocal=true&uselang=en
   timeout: 20
-  ua_profile: archwiki_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userid":'
@@ -339,7 +339,7 @@ archwiki:
 arduino (forum):
   url: https://forum.arduino.cc/u/{username}.json
   timeout: 20
-  ua_profile: arduino (forum)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -349,7 +349,7 @@ arduino (forum):
 arduino (project hub):
   url: https://projecthub.arduino.cc/{username}
   timeout: 20
-  ua_profile: arduino (project hub)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userInfo":{'
@@ -369,7 +369,7 @@ armorgames:
 arsmate:
   url: https://arsmate.com/{username}
   timeout: 20
-  ua_profile: arsmate_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - far fa-user-circle mr-1
@@ -379,7 +379,7 @@ arsmate:
 artbreeder:
   url: https://www.artbreeder.com/{username}
   timeout: 20
-  ua_profile: artbreeder_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>
@@ -389,7 +389,7 @@ artbreeder:
 artists & clients:
   url: https://artistsnclients.com/people/{username}
   timeout: 20
-  ua_profile: artists & clients_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Member Since
@@ -399,7 +399,7 @@ artists & clients:
 artstation:
   url: https://www.artstation.com/{username}
   timeout: 20
-  ua_profile: artstation_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Portfolio
@@ -409,7 +409,7 @@ artstation:
 asciinema:
   url: https://asciinema.org/~{username}
   timeout: 20
-  ua_profile: asciinema_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="profile-page"
@@ -419,7 +419,7 @@ asciinema:
 atcoder:
   url: https://atcoder.jp/users/{username}
   timeout: 20
-  ua_profile: atcoder_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <h3>Contest Status</h3>
@@ -429,7 +429,7 @@ atcoder:
 au.ru:
   url: https://au.ru/user/{username}/
   timeout: 20
-  ua_profile: au.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Лоты пользователя "
@@ -439,7 +439,7 @@ au.ru:
 audiojungle:
   url: https://audiojungle.net/user/{username}
   timeout: 20
-  ua_profile: audiojungle_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s profile on AudioJungle
@@ -449,7 +449,7 @@ audiojungle:
 avid community:
   url: https://community.avid.com/members/{username}/default.aspx
   timeout: 20
-  ua_profile: avid community_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - My Activity
@@ -459,7 +459,7 @@ avid community:
 babepedia:
   url: https://www.babepedia.com/user/{username}
   timeout: 20
-  ua_profile: babepedia_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "'s Page</title>"
@@ -469,7 +469,7 @@ babepedia:
 babypips:
   url: https://forums.babypips.com/u/{username}.json
   timeout: 20
-  ua_profile: babypips_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - user_badges
@@ -479,7 +479,7 @@ babypips:
 bandcamp:
   url: https://bandcamp.com/{username}
   timeout: 20
-  ua_profile: bandcamp_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " collection | Bandcamp</title>"
@@ -489,7 +489,7 @@ bandcamp:
 bandlab:
   url: https://www.bandlab.com/api/v1.3/users/{username}
   timeout: 20
-  ua_profile: bandlab_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - about
@@ -499,7 +499,7 @@ bandlab:
 bblog_ru:
   url: https://www.babyblog.ru/user/{username}
   timeout: 20
-  ua_profile: bblog_ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ) — дневник на Babyblog.ru
@@ -509,7 +509,7 @@ bblog_ru:
 bdsmlr:
   url: https://{username}.bdsmlr.com
   timeout: 20
-  ua_profile: bdsmlr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - login
@@ -519,7 +519,7 @@ bdsmlr:
 bdsmsingles:
   url: https://www.bdsmsingles.com/members/{username}/
   timeout: 20
-  ua_profile: bdsmsingles_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>Profile
@@ -529,7 +529,7 @@ bdsmsingles:
 beacons:
   url: https://beacons.ai/{username}
   timeout: 20
-  ua_profile: beacons_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " - Link in Bio &amp; Creator Tools | Beacons</title>"
@@ -539,7 +539,7 @@ beacons:
 bentbox:
   url: https://bentbox.co/{username}
   timeout: 20
-  ua_profile: bentbox_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <div id="user_bar">
@@ -549,7 +549,7 @@ bentbox:
 bento:
   url: https://bento.me/{username}
   timeout: 20
-  ua_profile: bento_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - href="https://bento.me/explore"
@@ -559,7 +559,7 @@ bento:
 biggerpockets:
   url: https://www.biggerpockets.com/users/{username}
   timeout: 20
-  ua_profile: biggerpockets_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| BiggerPockets</title>"
@@ -569,7 +569,7 @@ biggerpockets:
 bigo live:
   url: https://www.bigo.tv/user/{username}
   timeout: 20
-  ua_profile: bigo live_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userInfo:{nickName
@@ -579,7 +579,7 @@ bigo live:
 bikemap:
   url: https://www.bikemap.net/en/u/{username}/routes/created/
   timeout: 20
-  ua_profile: bikemap_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- 🚲 Bikemap</title>"
@@ -589,7 +589,7 @@ bikemap:
 bimpos:
   url: https://ask.bimpos.com/user/{username}
   timeout: 20
-  ua_profile: bimpos_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "<title>User "
@@ -599,7 +599,7 @@ bimpos:
 bio sites:
   url: https://bio.site/{username}
   timeout: 20
-  ua_profile: bio sites_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - section":{"handles
@@ -609,7 +609,7 @@ bio sites:
 biolink:
   url: https://bio.link/{username}
   timeout: 20
-  ua_profile: biolink_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile:username
@@ -619,7 +619,7 @@ biolink:
 bitbucket:
   url: https://bitbucket.org/!api/2.0/repositories/{username}?page=1&pagelen=25&sort=-updated_on&q=&fields=-values.owner%2C-values.workspace
   timeout: 20
-  ua_profile: bitbucket_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - full_name
@@ -629,7 +629,7 @@ bitbucket:
 bitchute:
   url: https://api.bitchute.com/api/beta/channel
   timeout: 20
-  ua_profile: bitchute_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"channel_id":'
@@ -639,7 +639,7 @@ bitchute:
 blogger:
   url: https://www.blogger.com/profile/{username}
   timeout: 20
-  ua_profile: blogger_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - shadow-light user-stats
@@ -649,7 +649,7 @@ blogger:
 blogi.pl:
   url: https://www.blogi.pl/osoba,{username}.html
   timeout: 20
-  ua_profile: blogi.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Informacje ogólne
@@ -659,7 +659,7 @@ blogi.pl:
 blogmarks:
   url: http://blogmarks.net/user/{username}
   timeout: 20
-  ua_profile: blogmarks_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="mark"
@@ -668,7 +668,7 @@ blogmarks:
 blogspot:
   url: http://{username}.blogspot.com
   timeout: 20
-  ua_profile: blogspot_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Blogger Template Style
@@ -678,7 +678,7 @@ blogspot:
 bluesky 1:
   url: https://bsky.app/profile/{username}
   timeout: 20
-  ua_profile: bluesky 1_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - on Bluesky
@@ -688,7 +688,7 @@ bluesky 1:
 bluesky 2:
   url: https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor={username}.bsky.social
   timeout: 20
-  ua_profile: bluesky 2_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"handle":"'
@@ -698,7 +698,7 @@ bluesky 2:
 boardgamegeek:
   url: https://api.geekdo.com/api/accounts/validate/username?username={username}
   timeout: 20
-  ua_profile: boardgamegeek_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"message":"Sorry, this username is already taken."'
@@ -708,7 +708,7 @@ boardgamegeek:
 bodybuilding.com:
   url: http://api.bodybuilding.com/api-proxy/bbc/get?slug={username}
   timeout: 20
-  ua_profile: bodybuilding.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - username
@@ -718,7 +718,7 @@ bodybuilding.com:
 bonga_cams:
   url: https://pt.bongacams.com/{username}
   timeout: 20
-  ua_profile: bonga_cams_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Chat público ao vivo de
@@ -728,7 +728,7 @@ bonga_cams:
 bookcrossing:
   url: https://www.bookcrossing.com/mybookshelf/{username}
   timeout: 20
-  ua_profile: bookcrossing_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Recent Book Activity
@@ -738,7 +738,7 @@ bookcrossing:
 booknode:
   url: https://booknode.com/profil/{username}
   timeout: 20
-  ua_profile: booknode_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>Profil de
@@ -748,7 +748,7 @@ booknode:
 boosty:
   url: https://api.boosty.to/v1/blog/{username}
   timeout: 20
-  ua_profile: boosty_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -758,7 +758,7 @@ boosty:
 booth:
   url: https://{username}.booth.pm/
   timeout: 20
-  ua_profile: booth_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- BOOTH</title>"
@@ -768,7 +768,7 @@ booth:
 brickset:
   url: https://brickset.com/profile/{username}
   timeout: 20
-  ua_profile: brickset_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Member since:</dt>
@@ -778,7 +778,7 @@ brickset:
 bugcrowd:
   url: https://bugcrowd.com/{username}/profile_widgets
   timeout: 20
-  ua_profile: bugcrowd_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"widgets":'
@@ -788,7 +788,7 @@ bugcrowd:
 bunpro:
   url: https://community.bunpro.jp/u/{username}.json
   timeout: 20
-  ua_profile: bunpro_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - username
@@ -798,7 +798,7 @@ bunpro:
 buy me a coffee:
   url: https://app.buymeacoffee.com/api/v1/check_availability
   timeout: 20
-  ua_profile: buy me a coffee_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"available":false'
@@ -808,7 +808,7 @@ buy me a coffee:
 buzzfeed:
   url: https://www.buzzfeed.com/{username}
   timeout: 20
-  ua_profile: buzzfeed_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " on BuzzFeed</title><meta"
@@ -818,7 +818,7 @@ buzzfeed:
 cafecito:
   url: https://cafecito.app/{username}
   timeout: 20
-  ua_profile: cafecito_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " | Cafecito</title>"
@@ -829,7 +829,7 @@ cafecito:
 calendy:
   url: https://calendly.com/{username}
   timeout: 20
-  ua_profile: calendy_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - og:author
@@ -839,7 +839,7 @@ calendy:
 cameo:
   url: https://www.cameo.com/{username}
   timeout: 20
-  ua_profile: cameo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - aggregateRating
@@ -848,7 +848,7 @@ cameo:
 carbonmade:
   url: https://{username}.carbonmade.com/
   timeout: 20
-  ua_profile: carbonmade_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s online portfolio
@@ -857,8 +857,8 @@ carbonmade:
     - site not found
 career.habr:
   url: https://career.habr.com/{username}
-  timeout: 5
-  ua_profile: career.habr_android
+  timeout: 20
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - — Хабр Карьера</title>
@@ -868,7 +868,7 @@ career.habr:
 carrd.co:
   url: https://{username}.carrd.co
   timeout: 20
-  ua_profile: carrd.co_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ( Made with Carrd )
@@ -878,7 +878,7 @@ carrd.co:
 castingcallclub:
   url: https://www.castingcall.club/{username}
   timeout: 20
-  ua_profile: castingcallclub_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Casting Call Club"
@@ -889,7 +889,7 @@ castingcallclub:
 cd-action:
   url: https://cdaction.pl/uzytkownicy/{username}
   timeout: 20
-  ua_profile: cd-action_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Lista gier:"
@@ -899,7 +899,7 @@ cd-action:
 cda.pl:
   url: https://www.cda.pl/{username}
   timeout: 20
-  ua_profile: cda.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Foldery
@@ -909,7 +909,7 @@ cda.pl:
 cent:
   url: https://beta.cent.co/data/user/profile?userHandles={username}
   timeout: 20
-  ua_profile: cent_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -919,7 +919,7 @@ cent:
 cfx.re:
   url: https://forum.cfx.re/u/{username}.json
   timeout: 20
-  ua_profile: cfx.re_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - created_at
@@ -929,7 +929,7 @@ cfx.re:
 championat:
   url: https://www.championat.com/user/{username}/
   timeout: 20
-  ua_profile: championat_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Личный профил
@@ -939,7 +939,7 @@ championat:
 chamsko:
   url: https://www.chamsko.pl/profil/{username}
   timeout: 20
-  ua_profile: chamsko_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - W serwisie od
@@ -949,7 +949,7 @@ chamsko:
 chatango.com:
   url: https://{username}.chatango.com
   timeout: 20
-  ua_profile: chatango.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>Chatango!
@@ -959,7 +959,7 @@ chatango.com:
 chaturbate:
   url: https://chaturbate.com/{username}/
   timeout: 20
-  ua_profile: chaturbate_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "'s Bio and Free Webcam"
@@ -969,7 +969,7 @@ chaturbate:
 cheezburger:
   url: https://profile.cheezburger.com/{username}
   timeout: 20
-  ua_profile: cheezburger_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile-header
@@ -987,7 +987,7 @@ chess_com:
 choko.link:
   url: https://choko.link/api/auth/check
   timeout: 20
-  ua_profile: choko.link_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"result":false'
@@ -997,7 +997,7 @@ choko.link:
 chomikuj.pl:
   url: https://chomikuj.pl/{username}/
   timeout: 20
-  ua_profile: chomikuj.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Foldery
@@ -1007,7 +1007,7 @@ chomikuj.pl:
 chyoa:
   url: https://chyoa.com/user/{username}
   timeout: 20
-  ua_profile: chyoa_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - When I'm not reading erotica I like to read
@@ -1017,7 +1017,7 @@ chyoa:
 cloudflare:
   url: https://community.cloudflare.com/u/{username}/card.json
   timeout: 20
-  ua_profile: cloudflare_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - user_avatar
@@ -1027,7 +1027,7 @@ cloudflare:
 clubhouse:
   url: https://www.clubhouse.com/@{username}
   timeout: 20
-  ua_profile: clubhouse_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"user":'
@@ -1037,7 +1037,7 @@ clubhouse:
 cnet:
   url: https://www.cnet.com/profiles/{username}/
   timeout: 20
-  ua_profile: cnet_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Member Since:"
@@ -1047,7 +1047,7 @@ cnet:
 coda:
   url: https://coda.io/@{username}/
   timeout: 20
-  ua_profile: coda_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Coda Profile</title>"
@@ -1057,7 +1057,7 @@ coda:
 code project:
   url: https://www.codeproject.com/Members/{username}
   timeout: 20
-  ua_profile: code project_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Member since
@@ -1067,7 +1067,7 @@ code project:
 codeberg:
   url: https://codeberg.org/{username}
   timeout: 20
-  ua_profile: codeberg_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Joined on
@@ -1078,7 +1078,7 @@ codeberg:
 codechef:
   url: https://www.codechef.com/users/{username}
   timeout: 20
-  ua_profile: codechef_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user-profile-container"
@@ -1087,7 +1087,7 @@ codechef:
 codeforces:
   url: https://codeforces.com/api/user.info?handles={username}
   timeout: 20
-  ua_profile: codeforces_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"status":"OK"'
@@ -1097,7 +1097,7 @@ codeforces:
 codementor:
   url: https://www.codementor.io/@{username}
   timeout: 20
-  ua_profile: codementor_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ABOUT ME
@@ -1107,7 +1107,7 @@ codementor:
 codepen:
   url: https://codepen.io/{username}
   timeout: 20
-  ua_profile: codepen_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - property="og:url"
@@ -1117,7 +1117,7 @@ codepen:
 coderwall:
   url: https://coderwall.com/{username}/
   timeout: 20
-  ua_profile: coderwall_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s profile |
@@ -1127,7 +1127,7 @@ coderwall:
 codewars:
   url: https://www.codewars.com/users/{username}
   timeout: 20
-  ua_profile: codewars_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Codewars"
@@ -1137,7 +1137,7 @@ codewars:
 colourlovers:
   url: https://www.colourlovers.com/ajax/check-username-availability
   timeout: 20
-  ua_profile: colourlovers_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"_status":"unavailable"'
@@ -1147,7 +1147,7 @@ colourlovers:
 community adobe:
   url: https://community.adobe.com/t5/forums/searchpage/tab/user?q={username}
   timeout: 20
-  ua_profile: community adobe_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - UserSearchItemContainer
@@ -1157,7 +1157,7 @@ community adobe:
 contactos.sex:
   url: https://www.contactossex.com/profile/{username}
   timeout: 20
-  ua_profile: contactos.sex_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Información Personal
@@ -1167,7 +1167,7 @@ contactos.sex:
 coroflot:
   url: https://www.coroflot.com/{username}
   timeout: 20
-  ua_profile: coroflot_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - portfolio
@@ -1177,7 +1177,7 @@ coroflot:
 coub:
   url: https://coub.com/api/v2/channels/{username}
   timeout: 20
-  ua_profile: coub_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"user_id":'
@@ -1187,7 +1187,7 @@ coub:
 cowboys4angels:
   url: https://cowboys4angels.com/cowboy/{username}/
   timeout: 20
-  ua_profile: cowboys4angels_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " - Cowboys 4 Angels</title>"
@@ -1197,7 +1197,7 @@ cowboys4angels:
 cracked:
   url: https://www.cracked.com/members/{username}
   timeout: 20
-  ua_profile: cracked_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Member Since
@@ -1206,7 +1206,7 @@ cracked:
 cracked_io:
   url: https://cracked.io/{username}
   timeout: 20
-  ua_profile: cracked_io_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Cracked.io - Profile of
@@ -1216,7 +1216,7 @@ cracked_io:
 crevado:
   url: https://{username}.crevado.com/
   timeout: 20
-  ua_profile: crevado_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Portfolio
@@ -1226,7 +1226,7 @@ crevado:
 cropty:
   url: https://api.cropty.io/v1/auth/{username}
   timeout: 20
-  ua_profile: cropty_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"name":'
@@ -1236,7 +1236,7 @@ cropty:
 crowdin:
   url: https://crowdin.com/profile/{username}
   timeout: 20
-  ua_profile: crowdin_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - id="profile-page"
@@ -1246,7 +1246,7 @@ crowdin:
 cults3d:
   url: https://cults3d.com/en/users/{username}/creations
   timeout: 20
-  ua_profile: cults3d_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - All the 3D models of
@@ -1256,7 +1256,7 @@ cults3d:
 cytoid:
   url: https://cytoid.io/profile/{username}
   timeout: 20
-  ua_profile: cytoid_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Joined
@@ -1266,7 +1266,7 @@ cytoid:
 daily kos:
   url: https://www.dailykos.com/user/{username}
   timeout: 20
-  ua_profile: daily kos_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - id="userData"
@@ -1276,7 +1276,7 @@ daily kos:
 darudar:
   url: https://darudar.org/users/{username}/
   timeout: 20
-  ua_profile: darudar_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - . Дарудар
@@ -1286,7 +1286,7 @@ darudar:
 dateinasia:
   url: https://www.dateinasia.com/{username}
   timeout: 20
-  ua_profile: dateinasia_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - About me
@@ -1296,7 +1296,7 @@ dateinasia:
 datezone:
   url: https://www.datezone.com/users/{username}/
   timeout: 20
-  ua_profile: datezone_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile_status
@@ -1306,7 +1306,7 @@ datezone:
 dating.ru:
   url: https://dating.ru/{username}/
   timeout: 20
-  ua_profile: dating.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| dating.ru"
@@ -1316,7 +1316,7 @@ dating.ru:
 ddosecrets:
   url: https://search.ddosecrets.com/search?q={username}
   timeout: 20
-  ua_profile: ddosecrets_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - aria-label="Search result pages"
@@ -1326,7 +1326,7 @@ ddosecrets:
 demotywatory:
   url: https://demotywatory.pl/user/{username}
   timeout: 20
-  ua_profile: demotywatory_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Z nami od:"
@@ -1336,7 +1336,7 @@ demotywatory:
 depop:
   url: https://www.depop.com/{username}/
   timeout: 20
-  ua_profile: depop_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Shop - Depop
@@ -1346,7 +1346,7 @@ depop:
 designspriation:
   url: https://www.designspiration.com/{username}/
   timeout: 20
-  ua_profile: designspriation_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - has discovered on Designspiration
@@ -1356,7 +1356,7 @@ designspriation:
 destream:
   url: https://api.destream.net/siteapi/v2/live/details/{username}
   timeout: 20
-  ua_profile: destream_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userName":'
@@ -1366,7 +1366,7 @@ destream:
 destructoid:
   url: https://www.destructoid.com/?name={username}
   timeout: 20
-  ua_profile: destructoid_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Follow
@@ -1386,7 +1386,7 @@ dev_to:
 deviantart:
   url: https://www.deviantart.com/{username}
   timeout: 20
-  ua_profile: deviantart_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
   error_patterns:
@@ -1395,7 +1395,7 @@ deviantart:
 devrant:
   url: https://devrant.com/users/{username}
   timeout: 20
-  ua_profile: devrant_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Joined devRant on
@@ -1405,7 +1405,7 @@ devrant:
 dfgames:
   url: https://www.dfgames.com.br/user/{username}
   timeout: 20
-  ua_profile: dfgames_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Reputa
@@ -1415,7 +1415,7 @@ dfgames:
 diablo:
   url: https://diablo2.io/member/{username}/
   timeout: 20
-  ua_profile: diablo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Viewing profile - "
@@ -1425,7 +1425,7 @@ diablo:
 dibiz:
   url: https://www.dibiz.com/{username}
   timeout: 20
-  ua_profile: dibiz_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Add to contacts</span>
@@ -1435,7 +1435,7 @@ dibiz:
 digitalspy:
   url: https://forums.digitalspy.com/profile/discussions/{username}
   timeout: 20
-  ua_profile: digitalspy_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - About
@@ -1445,7 +1445,7 @@ digitalspy:
 diigo:
   url: https://www.diigo.com/interact_api/load_profile_info?name={username}
   timeout: 20
-  ua_profile: diigo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - regist_at
@@ -1455,7 +1455,7 @@ diigo:
 discogs:
   url: https://api.discogs.com/users/{username}
   timeout: 20
-  ua_profile: discogs_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -1465,7 +1465,7 @@ discogs:
 discord invites:
   url: https://discord.com/api/v9/invites/{username}?with_counts=true&with_expiration=true
   timeout: 20
-  ua_profile: discord invites_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"channel":'
@@ -1475,7 +1475,7 @@ discord invites:
 discord users:
   url: https://discord.com/api/v9/unique-username/username-attempt-unauthed
   timeout: 20
-  ua_profile: discord users_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"taken":true'
@@ -1485,7 +1485,7 @@ discord users:
 discourse:
   url: https://meta.discourse.org/u/{username}/summary.json
   timeout: 20
-  ua_profile: discourse_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - topics
@@ -1495,7 +1495,7 @@ discourse:
 discuss.elastic.co:
   url: https://discuss.elastic.co/u/{username}
   timeout: 20
-  ua_profile: discuss.elastic.co_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>  Profile
@@ -1505,7 +1505,7 @@ discuss.elastic.co:
 disqus:
   url: https://disqus.com/api/3.0/users/details?user=username:{username}&api_key=E8Uh5l5fHZ6gD8U3KycjAIAk46f68Zw7C6eW8WSjZvCLXebZ7p0r1yrYDrLilk2F
   timeout: 20
-  ua_profile: disqus_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"code":0'
@@ -1515,7 +1515,7 @@ disqus:
 dissenter:
   url: https://dissenter.com/user/{username}
   timeout: 20
-  ua_profile: dissenter_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Dissenter | The Comment Section of the Internet
@@ -1525,7 +1525,7 @@ dissenter:
 docker hub (organization):
   url: https://hub.docker.com/v2/orgs/{username}/
   timeout: 20
-  ua_profile: docker hub (organization)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"uuid":'
@@ -1535,7 +1535,7 @@ docker hub (organization):
 docker hub (user):
   url: https://hub.docker.com/v2/users/{username}/
   timeout: 20
-  ua_profile: docker hub (user)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"uuid":'
@@ -1545,7 +1545,7 @@ docker hub (user):
 dojoverse:
   url: https://dojoverse.com/members/{username}/
   timeout: 20
-  ua_profile: dojoverse_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Joined
@@ -1555,7 +1555,7 @@ dojoverse:
 donate.stream:
   url: https://donate.stream/api/v1/streamer.get?path={username}&app=9f4e793cec820015d511dbc77b20c5c1
   timeout: 20
-  ua_profile: donate.stream_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"response":'
@@ -1565,7 +1565,7 @@ donate.stream:
 donatello:
   url: https://donatello.to/{username}
   timeout: 20
-  ua_profile: donatello_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - UserPage.init
@@ -1575,7 +1575,7 @@ donatello:
 donatik:
   url: https://{username}.donatik.io/en
   timeout: 20
-  ua_profile: donatik_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - \"__typename\":\"User\"
@@ -1585,7 +1585,7 @@ donatik:
 donation alerts:
   url: https://www.donationalerts.com/api/v1/user/{username}/donationpagesettings
   timeout: 20
-  ua_profile: donation alerts_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"data":'
@@ -1595,7 +1595,7 @@ donation alerts:
 donatty:
   url: https://api.donatty.com/users/find/{username}
   timeout: 20
-  ua_profile: donatty_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"response":'
@@ -1605,7 +1605,7 @@ donatty:
 dot.cards:
   url: https://dot.cards/{username}
   timeout: 20
-  ua_profile: dot.cards_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'status": "success'
@@ -1615,7 +1615,7 @@ dot.cards:
 dota2.ru:
   url: https://dota2.ru/forum/search/?type=user&keywords={username}&sort_by=username
   timeout: 20
-  ua_profile: dota2.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="forum-section__item forum-section__item--first"
@@ -1625,7 +1625,7 @@ dota2.ru:
 dotafire:
   url: https://www.dotafire.com/ajax/searchSite?text={username}&search=members
   timeout: 20
-  ua_profile: dotafire_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - href="/profile/
@@ -1635,7 +1635,7 @@ dotafire:
 dou:
   url: https://dou.ua/users/{username}/
   timeout: 20
-  ua_profile: dou_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="page-profile"
@@ -1645,7 +1645,7 @@ dou:
 dribbble:
   url: https://dribbble.com/{username}
   timeout: 20
-  ua_profile: dribbble_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " | Dribbble"
@@ -1655,7 +1655,7 @@ dribbble:
 drive2.ru:
   url: https://www.drive2.ru/users/{username}/
   timeout: 20
-  ua_profile: drive2.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - itemprop="name"
@@ -1665,7 +1665,7 @@ drive2.ru:
 droners:
   url: https://droners.io/accounts/{username}/
   timeout: 20
-  ua_profile: droners_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Professional Drone Pilot"
@@ -1676,7 +1676,7 @@ droners:
 duolingo:
   url: https://www.duolingo.com/2017-06-30/users?username={username}&_=1628308619574
   timeout: 20
-  ua_profile: duolingo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - joinedClassroomIds
@@ -1686,7 +1686,7 @@ duolingo:
 easyen:
   url: https://easyen.ru/index/8-0-{username}
   timeout: 20
-  ua_profile: easyen_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - День рождения
@@ -1696,7 +1696,7 @@ easyen:
 ebay:
   url: https://www.ebay.com/usr/{username}
   timeout: 20
-  ua_profile: ebay_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - on eBay</title>
@@ -1706,7 +1706,7 @@ ebay:
 ebay_stores:
   url: https://www.ebay.com/str/{username}
   timeout: 20
-  ua_profile: ebay_stores_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| eBay Stores</title>"
@@ -1716,7 +1716,7 @@ ebay_stores:
 electrobel:
   url: https://be.electrobel.org/register.ajax
   timeout: 20
-  ua_profile: electrobel_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"html":"Username exists<br\/>Please choose another"'
@@ -1726,7 +1726,7 @@ electrobel:
 engadget:
   url: https://www.engadget.com/about/editors/{username}/
   timeout: 20
-  ua_profile: engadget_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"displayName"'
@@ -1736,7 +1736,7 @@ engadget:
 eporner:
   url: https://www.eporner.com/xhr/check/
   timeout: 20
-  ua_profile: eporner_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"msg_body":"This login already exists. Choose another one"'
@@ -1746,7 +1746,7 @@ eporner:
 etoro:
   url: https://www.etoro.com/api/logininfo/v1.1/users/{username}
   timeout: 20
-  ua_profile: etoro_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"gcid":'
@@ -1756,7 +1756,7 @@ etoro:
 etsy:
   url: https://www.etsy.com/people/{username}
   timeout: 20
-  ua_profile: etsy_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " favorite items - Etsy</title>"
@@ -1766,7 +1766,7 @@ etsy:
 evolution cms:
   url: https://community.evocms.ru/users/?search={username}
   timeout: 20
-  ua_profile: evolution cms_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - id="user-search"
@@ -1775,7 +1775,7 @@ evolution cms:
 expressional.social (mastodon instance):
   url: https://expressional.social/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: expressional.social (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -1785,7 +1785,7 @@ expressional.social (mastodon instance):
 eyeem:
   url: https://www.eyeem.com/u/{username}
   timeout: 20
-  ua_profile: eyeem_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Marketplace</title>
@@ -1795,7 +1795,7 @@ eyeem:
 f3:
   url: https://f3.cool/{username}
   timeout: 20
-  ua_profile: f3_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>@
@@ -1805,7 +1805,7 @@ f3:
 fabswingers:
   url: https://www.fabswingers.com/profile/{username}
   timeout: 20
-  ua_profile: fabswingers_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - View Profile
@@ -1824,7 +1824,7 @@ facebook:
 faceit:
   url: https://www.faceit.com/api/users/v1/nicknames/{username}
   timeout: 20
-  ua_profile: faceit_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"result":"OK"'
@@ -1834,7 +1834,7 @@ faceit:
 faktopedia:
   url: https://faktopedia.pl/user/{username}
   timeout: 20
-  ua_profile: faktopedia_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Zamieszcza fakty od:"
@@ -1844,7 +1844,7 @@ faktopedia:
 fancentro:
   url: https://fancentro.com/api/profile.get?profileAlias={username}&limit=1
   timeout: 20
-  ua_profile: fancentro_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"status":true'
@@ -1854,7 +1854,7 @@ fancentro:
 fandom:
   url: https://www.fandom.com/u/{username}
   timeout: 20
-  ua_profile: fandom_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Profile | Fandom"
@@ -1864,7 +1864,7 @@ fandom:
 fanpop:
   url: https://www.fanpop.com/fans/{username}
   timeout: 20
-  ua_profile: fanpop_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Fanpopping since
@@ -1873,7 +1873,7 @@ fanpop:
 fansly:
   url: https://apiv2.fansly.com/api/v1/account?usernames={username}
   timeout: 20
-  ua_profile: fansly_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -1883,7 +1883,7 @@ fansly:
 fark:
   url: https://www.fark.com/users/{username}
   timeout: 20
-  ua_profile: fark_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Fark account number
@@ -1893,7 +1893,7 @@ fark:
 fatsecret:
   url: https://www.fatsecret.com/member/{username}
   timeout: 20
-  ua_profile: fatsecret_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Member</title>"
@@ -1903,7 +1903,7 @@ fatsecret:
 federated.press (mastodon instance):
   url: https://federated.press/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: federated.press (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -1913,7 +1913,7 @@ federated.press (mastodon instance):
 figma:
   url: https://www.figma.com/api/profile/handle/{username}
   timeout: 20
-  ua_profile: figma_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"status":200'
@@ -1923,7 +1923,7 @@ figma:
 filmot channel search:
   url: https://filmot.com/channelsearch/{username}
   timeout: 20
-  ua_profile: filmot channel search_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Subscribers
@@ -1933,7 +1933,7 @@ filmot channel search:
 filmot unlisted videos:
   url: https://filmot.com/unlistedSearch?channelQuery={username}&sortField=uploaddate&sortOrder=desc&
   timeout: 20
-  ua_profile: filmot unlisted videos_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - clips found
@@ -1943,7 +1943,7 @@ filmot unlisted videos:
 filmweb:
   url: https://www.filmweb.pl/user/{username}
   timeout: 20
-  ua_profile: filmweb_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profil w Filmweb</title>
@@ -1953,7 +1953,7 @@ filmweb:
 fine_art_america:
   url: https://fineartamerica.com/profiles/{username}
   timeout: 20
-  ua_profile: fine_art_america_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Shop for artwork by
@@ -1963,7 +1963,7 @@ fine_art_america:
 fiverr:
   url: https://www.fiverr.com/validate_username
   timeout: 20
-  ua_profile: fiverr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "201"
     - '"errorKeys":[["username","user_taken"]]'
@@ -1973,7 +1973,7 @@ fiverr:
 fl.ru:
   url: https://www.fl.ru/users/{username}/portfolio/
   timeout: 20
-  ua_profile: fl.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="page-profile"
@@ -1983,7 +1983,7 @@ fl.ru:
 flickr:
   url: https://www.flickr.com/photos/{username}/
   timeout: 20
-  ua_profile: flickr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Flickr"
@@ -1992,7 +1992,7 @@ flickr:
 flightradar24:
   url: https://my.flightradar24.com/{username}/
   timeout: 20
-  ua_profile: flightradar24_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="profile-card" data-profile-user=
@@ -2002,7 +2002,7 @@ flightradar24:
 flipboard:
   url: https://flipboard.com/@{username}
   timeout: 20
-  ua_profile: flipboard_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ) on Flipboard
@@ -2012,7 +2012,7 @@ flipboard:
 flowcode:
   url: https://www.flowcode.com/page/{username}
   timeout: 20
-  ua_profile: flowcode_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ;s Flowpage
@@ -2022,7 +2022,7 @@ flowcode:
 fodors forum:
   url: https://www.fodors.com/community/profile/{username}/forum-activity
   timeout: 20
-  ua_profile: fodors forum_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - User Profile | Fodor’s Travel</title>
@@ -2032,7 +2032,7 @@ fodors forum:
 folkd:
   url: https://www.folkd.com/?app=core&module=system&controller=ajax&do=usernameExists&input={username}
   timeout: 20
-  ua_profile: folkd_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"message":"That display name is in use by another member."'
@@ -2051,7 +2051,7 @@ fortnite_tracker:
 forumprawne.org:
   url: https://forumprawne.org/members/{username}.html
   timeout: 20
-  ua_profile: forumprawne.org_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Wiadomość
@@ -2060,7 +2060,7 @@ forumprawne.org:
 fosstodon.org (mastodon instance):
   url: https://fosstodon.org/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: fosstodon.org (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -2070,7 +2070,7 @@ fosstodon.org (mastodon instance):
 fotka:
   url: https://api.fotka.com/v2/user/dataStatic?login={username}
   timeout: 20
-  ua_profile: fotka_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profil
@@ -2080,7 +2080,7 @@ fotka:
 fotolog archived profile:
   url: https://archive.org/wayback/available?url=https://www.fotolog.com/{username}
   timeout: 20
-  ua_profile: fotolog archived profile_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"archived_snapshots": {"closest"'
@@ -2090,7 +2090,7 @@ fotolog archived profile:
 foursquare:
   url: https://foursquare.com/{username}
   timeout: 20
-  ua_profile: foursquare_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="userProfile2Page"
@@ -2099,7 +2099,7 @@ foursquare:
 freecodecamp:
   url: https://api.freecodecamp.org/users/get-public-profile?username={username}
   timeout: 20
-  ua_profile: freecodecamp_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"user":'
@@ -2109,7 +2109,7 @@ freecodecamp:
 freelance.ru:
   url: https://freelance.ru/{username}
   timeout: 20
-  ua_profile: freelance.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class=" user-top-container user-portfolio"
@@ -2119,7 +2119,7 @@ freelance.ru:
 freelance.ua:
   url: https://freelance.ua/user/{username}/
   timeout: 20
-  ua_profile: freelance.ua_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - p-profile-avatar
@@ -2129,7 +2129,7 @@ freelance.ua:
 freelancehunt employer:
   url: https://freelancehunt.com/en/employer/{username}.html
   timeout: 20
-  ua_profile: freelancehunt employer_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"@id":"https://freelancehunt.com/en/employers"'
@@ -2139,7 +2139,7 @@ freelancehunt employer:
 freelancehunt freelancer:
   url: https://freelancehunt.com/en/freelancer/{username}.html
   timeout: 20
-  ua_profile: freelancehunt freelancer_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"@id":"https://freelancehunt.com/en/freelancers"'
@@ -2149,7 +2149,7 @@ freelancehunt freelancer:
 freelancer:
   url: https://www.freelancer.com/api/users/0.1/users?usernames%5B%5D={username}&compact=true
   timeout: 20
-  ua_profile: freelancer_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"users":{"'
@@ -2159,7 +2159,7 @@ freelancer:
 freesound:
   url: https://freesound.org/people/{username}/section/stats/?ajax=1
   timeout: 20
-  ua_profile: freesound_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - forum posts
@@ -2169,7 +2169,7 @@ freesound:
 freesteamkeys:
   url: https://www.freesteamkeys.com/members/{username}/
   timeout: 20
-  ua_profile: freesteamkeys_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - item-header-avatar
@@ -2179,7 +2179,7 @@ freesteamkeys:
 friendfinder:
   url: https://friendfinder.com/profile/{username}
   timeout: 20
-  ua_profile: friendfinder_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Last Visit:"
@@ -2189,7 +2189,7 @@ friendfinder:
 friendfinder-x:
   url: https://www.friendfinder-x.com/profile/{username}
   timeout: 20
-  ua_profile: friendfinder-x_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "'s Dating Profile on FriendFinder-x"
@@ -2199,7 +2199,7 @@ friendfinder-x:
 fur affinity:
   url: https://www.furaffinity.net/user/{username}/
   timeout: 20
-  ua_profile: fur affinity_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <userpage-nav-header>
@@ -2209,7 +2209,7 @@ fur affinity:
 gab:
   url: https://gab.com/api/v1/account_by_username/{username}
   timeout: 20
-  ua_profile: gab_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -2219,7 +2219,7 @@ gab:
 game jolt:
   url: https://gamejolt.com/site-api/web/profile/@{username}/
   timeout: 20
-  ua_profile: game jolt_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - created_on
@@ -2229,7 +2229,7 @@ game jolt:
 game_debate:
   url: https://www.game-debate.com/profile/{username}
   timeout: 20
-  ua_profile: game_debate_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| , , GB pc game performance"
@@ -2239,7 +2239,7 @@ game_debate:
 gamer dvr:
   url: https://gamerdvr.com/gamer/{username}
   timeout: 20
-  ua_profile: gamer dvr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="gamerpic"
@@ -2249,7 +2249,7 @@ gamer dvr:
 gamespot:
   url: https://www.gamespot.com/profile/{username}/summary/activity/?ajax
   timeout: 20
-  ua_profile: gamespot_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"success":true'
@@ -2259,7 +2259,7 @@ gamespot:
 garmin connect:
   url: https://connect.garmin.com/modern/profile/{username}
   timeout: 20
-  ua_profile: garmin connect_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - window.ERROR_VIEW = null
@@ -2269,7 +2269,7 @@ garmin connect:
 gdbrowser:
   url: https://gdbrowser.com/api/profile/{username}
   timeout: 20
-  ua_profile: gdbrowser_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"accountID":'
@@ -2279,7 +2279,7 @@ gdbrowser:
 geeksforgeeks:
   url: https://authapi.geeksforgeeks.org/api-get/user-profile-info/?handle={username}
   timeout: 20
-  ua_profile: geeksforgeeks_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"message":"data retrieved successfully"'
@@ -2289,7 +2289,7 @@ geeksforgeeks:
 genius (artists):
   url: https://genius.com/artists/{username}
   timeout: 20
-  ua_profile: genius (artists)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="profile_header"
@@ -2299,7 +2299,7 @@ genius (artists):
 genius (users):
   url: https://genius.com/{username}
   timeout: 20
-  ua_profile: genius (users)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="profile_header"
@@ -2309,7 +2309,7 @@ genius (users):
 geocaching:
   url: https://www.geocaching.com/p/?u={username}
   timeout: 20
-  ua_profile: geocaching_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="hax-profile"
@@ -2319,7 +2319,7 @@ geocaching:
 getmonero:
   url: https://forum.getmonero.org/user/{username}
   timeout: 20
-  ua_profile: getmonero_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Monero | User
@@ -2329,7 +2329,7 @@ getmonero:
 gettr:
   url: https://gettr.com/api/s/uinf/{username}
   timeout: 20
-  ua_profile: gettr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"rc":"OK"'
@@ -2339,7 +2339,7 @@ gettr:
 gigapan:
   url: https://www.gigapan.com/profiles/{username}
   timeout: 20
-  ua_profile: gigapan_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - width="100"
@@ -2349,7 +2349,7 @@ gigapan:
 giphy (channel):
   url: https://giphy.com/channel/{username}
   timeout: 20
-  ua_profile: giphy (channel)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - \"user_id\"
@@ -2359,7 +2359,7 @@ giphy (channel):
 gitea:
   url: https://gitea.com/api/v1/users/{username}
   timeout: 20
-  ua_profile: gitea_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -2369,7 +2369,7 @@ gitea:
 gitee:
   url: https://gitee.com/{username}
   timeout: 20
-  ua_profile: gitee_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="ui container user_page"
@@ -2379,7 +2379,7 @@ gitee:
 github:
   url: https://api.github.com/users/{username}
   timeout: 20
-  ua_profile: github_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -2389,7 +2389,7 @@ github:
 github gists:
   url: https://api.github.com/users/{username}/gists
   timeout: 20
-  ua_profile: github gists_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -2399,7 +2399,7 @@ github gists:
 gitlab:
   url: https://gitlab.com/api/v4/users?username={username}
   timeout: 20
-  ua_profile: gitlab_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -2409,7 +2409,7 @@ gitlab:
 gloria.tv:
   url: https://gloria.tv/{username}
   timeout: 20
-  ua_profile: gloria.tv_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Last online
@@ -2419,7 +2419,7 @@ gloria.tv:
 gnome (gitlab):
   url: https://gitlab.gnome.org/api/v4/users?username={username}
   timeout: 20
-  ua_profile: gnome (gitlab)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -2429,7 +2429,7 @@ gnome (gitlab):
 gnome (shell extensions):
   url: https://extensions.gnome.org/accounts/profile/{username}
   timeout: 20
-  ua_profile: gnome (shell extensions)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user-details"
@@ -2448,7 +2448,7 @@ gog:
 goodgame_russia:
   url: https://goodgame.ru/channel/{username}/
   timeout: 20
-  ua_profile: goodgame_russia_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - channel_id
@@ -2458,7 +2458,7 @@ goodgame_russia:
 gpodder.net:
   url: https://gpodder.net/user/{username}/
   timeout: 20
-  ua_profile: gpodder.net_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - mdash; gpodder.net
@@ -2468,7 +2468,7 @@ gpodder.net:
 grandprof:
   url: https://grandprof.org/communaute/{username}
   timeout: 20
-  ua_profile: grandprof_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Profile
@@ -2478,7 +2478,7 @@ grandprof:
 graphics.social (mastodon instance):
   url: https://graphics.social/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: graphics.social (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -2488,7 +2488,7 @@ graphics.social (mastodon instance):
 gravatar:
   url: https://en.gravatar.com/{username}.json
   timeout: 20
-  ua_profile: gravatar_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - entry
@@ -2498,7 +2498,7 @@ gravatar:
 greasy fork:
   url: https://greasyfork.org/en/users?q={username}
   timeout: 20
-  ua_profile: greasy fork_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user-list"
@@ -2508,7 +2508,7 @@ greasy fork:
 gtainside.com:
   url: https://www.gtainside.com/user/{username}
   timeout: 20
-  ua_profile: gtainside.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userpage_user
@@ -2518,7 +2518,7 @@ gtainside.com:
 gumroad:
   url: https://{username}.gumroad.com/
   timeout: 20
-  ua_profile: gumroad_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s profile picture
@@ -2528,7 +2528,7 @@ gumroad:
 habbo.com:
   url: " https://www.habbo.com/api/public/users?name={username}"
   timeout: 20
-  ua_profile: habbo.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'uniqueId":'
@@ -2538,7 +2538,7 @@ habbo.com:
 habbo.com.br:
   url: https://www.habbo.com.br/api/public/users?name={username}
   timeout: 20
-  ua_profile: habbo.com.br_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'uniqueId":'
@@ -2548,7 +2548,7 @@ habbo.com.br:
 habbo.com.tr:
   url: https://www.habbo.com.tr/api/public/users?name={username}
   timeout: 20
-  ua_profile: habbo.com.tr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'uniqueId":'
@@ -2558,7 +2558,7 @@ habbo.com.tr:
 habbo.de:
   url: https://www.habbo.de/api/public/users?name={username}
   timeout: 20
-  ua_profile: habbo.de_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'uniqueId":'
@@ -2568,7 +2568,7 @@ habbo.de:
 habbo.es:
   url: " https://www.habbo.es/api/public/users?name={username}"
   timeout: 20
-  ua_profile: habbo.es_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'uniqueId":'
@@ -2578,7 +2578,7 @@ habbo.es:
 habbo.fi:
   url: https://www.habbo.fi/api/public/users?name={username}
   timeout: 20
-  ua_profile: habbo.fi_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'uniqueId":'
@@ -2588,7 +2588,7 @@ habbo.fi:
 habbo.fr:
   url: https://www.habbo.fr/api/public/users?name={username}
   timeout: 20
-  ua_profile: habbo.fr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'uniqueId":'
@@ -2598,7 +2598,7 @@ habbo.fr:
 habbo.it:
   url: https://www.habbo.it/api/public/users?name={username}
   timeout: 20
-  ua_profile: habbo.it_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'uniqueId":'
@@ -2608,7 +2608,7 @@ habbo.it:
 habbo.nl:
   url: https://www.habbo.nl/api/public/users?name={username}
   timeout: 20
-  ua_profile: habbo.nl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'uniqueId":'
@@ -2617,38 +2617,38 @@ habbo.nl:
     - 'error": "not-found'
 habr:
   url: https://habr.com/ru/users/{username}/
-  timeout: 5
-  ua_profile: habr_android
+  timeout: 20
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - tm-page tm-user
   error_patterns:
     - "404"
     - tm-error-message
-habr employer:
+habr_employer:
   url: https://freelance.habr.com/freelancers/{username}/employer
-  timeout: 5
-  ua_profile: habr employer_android
+  timeout: 20
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - user-profile profile-blocks
   error_patterns:
     - "404"
     - icon_user_locked
-habr freelancer:
+habr_freelancer:
   url: https://freelance.habr.com/freelancers/{username}
-  timeout: 5
-  ua_profile: habr freelancer_android
+  timeout: 20
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - user-profile profile-blocks
   error_patterns:
     - "404"
     - icon_user_locked
-habr q&a:
+habr_q&a:
   url: https://qna.habr.com/user/{username}
-  timeout: 5
-  ua_profile: habr q&a_android
+  timeout: 20
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="page-header__info"
@@ -2658,7 +2658,7 @@ habr q&a:
 habtium:
   url: https://habtium.es/{username}
   timeout: 20
-  ua_profile: habtium_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <div class="profile-info
@@ -2668,7 +2668,7 @@ habtium:
 hackaday.io:
   url: https://hackaday.io/{username}
   timeout: 20
-  ua_profile: hackaday.io_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="following-container "
@@ -2678,7 +2678,7 @@ hackaday.io:
 hackadvisor:
   url: https://hackadvisor.io/api/v2/profile/{username}/
   timeout: 20
-  ua_profile: hackadvisor_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -2688,7 +2688,7 @@ hackadvisor:
 hacker news:
   url: https://news.ycombinator.com/user?id={username}
   timeout: 20
-  ua_profile: hacker news_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "created:"
@@ -2698,7 +2698,7 @@ hacker news:
 hackerearth:
   url: https://www.hackerearth.com/@{username}
   timeout: 20
-  ua_profile: hackerearth_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Developer Profile on HackerEarth"
@@ -2708,7 +2708,7 @@ hackerearth:
 hackernoon:
   url: https://hackernoon.com/_next/data/foL6JC7ro2FEEMD-gMKgQ/u/{username}.json
   timeout: 20
-  ua_profile: hackernoon_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"profile"'
@@ -2718,7 +2718,7 @@ hackernoon:
 hackerone:
   url: https://hackerone.com/graphql
   timeout: 20
-  ua_profile: hackerone_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -2728,7 +2728,7 @@ hackerone:
 hackerrank:
   url: https://www.hackerrank.com/rest/contests/master/hackers/{username}/profile
   timeout: 20
-  ua_profile: hackerrank_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"model":'
@@ -2738,7 +2738,7 @@ hackerrank:
 hackrocks:
   url: https://hackrocks.com/api/users/profile
   timeout: 20
-  ua_profile: hackrocks_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -2748,7 +2748,7 @@ hackrocks:
 hackster:
   url: https://www.hackster.io/{username}
   timeout: 20
-  ua_profile: hackster_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - data-hypernova-key="UserProfile"
@@ -2758,7 +2758,7 @@ hackster:
 hamaha:
   url: https://hamaha.net/{username}
   timeout: 20
-  ua_profile: hamaha_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- трейдинг форекс фьючерсы акции фондовый рынок "
@@ -2768,7 +2768,7 @@ hamaha:
 hanime:
   url: https://hanime.tv/channels/{username}
   timeout: 20
-  ua_profile: hanime_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Channel Views
@@ -2778,7 +2778,7 @@ hanime:
 hashnode:
   url: https://gql.hashnode.com/
   timeout: 20
-  ua_profile: hashnode_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -2788,7 +2788,7 @@ hashnode:
 hcommons.social (mastodon instance):
   url: https://hcommons.social/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: hcommons.social (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -2798,7 +2798,7 @@ hcommons.social (mastodon instance):
 heylink:
   url: https://heylink.me/{username}/
   timeout: 20
-  ua_profile: heylink_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - HeyLink.me |
@@ -2808,7 +2808,7 @@ heylink:
 hiberworld:
   url: https://hiberworld.com/user/{username}
   timeout: 20
-  ua_profile: hiberworld_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Member since "
@@ -2818,7 +2818,7 @@ hiberworld:
 hihello:
   url: https://www.hihello.me/author/{username}
   timeout: 20
-  ua_profile: hihello_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "<title>HiHello Blog Author: "
@@ -2828,7 +2828,7 @@ hihello:
 historians.social (mastodon instance):
   url: https://historians.social/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: historians.social (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -2838,7 +2838,7 @@ historians.social (mastodon instance):
 holopin:
   url: https://www.holopin.io/api/auth/username
   timeout: 20
-  ua_profile: holopin_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"available":false'
@@ -2848,7 +2848,7 @@ holopin:
 homedesign3d:
   url: https://en.homedesign3d.net/user/{username}
   timeout: 20
-  ua_profile: homedesign3d_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userspace
@@ -2858,7 +2858,7 @@ homedesign3d:
 hometech.social (mastodon instance):
   url: https://hometech.social/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: hometech.social (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -2868,7 +2868,7 @@ hometech.social (mastodon instance):
 hoo.be:
   url: https://hoo.be/{username}
   timeout: 20
-  ua_profile: hoo.be_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - --profile-name-color
@@ -2878,7 +2878,7 @@ hoo.be:
 hostux.social (mastodon instance):
   url: https://hostux.social/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: hostux.social (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -2888,7 +2888,7 @@ hostux.social (mastodon instance):
 houzz:
   url: https://www.houzz.com/user/{username}
   timeout: 20
-  ua_profile: houzz_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Followers
@@ -2898,7 +2898,7 @@ houzz:
 hubpages:
   url: https://hubpages.com/@{username}
   timeout: 20
-  ua_profile: hubpages_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - name">Followers
@@ -2908,7 +2908,7 @@ hubpages:
 hubski:
   url: https://hubski.com/user/{username}
   timeout: 20
-  ua_profile: hubski_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "'s profile"
@@ -2918,7 +2918,7 @@ hubski:
 hudsonrock:
   url: https://cavalier.hudsonrock.com/api/json/v2/osint-tools/search-by-username?username={username}
   timeout: 20
-  ua_profile: hudsonrock_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - This username is associated with a computer that was infected by an info-stealer
@@ -2928,7 +2928,7 @@ hudsonrock:
 huggingface:
   url: https://huggingface.co/{username}
   timeout: 20
-  ua_profile: huggingface_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - data-target="UserProfile"
@@ -2938,7 +2938,7 @@ huggingface:
 hulkshare:
   url: https://www.hulkshare.com/{username}
   timeout: 20
-  ua_profile: hulkshare_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - id="profile_image"
@@ -2948,7 +2948,7 @@ hulkshare:
 iconfinder:
   url: https://www.iconfinder.com/{username}
   timeout: 20
-  ua_profile: iconfinder_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - data-to-user-id=
@@ -2958,7 +2958,7 @@ iconfinder:
 icq-chat:
   url: https://icq.icqchat.co/members/{username}/
   timeout: 20
-  ua_profile: icq-chat_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Last seen
@@ -2968,7 +2968,7 @@ icq-chat:
 ifttt:
   url: https://ifttt.com/p/{username}
   timeout: 20
-  ua_profile: ifttt_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Joined
@@ -2978,7 +2978,7 @@ ifttt:
 ifunny:
   url: https://ifunny.co/user/{username}
   timeout: 20
-  ua_profile: ifunny_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - subscribers
@@ -2988,7 +2988,7 @@ ifunny:
 igromania:
   url: http://forum.igromania.ru/member.php?username={username}
   timeout: 20
-  ua_profile: igromania_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Форум Игромании - Просмотр профиля:"
@@ -2998,7 +2998,7 @@ igromania:
 ilovegrowingmarijuana:
   url: https://support.ilovegrowingmarijuana.com/u/{username}
   timeout: 20
-  ua_profile: ilovegrowingmarijuana_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "<title>  Profile - "
@@ -3008,7 +3008,7 @@ ilovegrowingmarijuana:
 imagefap:
   url: https://www.imagefap.com/profile/{username}
   timeout: 20
-  ua_profile: imagefap_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Profile
@@ -3018,7 +3018,7 @@ imagefap:
 imageshack:
   url: https://imageshack.com/user/{username}
   timeout: 20
-  ua_profile: imageshack_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Images</title>
@@ -3027,7 +3027,7 @@ imageshack:
 imgsrc.ru:
   url: https://imgsrc.ru/main/user.php?lang=ru&user={username}
   timeout: 20
-  ua_profile: imgsrc.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Присоединился
@@ -3036,7 +3036,7 @@ imgsrc.ru:
 imgur:
   url: https://api.imgur.com/account/v1/accounts/{username}?client_id=546c25a59c58ad7
   timeout: 20
-  ua_profile: imgur_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -3046,7 +3046,7 @@ imgur:
 inaturalist:
   url: https://inaturalist.nz/people/{username}
   timeout: 20
-  ua_profile: inaturalist_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Profile
@@ -3056,7 +3056,7 @@ inaturalist:
 independent academia:
   url: https://independent.academia.edu/{username}
   timeout: 20
-  ua_profile: independent academia_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Academia.edu"
@@ -3066,7 +3066,7 @@ independent academia:
 inkbunny:
   url: https://inkbunny.net/{username}
   timeout: 20
-  ua_profile: inkbunny_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Profile | Inkbunny, the Furry Art Community</title>
@@ -3076,7 +3076,7 @@ inkbunny:
 insanejournal:
   url: https://{username}.insanejournal.com/profile
   timeout: 20
-  ua_profile: insanejournal_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "User:"
@@ -3086,7 +3086,7 @@ insanejournal:
 instagram:
   url: https://www.instagram.com/{username}/
   timeout: 15
-  ua_profile: instagram_android
+  ua_profile: "desktop_chrome"
   # This pattern checks for a JSON object that only appears on valid profiles
   success_patterns:
     - '"is_private":'
@@ -3096,7 +3096,7 @@ instagram:
 instagram (imginn):
   url: https://imginn.com/{username}/
   timeout: 20
-  ua_profile: instagram (imginn)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userinfo
@@ -3106,7 +3106,7 @@ instagram (imginn):
 instagram_archives:
   url: https://archive.org/wayback/available?url=https://instagram.com/{username}/
   timeout: 20
-  ua_profile: instagram_archives_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"archived_snapshots": {"closest"'
@@ -3116,7 +3116,7 @@ instagram_archives:
 instructables:
   url: https://www.instructables.com/json-api/showAuthorExists?screenName={username}
   timeout: 20
-  ua_profile: instructables_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"exists": true'
@@ -3126,7 +3126,7 @@ instructables:
 internet archive user search:
   url: https://archive.org/advancedsearch.php?q={username}&output=json
   timeout: 20
-  ua_profile: internet archive user search_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - backup_location
@@ -3136,7 +3136,7 @@ internet archive user search:
 interpals:
   url: https://www.interpals.net/{username}
   timeout: 20
-  ua_profile: interpals_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Looking for
@@ -3146,7 +3146,7 @@ interpals:
 intigriti:
   url: https://app.intigriti.com/api/user/public/profile/{username}
   timeout: 20
-  ua_profile: intigriti_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userName":'
@@ -3156,7 +3156,7 @@ intigriti:
 issuu:
   url: https://issuu.com/call/signup/v2/check-username/{username}
   timeout: 20
-  ua_profile: issuu_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"status":"unavailable"'
@@ -3166,7 +3166,7 @@ issuu:
 itch.io:
   url: https://itch.io/profile/{username}
   timeout: 20
-  ua_profile: itch.io_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user_data"
@@ -3176,7 +3176,7 @@ itch.io:
 ixbt forum:
   url: https://forum.ixbt.com/users.cgi?id=info:{username}
   timeout: 20
-  ua_profile: ixbt forum_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Информация об участнике:"
@@ -3186,7 +3186,7 @@ ixbt forum:
 japandict:
   url: https://forum.japandict.com/u/{username}
   timeout: 20
-  ua_profile: japandict_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - modern browser
@@ -3196,7 +3196,7 @@ japandict:
 jbzd:
   url: https://jbzd.com.pl/uzytkownik/{username}
   timeout: 20
-  ua_profile: jbzd_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Dzidy użytkownika
@@ -3206,7 +3206,7 @@ jbzd:
 jeja.pl:
   url: https://www.jeja.pl/user,{username}
   timeout: 20
-  ua_profile: jeja.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Profil użytkownika
@@ -3216,7 +3216,7 @@ jeja.pl:
 jeuxvideo:
   url: https://www.jeuxvideo.com/profil/{username}?mode=infos
   timeout: 20
-  ua_profile: jeuxvideo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- jeuxvideo.com"
@@ -3226,7 +3226,7 @@ jeuxvideo:
 joe monster:
   url: https://joemonster.org/bojownik/{username}
   timeout: 20
-  ua_profile: joe monster_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - jest prywatny
@@ -3236,7 +3236,7 @@ joe monster:
 joindota:
   url: https://www.joindota.com/ajax/search
   timeout: 20
-  ua_profile: joindota_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"items":[{'
@@ -3246,7 +3246,7 @@ joindota:
 jsfiddle:
   url: https://jsfiddle.net/user/{username}/
   timeout: 20
-  ua_profile: jsfiddle_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Settings - JSFiddle - Code Playground
@@ -3256,7 +3256,7 @@ jsfiddle:
 justforfans:
   url: https://justfor.fans/{username}
   timeout: 20
-  ua_profile: justforfans_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " @ JustFor.Fans"
@@ -3265,7 +3265,7 @@ justforfans:
 kaggle:
   url: https://www.kaggle.com/{username}
   timeout: 20
-  ua_profile: kaggle_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - property="og:username"
@@ -3275,7 +3275,7 @@ kaggle:
 kashipara:
   url: https://www.kashipara.com/ajax/checkNewUser.php
   timeout: 20
-  ua_profile: kashipara_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"message":"UserName already Exist"'
@@ -3285,7 +3285,7 @@ kashipara:
 keybase:
   url: https://keybase.io/_/api/1.0/user/lookup.json?usernames={username}
   timeout: 20
-  ua_profile: keybase_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -3295,7 +3295,7 @@ keybase:
 kick:
   url: https://kick.com/api/v2/channels/{username}
   timeout: 20
-  ua_profile: kick_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id"'
@@ -3305,7 +3305,7 @@ kick:
 kickstarter:
   url: https://www.kickstarter.com/profile/{username}
   timeout: 20
-  ua_profile: kickstarter_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - projects
@@ -3315,7 +3315,7 @@ kickstarter:
 kik:
   url: https://kik.me/{username}
   timeout: 20
-  ua_profile: kik_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - /thumb.jpg"/>
@@ -3325,7 +3325,7 @@ kik:
 kipin:
   url: https://kipin.app/{username}
   timeout: 20
-  ua_profile: kipin_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - kipin.app/data/photos/resized2/
@@ -3335,7 +3335,7 @@ kipin:
 knowyourmeme:
   url: https://knowyourmeme.com/users/{username}
   timeout: 20
-  ua_profile: knowyourmeme_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Contributions
@@ -3345,7 +3345,7 @@ knowyourmeme:
 ko-fi:
   url: https://ko-fi.com/{username}
   timeout: 20
-  ua_profile: ko-fi_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - id="profile-header"
@@ -3355,7 +3355,7 @@ ko-fi:
 komi:
   url: https://api.komi.io/api/talent/usernames/{username}
   timeout: 20
-  ua_profile: komi_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - accountStatus":"active
@@ -3365,7 +3365,7 @@ komi:
 kongregate:
   url: https://www.kongregate.com/accounts/{username}
   timeout: 20
-  ua_profile: kongregate_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Member Since
@@ -3375,7 +3375,7 @@ kongregate:
 kotburger:
   url: https://kotburger.pl/user/{username}
   timeout: 20
-  ua_profile: kotburger_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Zamieszcza kotburgery od:"
@@ -3385,7 +3385,7 @@ kotburger:
 kwai:
   url: https://www.kwai.com/@{username}
   timeout: 20
-  ua_profile: kwai_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - name="title"
@@ -3395,7 +3395,7 @@ kwai:
 kwejk.pl:
   url: https://kwejk.pl/uzytkownik/{username}#/tablica/
   timeout: 20
-  ua_profile: kwejk.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Kwejki użytkownika
@@ -3405,7 +3405,7 @@ kwejk.pl:
 kwork:
   url: https://kwork.ru/user_kworks/{username}
   timeout: 20
-  ua_profile: kwork_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"success":true'
@@ -3415,7 +3415,7 @@ kwork:
 last.fm:
   url: https://www.last.fm/user/{username}
   timeout: 20
-  ua_profile: last.fm_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="header-info"
@@ -3425,7 +3425,7 @@ last.fm:
 leakix:
   url: https://leakix.net/u/{username}
   timeout: 20
-  ua_profile: leakix_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ">Joined "
@@ -3435,7 +3435,7 @@ leakix:
 learn cw online:
   url: https://lcwo.net/api/user_exists.php
   timeout: 20
-  ua_profile: learn cw online_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"user_exists": 1'
@@ -3445,7 +3445,7 @@ learn cw online:
 leetcode:
   url: https://leetcode.com/graphql/
   timeout: 20
-  ua_profile: leetcode_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -3455,7 +3455,7 @@ leetcode:
 lemon8:
   url: https://www.lemon8-app.com/{username}?region=us
   timeout: 20
-  ua_profile: lemon8_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user-desc-main-info
@@ -3465,7 +3465,7 @@ lemon8:
 letterboxd:
   url: https://letterboxd.com/{username}/
   timeout: 20
-  ua_profile: letterboxd_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ’s profile on Letterboxd
@@ -3475,7 +3475,7 @@ letterboxd:
 levelblue:
   url: https://otx.alienvault.com/otxapi/auth/validate?username={username}
   timeout: 20
-  ua_profile: levelblue_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "400"
     - '"username": ["This username is already taken"]'
@@ -3485,7 +3485,7 @@ levelblue:
 liberapay:
   url: https://liberapay.com/{username}
   timeout: 20
-  ua_profile: liberapay_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="profile-header"
@@ -3495,7 +3495,7 @@ liberapay:
 librarything:
   url: https://www.librarything.com/profile/{username}
   timeout: 20
-  ua_profile: librarything_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <dt>Joined</dt>
@@ -3505,7 +3505,7 @@ librarything:
 libretooth.gr (mastodon instance):
   url: https://libretooth.gr/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: libretooth.gr (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -3524,7 +3524,7 @@ lichess.org:
 line:
   url: https://line.me/R/ti/p/@{username}?from=page
   timeout: 20
-  ua_profile: line_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Add LINE Friends via QR Code
@@ -3534,7 +3534,7 @@ line:
 linux.org.ru:
   url: https://www.linux.org.ru/people/{username}/profile
   timeout: 20
-  ua_profile: linux.org.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Дата регистрации
@@ -3544,7 +3544,7 @@ linux.org.ru:
 livejournal:
   url: https://{username}.livejournal.com
   timeout: 20
-  ua_profile: livejournal_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <link rel="canonical" href="
@@ -3554,7 +3554,7 @@ livejournal:
 livemaster.ru:
   url: https://www.livemaster.ru/{username}
   timeout: 20
-  ua_profile: livemaster.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>Магазин мастера
@@ -3564,7 +3564,7 @@ livemaster.ru:
 lobste.rs:
   url: https://lobste.rs/u/{username}
   timeout: 20
-  ua_profile: lobste.rs_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Joined
@@ -3574,7 +3574,7 @@ lobste.rs:
 lolprofile:
   url: https://lolprofile.net/search/world/{username}-world
   timeout: 20
-  ua_profile: lolprofile_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="content sw">
@@ -3584,7 +3584,7 @@ lolprofile:
 lor.sh (mastodon instance):
   url: https://lor.sh/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: lor.sh (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -3594,7 +3594,7 @@ lor.sh (mastodon instance):
 lowcygier.pl:
   url: https://bazar.lowcygier.pl/user/{username}
   timeout: 20
-  ua_profile: lowcygier.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Zarejestrowany
@@ -3604,7 +3604,7 @@ lowcygier.pl:
 magabook:
   url: https://magabook.com/{username}
   timeout: 20
-  ua_profile: magabook_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Timeline
@@ -3613,7 +3613,7 @@ magabook:
 magix:
   url: https://www.magix.info/us/users/profile/{username}/
   timeout: 20
-  ua_profile: magix_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - About me
@@ -3623,7 +3623,7 @@ magix:
 malpedia actors:
   url: https://malpedia.caad.fkie.fraunhofer.de/actor/{username}
   timeout: 20
-  ua_profile: malpedia actors_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - href="/actors"
@@ -3633,7 +3633,7 @@ malpedia actors:
 mapmytracks:
   url: https://www.mapmytracks.com/{username}
   timeout: 20
-  ua_profile: mapmytracks_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Daily distance this week
@@ -3643,7 +3643,7 @@ mapmytracks:
 mapstodon.space (mastodon instance):
   url: https://mapstodon.space/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: mapstodon.space (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -3653,7 +3653,7 @@ mapstodon.space (mastodon instance):
 maroc_nl:
   url: https://www.maroc.nl/forums/members/{username}.html
   timeout: 20
-  ua_profile: maroc_nl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Bekijk Profiel:"
@@ -3663,7 +3663,7 @@ maroc_nl:
 marshmallow:
   url: https://marshmallow-qa.com/{username}
   timeout: 20
-  ua_profile: marshmallow_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - さんにメッセージをおくる
@@ -3673,7 +3673,7 @@ marshmallow:
 martech:
   url: https://martech.org/author/{username}/
   timeout: 20
-  ua_profile: martech_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - twitter:site
@@ -3683,7 +3683,7 @@ martech:
 massage anywhere:
   url: https://www.massageanywhere.com/profile/{username}
   timeout: 20
-  ua_profile: massage anywhere_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "<title>MassageAnywhere.com Profile for "
@@ -3693,7 +3693,7 @@ massage anywhere:
 masto.ai:
   url: https://masto.ai/@{username}
   timeout: 20
-  ua_profile: masto.ai_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@masto.ai) - Mastodon</title>"
@@ -3703,7 +3703,7 @@ masto.ai:
 masto.nyc (mastodon instance):
   url: https://masto.nyc/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: masto.nyc (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -3713,7 +3713,7 @@ masto.nyc (mastodon instance):
 mastodon api:
   url: https://mastodon.social/api/v2/search?q={username}&limit=1&type=accounts
   timeout: 20
-  ua_profile: mastodon api_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -3723,7 +3723,7 @@ mastodon api:
 mastodon-101010.pl:
   url: https://101010.pl/@{username}
   timeout: 20
-  ua_profile: mastodon-101010.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@101010.pl"
@@ -3733,7 +3733,7 @@ mastodon-101010.pl:
 mastodon-c.im:
   url: https://c.im/@{username}
   timeout: 20
-  ua_profile: mastodon-c.im_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@c.im) - C.IM</title>"
@@ -3743,7 +3743,7 @@ mastodon-c.im:
 mastodon-chaos.social:
   url: https://chaos.social/@{username}
   timeout: 20
-  ua_profile: mastodon-chaos.social_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@chaos.social) - chaos.social</title>"
@@ -3753,7 +3753,7 @@ mastodon-chaos.social:
 mastodon-climatejustice.rocks:
   url: https://climatejustice.rocks/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: mastodon-climatejustice.rocks_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'username":'
@@ -3763,7 +3763,7 @@ mastodon-climatejustice.rocks:
 mastodon-defcon:
   url: https://defcon.social/@{username}
   timeout: 20
-  ua_profile: mastodon-defcon_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- DEF CON Social</title>"
@@ -3773,7 +3773,7 @@ mastodon-defcon:
 mastodon-mastodon:
   url: https://mastodon.social/@{username}
   timeout: 20
-  ua_profile: mastodon-mastodon_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile:username
@@ -3783,7 +3783,7 @@ mastodon-mastodon:
 mastodon-meow.social:
   url: https://meow.social/@{username}
   timeout: 20
-  ua_profile: mastodon-meow.social_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- the mastodon instance for creatures fluffy, scaly and otherwise</title>"
@@ -3793,7 +3793,7 @@ mastodon-meow.social:
 mastodon-mstdn.io:
   url: https://mstdn.io/@{username}
   timeout: 20
-  ua_profile: mastodon-mstdn.io_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@mstdn.io) - Mastodon"
@@ -3803,7 +3803,7 @@ mastodon-mstdn.io:
 mastodon-pol.social:
   url: https://pol.social/@{username}
   timeout: 20
-  ua_profile: mastodon-pol.social_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@pol.social"
@@ -3813,7 +3813,7 @@ mastodon-pol.social:
 mastodon-rigcz.club:
   url: https://rigcz.club/@{username}
   timeout: 20
-  ua_profile: mastodon-rigcz.club_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@rigcz.club"
@@ -3823,7 +3823,7 @@ mastodon-rigcz.club:
 mastodon-social_tchncs:
   url: https://social.tchncs.de/@{username}
   timeout: 20
-  ua_profile: mastodon-social_tchncs_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile:username
@@ -3833,7 +3833,7 @@ mastodon-social_tchncs:
 mastodon-toot.community:
   url: https://toot.community/@{username}
   timeout: 20
-  ua_profile: mastodon-toot.community_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@toot.community) - toot.community</title>"
@@ -3843,7 +3843,7 @@ mastodon-toot.community:
 mastodon.online:
   url: https://mastodon.online/@{username}
   timeout: 20
-  ua_profile: mastodon.online_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@mastodon.online) - Mastodon</title>"
@@ -3853,7 +3853,7 @@ mastodon.online:
 mastodonbooks.net (mastodon instance):
   url: https://mastodonbooks.net/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: mastodonbooks.net (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -3863,7 +3863,7 @@ mastodonbooks.net (mastodon instance):
 mcname (minecraft):
   url: https://mcname.info/en/search?q={username}
   timeout: 20
-  ua_profile: mcname (minecraft)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - card mb-3 text-monospace
@@ -3882,7 +3882,7 @@ minecraft_playerdb:
 medium:
   url: https://medium.com/@{username}/about
   timeout: 20
-  ua_profile: medium_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Medium member since
@@ -3892,7 +3892,7 @@ medium:
 medyczka.pl:
   url: http://medyczka.pl/user/{username}
   timeout: 20
-  ua_profile: medyczka.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Lista uzytkownikow
@@ -3902,7 +3902,7 @@ medyczka.pl:
 meet me:
   url: https://www.meetme.com/{username}
   timeout: 20
-  ua_profile: meet me_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "<title>Meet people like "
@@ -3912,7 +3912,7 @@ meet me:
 metacritic:
   url: https://www.metacritic.com/user/{username}/
   timeout: 20
-  ua_profile: metacritic_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="c-pageProfile-wrapper"
@@ -3922,7 +3922,7 @@ metacritic:
 minds:
   url: https://www.minds.com/api/v3/register/validate?username={username}
   timeout: 20
-  ua_profile: minds_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"valid":false'
@@ -3932,7 +3932,7 @@ minds:
 minecraft list:
   url: https://minecraftlist.com/players/{username}
   timeout: 20
-  ua_profile: minecraft list_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - -->was seen on<!--
@@ -3942,7 +3942,7 @@ minecraft list:
 mintme:
   url: https://www.mintme.com/token/{username}
   timeout: 20
-  ua_profile: mintme_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - token | mintMe
@@ -3952,7 +3952,7 @@ mintme:
 mistrzowie:
   url: https://mistrzowie.org/user/{username}
   timeout: 20
-  ua_profile: mistrzowie_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Profil użytkownika
@@ -3962,7 +3962,7 @@ mistrzowie:
 mix:
   url: https://mix.com/{username}/
   timeout: 20
-  ua_profile: mix_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>@
@@ -3972,7 +3972,7 @@ mix:
 mixcloud:
   url: https://api.mixcloud.com/{username}/
   timeout: 20
-  ua_profile: mixcloud_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -3982,7 +3982,7 @@ mixcloud:
 mixi:
   url: https://mixi.jp/view_community.pl?id={username}
   timeout: 20
-  ua_profile: mixi_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| mixiコミュニティ</title>"
@@ -3992,7 +3992,7 @@ mixi:
 mixlr:
   url: https://api.mixlr.com/users/{username}
   timeout: 20
-  ua_profile: mixlr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -4002,7 +4002,7 @@ mixlr:
 mmorpg:
   url: https://forums.mmorpg.com/profile/{username}
   timeout: 20
-  ua_profile: mmorpg_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - MMORPG.com Forums
@@ -4012,7 +4012,7 @@ mmorpg:
 mobilegta.net:
   url: https://www.mobilegta.net/en/user/{username}
   timeout: 20
-  ua_profile: mobilegta.net_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userpage_user
@@ -4022,7 +4022,7 @@ mobilegta.net:
 mod db:
   url: https://www.moddb.com/html/scripts/autocomplete.php?a=username&q={username}
   timeout: 20
-  ua_profile: mod db_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"available":false'
@@ -4032,7 +4032,7 @@ mod db:
 modx.im:
   url: https://modx.evo.im/profile/{username}/
   timeout: 20
-  ua_profile: modx.im_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="profile"
@@ -4042,7 +4042,7 @@ modx.im:
 monkeytype:
   url: https://api.monkeytype.com/users/{username}/profile
   timeout: 20
-  ua_profile: monkeytype_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"message":"Profile retrieved"'
@@ -4052,7 +4052,7 @@ monkeytype:
 moto trip:
   url: https://moto-trip.com/profil/{username}
   timeout: 20
-  ua_profile: moto trip_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '<h1 class="h2">Profil de '
@@ -4062,7 +4062,7 @@ moto trip:
 motokiller:
   url: https://mklr.pl/user/{username}
   timeout: 20
-  ua_profile: motokiller_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Zamieszcza materiały od:"
@@ -4072,7 +4072,7 @@ motokiller:
 moxfield:
   url: https://api2.moxfield.com/v1/users/{username}
   timeout: 20
-  ua_profile: moxfield_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userName":'
@@ -4082,7 +4082,7 @@ moxfield:
 mssg.me:
   url: https://{username}.mssg.me/
   timeout: 20
-  ua_profile: mssg.me_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - property="og:title"
@@ -4092,7 +4092,7 @@ mssg.me:
 muck rack:
   url: https://muckrack.com/{username}
   timeout: 20
-  ua_profile: muck rack_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - on Muck Rack
@@ -4102,7 +4102,7 @@ muck rack:
 musician.social (mastodon instance):
   url: https://musician.social/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: musician.social (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -4112,7 +4112,7 @@ musician.social (mastodon instance):
 musictraveler:
   url: https://www.musictraveler.com/en/users/{username}/
   timeout: 20
-  ua_profile: musictraveler_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - on Music Traveler</title>
@@ -4122,7 +4122,7 @@ musictraveler:
 muyzorras:
   url: https://www.muyzorras.com/usuarios/{username}
   timeout: 20
-  ua_profile: muyzorras_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - og:title
@@ -4132,7 +4132,7 @@ muyzorras:
 my_instants:
   url: https://www.myinstants.com/en/profile/{username}/
   timeout: 20
-  ua_profile: my_instants_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " | Myinstants</title>"
@@ -4142,7 +4142,7 @@ my_instants:
 myanimelist:
   url: https://myanimelist.net/profile/{username}
   timeout: 20
-  ua_profile: myanimelist_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Profile - MyAnimeList.net
@@ -4152,7 +4152,7 @@ myanimelist:
 mybuilder.com:
   url: https://www.mybuilder.com/profile/view/{username}
   timeout: 20
-  ua_profile: mybuilder.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - feedback
@@ -4162,7 +4162,7 @@ mybuilder.com:
 myfitnesspal author:
   url: https://blog.myfitnesspal.com/author/{username}/
   timeout: 20
-  ua_profile: myfitnesspal author_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - About the Author
@@ -4172,7 +4172,7 @@ myfitnesspal author:
 myfitnesspal community:
   url: https://community.myfitnesspal.com/en/profile/{username}
   timeout: 20
-  ua_profile: myfitnesspal community_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ">Last Active<"
@@ -4182,7 +4182,7 @@ myfitnesspal community:
 mylot:
   url: https://www.mylot.com/{username}
   timeout: 20
-  ua_profile: mylot_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - on myLot</title>
@@ -4192,7 +4192,7 @@ mylot:
 mym:
   url: https://mym.fans/{username}
   timeout: 20
-  ua_profile: mym_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="page profile"
@@ -4202,7 +4202,7 @@ mym:
 mynickname:
   url: https://mynickname.com/en/search?q={username}
   timeout: 20
-  ua_profile: mynickname_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - nickname found:</h2>
@@ -4212,7 +4212,7 @@ mynickname:
 myportfolio:
   url: https://{username}.myportfolio.com/work
   timeout: 20
-  ua_profile: myportfolio_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="page-title
@@ -4222,7 +4222,7 @@ myportfolio:
 myspace:
   url: https://myspace.com/{username}
   timeout: 20
-  ua_profile: myspace_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <!-- Profile -->
@@ -4232,7 +4232,7 @@ myspace:
 myspreadshop:
   url: https://myspreadshop.de/{username}/shopData/list
   timeout: 20
-  ua_profile: myspreadshop_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - siteName
@@ -4242,7 +4242,7 @@ myspreadshop:
 mywishboard:
   url: https://mywishboard.com/@{username}
   timeout: 20
-  ua_profile: mywishboard_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="MwbUserHeader"
@@ -4252,7 +4252,7 @@ mywishboard:
 naija_planet:
   url: https://naijaplanet.com/{username}
   timeout: 20
-  ua_profile: naija_planet_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "dating Profile, "
@@ -4262,7 +4262,7 @@ naija_planet:
 nairaland:
   url: https://www.nairaland.com/{username}
   timeout: 20
-  ua_profile: nairaland_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Profile
@@ -4272,7 +4272,7 @@ nairaland:
 naturalnews:
   url: https://naturalnews.com/author/{username}/
   timeout: 20
-  ua_profile: naturalnews_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - All posts by
@@ -4282,7 +4282,7 @@ naturalnews:
 naver:
   url: https://blog.naver.com/{username}
   timeout: 20
-  ua_profile: naver_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " : 네이버 블로그"
@@ -4292,7 +4292,7 @@ naver:
 neocities:
   url: https://neocities.org/site/{username}
   timeout: 20
-  ua_profile: neocities_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - noindex, follow
@@ -4302,7 +4302,7 @@ neocities:
 netvibes:
   url: https://www.netvibes.com/{username}
   timeout: 20
-  ua_profile: netvibes_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userId
@@ -4312,7 +4312,7 @@ netvibes:
 newgrounds:
   url: https://{username}.newgrounds.com/
   timeout: 20
-  ua_profile: newgrounds_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - user-header-name
@@ -4322,7 +4322,7 @@ newgrounds:
 newmeet:
   url: https://www.newmeet.com/en/profile/{username}/
   timeout: 20
-  ua_profile: newmeet_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <h2>The profile of
@@ -4332,7 +4332,7 @@ newmeet:
 nifty gateway:
   url: https://api.niftygateway.com/user/profile-and-offchain-nifties-by-url/?profile_url={username}
   timeout: 20
-  ua_profile: nifty gateway_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "&quot;didSucceed&quot;: true"
@@ -4342,7 +4342,7 @@ nifty gateway:
 nightbot:
   url: https://api.nightbot.tv/1/channels/t/{username}
   timeout: 20
-  ua_profile: nightbot_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"status":200'
@@ -4352,7 +4352,7 @@ nightbot:
 nihbuatjajan:
   url: https://www.nihbuatjajan.com/{username}
   timeout: 20
-  ua_profile: nihbuatjajan_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ) | Nih buat jajan</title>
@@ -4362,7 +4362,7 @@ nihbuatjajan:
 nitecrew (mastodon instance):
   url: https://nitecrew.rip/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: nitecrew (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -4372,7 +4372,7 @@ nitecrew (mastodon instance):
 nnru:
   url: https://{username}.www.nn.ru
   timeout: 20
-  ua_profile: nnru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "<title> "
@@ -4382,7 +4382,7 @@ nnru:
 notabug:
   url: https://notabug.org/{username}
   timeout: 20
-  ua_profile: notabug_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user profile"
@@ -4392,7 +4392,7 @@ notabug:
 note:
   url: https://note.com/{username}
   timeout: 20
-  ua_profile: note_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - フォロワー
@@ -4402,7 +4402,7 @@ note:
 npm:
   url: https://www.npmjs.com/~{username}
   timeout: 20
-  ua_profile: npm_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -4412,7 +4412,7 @@ npm:
 oglaszamy24h.pl:
   url: https://oglaszamy24h.pl/profil,{username}
   timeout: 20
-  ua_profile: oglaszamy24h.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Profil użytkownika:"
@@ -4422,7 +4422,7 @@ oglaszamy24h.pl:
 ok.ru:
   url: https://ok.ru/{username}
   timeout: 20
-  ua_profile: ok.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| OK"
@@ -4432,7 +4432,7 @@ ok.ru:
 okidoki:
   url: https://m.okidoki.ee/ru/users/{username}/
   timeout: 20
-  ua_profile: okidoki_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Пользователь
@@ -4442,7 +4442,7 @@ okidoki:
 omg.lol:
   url: https://api.omg.lol/address/{username}/info
   timeout: 20
-  ua_profile: omg.lol_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"success": true'
@@ -4452,7 +4452,7 @@ omg.lol:
 onlysearch (onlyfans):
   url: https://onlysearch.co/api/search?keyword={username}
   timeout: 20
-  ua_profile: onlysearch (onlyfans)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"hits":[{'
@@ -4461,7 +4461,7 @@ onlysearch (onlyfans):
 opencollective:
   url: https://opencollective.com/{username}
   timeout: 20
-  ua_profile: opencollective_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Open Collective"
@@ -4470,7 +4470,7 @@ opencollective:
 opensource:
   url: https://opensource.com/users/{username}
   timeout: 20
-  ua_profile: opensource_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"contentID":'
@@ -4480,7 +4480,7 @@ opensource:
 openstreetmap:
   url: https://www.openstreetmap.org/user/{username}
   timeout: 20
-  ua_profile: openstreetmap_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Mapper since:"
@@ -4490,7 +4490,7 @@ openstreetmap:
 openstreetmap wiki:
   url: https://wiki.openstreetmap.org/w/api.php?action=query&format=json&list=users&ususers={username}
   timeout: 20
-  ua_profile: openstreetmap wiki_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userid":'
@@ -4500,7 +4500,7 @@ openstreetmap wiki:
 oper.ru:
   url: https://oper.ru/visitors/info.php?t={username}
   timeout: 20
-  ua_profile: oper.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Информация о пользователе
@@ -4510,7 +4510,7 @@ oper.ru:
 opgg:
   url: https://eune.op.gg/summoners/eune/{username}
   timeout: 20
-  ua_profile: opgg_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Summoner Stats - League of Legends"
@@ -4520,7 +4520,7 @@ opgg:
 orbys:
   url: https://orbys.net/{username}
   timeout: 20
-  ua_profile: orbys_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile_user_image
@@ -4530,7 +4530,7 @@ orbys:
 origins.habbo.com:
   url: https://origins.habbo.com/api/public/users?name={username}
   timeout: 20
-  ua_profile: origins.habbo.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - uniqueId
@@ -4540,7 +4540,7 @@ origins.habbo.com:
 origins.habbo.com.br:
   url: https://origins.habbo.com.br/api/public/users?name={username}
   timeout: 20
-  ua_profile: origins.habbo.com.br_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - uniqueId
@@ -4550,7 +4550,7 @@ origins.habbo.com.br:
 origins.habbo.es:
   url: https://origins.habbo.es/api/public/users?name={username}
   timeout: 20
-  ua_profile: origins.habbo.es_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - uniqueId
@@ -4560,7 +4560,7 @@ origins.habbo.es:
 osu!:
   url: https://osu.ppy.sh/users/{username}
   timeout: 20
-  ua_profile: osu!_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "302"
   error_patterns:
@@ -4569,7 +4569,7 @@ osu!:
 our freedom book:
   url: https://www.ourfreedombook.com/{username}
   timeout: 20
-  ua_profile: our freedom book_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'meta property="og:'
@@ -4579,7 +4579,7 @@ our freedom book:
 ow.ly:
   url: http://ow.ly/user/{username}
   timeout: 20
-  ua_profile: ow.ly_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Images
@@ -4589,7 +4589,7 @@ ow.ly:
 palnet:
   url: https://www.palnet.io/@{username}/
   timeout: 20
-  ua_profile: palnet_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="profile-cover"
@@ -4599,7 +4599,7 @@ palnet:
 parler:
   url: https://parler.com/user/{username}
   timeout: 20
-  ua_profile: parler_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - People to Follow
@@ -4609,7 +4609,7 @@ parler:
 parler archived posts:
   url: http://archive.org/wayback/available?url=https://parler.com/profile/{username}/posts
   timeout: 20
-  ua_profile: parler archived posts_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"archived_snapshots": {"closest"'
@@ -4619,7 +4619,7 @@ parler archived posts:
 parler archived profile:
   url: http://archive.org/wayback/available?url=https://parler.com/profile/{username}
   timeout: 20
-  ua_profile: parler archived profile_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"archived_snapshots": {"closest"'
@@ -4629,7 +4629,7 @@ parler archived profile:
 pastebin:
   url: https://pastebin.com/u/{username}
   timeout: 20
-  ua_profile: pastebin_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user-view"
@@ -4639,7 +4639,7 @@ pastebin:
 patch:
   url: https://patch.com/users/{username}
   timeout: 20
-  ua_profile: patch_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>Patch User Profile
@@ -4649,7 +4649,7 @@ patch:
 patientslikeme:
   url: https://www.patientslikeme.com/members/{username}
   timeout: 20
-  ua_profile: patientslikeme_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s profile | PatientsLikeMe</title>
@@ -4658,7 +4658,7 @@ patientslikeme:
 patreon:
   url: https://www.patreon.com/{username}
   timeout: 20
-  ua_profile: patreon_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'full_name":'
@@ -4668,7 +4668,7 @@ patreon:
 patriots win:
   url: https://patriots.win/u/{username}/
   timeout: 20
-  ua_profile: patriots win_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - nav-user active register
@@ -4678,7 +4678,7 @@ patriots win:
 patronite:
   url: https://patronite.pl/{username}
   timeout: 20
-  ua_profile: patronite_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Zostań Patronem
@@ -4688,7 +4688,7 @@ patronite:
 paypal:
   url: https://www.paypal.com/paypalme/{username}
   timeout: 20
-  ua_profile: paypal_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userInfo
@@ -4698,7 +4698,7 @@ paypal:
 pcgamer:
   url: https://forums.pcgamer.com/members/{username}/
   timeout: 20
-  ua_profile: pcgamer_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Joined
@@ -4708,7 +4708,7 @@ pcgamer:
 pcpartpicker:
   url: https://pcpartpicker.com/user/{username}/
   timeout: 20
-  ua_profile: pcpartpicker_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="active"
@@ -4718,7 +4718,7 @@ pcpartpicker:
 periscope:
   url: https://www.periscope.tv/{username}
   timeout: 20
-  ua_profile: periscope_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <label>Followers
@@ -4728,7 +4728,7 @@ periscope:
 pewex:
   url: https://retro.pewex.pl/user/{username}
   timeout: 20
-  ua_profile: pewex_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Zamieszcza eksponaty od:"
@@ -4738,7 +4738,7 @@ pewex:
 picsart:
   url: https://api.picsart.com/users/show/{username}.json
   timeout: 20
-  ua_profile: picsart_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"status":"success"'
@@ -4748,7 +4748,7 @@ picsart:
 piekielni:
   url: https://piekielni.pl/user/{username}
   timeout: 20
-  ua_profile: piekielni_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Zamieszcza historie od:"
@@ -4758,7 +4758,7 @@ piekielni:
 pikabu:
   url: https://pikabu.ru/ajax.php
   timeout: 20
-  ua_profile: pikabu_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"result":false'
@@ -4768,7 +4768,7 @@ pikabu:
 pillowfort:
   url: https://www.pillowfort.social/{username}/json/?p=1
   timeout: 20
-  ua_profile: pillowfort_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"posts":'
@@ -4778,7 +4778,7 @@ pillowfort:
 pinkbike:
   url: https://www.pinkbike.com/u/{username}/
   timeout: 20
-  ua_profile: pinkbike_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - on Pinkbike</title>
@@ -4788,7 +4788,7 @@ pinkbike:
 pinterest:
   url: https://www.pinterest.com/{username}/
   timeout: 15
-  ua_profile: pinterest_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - ' - Profile | Pinterest'
     - 'Followers'
@@ -4798,7 +4798,7 @@ pinterest:
 pixelfed.social:
   url: https://pixelfed.social/{username}
   timeout: 20
-  ua_profile: pixelfed.social_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - on pixelfed</title>
@@ -4818,7 +4818,7 @@ playstation_network:
 plink:
   url: https://plink.gg/user/{username}
   timeout: 20
-  ua_profile: plink_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user-page"
@@ -4828,7 +4828,7 @@ plink:
 plurk:
   url: https://www.plurk.com/{username}
   timeout: 20
-  ua_profile: plurk_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Profile views
@@ -4838,7 +4838,7 @@ plurk:
 poe.com:
   url: https://poe.com/profile/{username}
   timeout: 20
-  ua_profile: poe.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"__isNode":"PoeUser"'
@@ -4848,7 +4848,7 @@ poe.com:
 pokec:
   url: https://pokec.azet.sk/{username}
   timeout: 20
-  ua_profile: pokec_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - idReportedUser
@@ -4858,7 +4858,7 @@ pokec:
 pokemonshowdown:
   url: https://pokemonshowdown.com/users/{username}
   timeout: 20
-  ua_profile: pokemonshowdown_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Official ladder
@@ -4868,7 +4868,7 @@ pokemonshowdown:
 pokerstrategy:
   url: http://www.pokerstrategy.net/user/{username}/profile/
   timeout: 20
-  ua_profile: pokerstrategy_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - User profile for
@@ -4878,7 +4878,7 @@ pokerstrategy:
 polarsteps:
   url: https://api.polarsteps.com/users/byusername/{username}
   timeout: 20
-  ua_profile: polarsteps_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -4888,7 +4888,7 @@ polarsteps:
 polchat.pl:
   url: https://polczat.pl/forum/profile/{username}/
   timeout: 20
-  ua_profile: polchat.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Historia wpisów
@@ -4898,7 +4898,7 @@ polchat.pl:
 policja2009:
   url: http://www.policja2009.fora.pl/search.php?search_author={username}
   timeout: 20
-  ua_profile: policja2009_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Autor
@@ -4908,7 +4908,7 @@ policja2009:
 poll everywhere:
   url: https://pollev.com/proxy/api/users/{username}
   timeout: 20
-  ua_profile: poll everywhere_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - name
@@ -4918,7 +4918,7 @@ poll everywhere:
 polygon:
   url: https://www.polygon.com/users/{username}
   timeout: 20
-  ua_profile: polygon_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Polygon"
@@ -4928,7 +4928,7 @@ polygon:
 popl:
   url: https://poplme.co/{username}
   timeout: 20
-  ua_profile: popl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - MuiTypography-root MuiTypography-body1 css-kj7pvm
@@ -4938,7 +4938,7 @@ popl:
 pornhub porn stars:
   url: https://www.pornhub.com/pornstar/{username}
   timeout: 20
-  ua_profile: pornhub porn stars_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Pornstar Rank
@@ -4947,7 +4947,7 @@ pornhub porn stars:
 pornhub users:
   url: https://www.pornhub.com/users/{username}
   timeout: 20
-  ua_profile: pornhub users_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Profile - Pornhub.com</title>
@@ -4957,7 +4957,7 @@ pornhub users:
 poshmark:
   url: https://poshmark.com/closet/{username}
   timeout: 20
-  ua_profile: poshmark_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " is using Poshmark to sell items from their closet."
@@ -4967,7 +4967,7 @@ poshmark:
 postcrossing:
   url: https://www.postcrossing.com/user/{username}
   timeout: 20
-  ua_profile: postcrossing_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ", from"
@@ -4977,7 +4977,7 @@ postcrossing:
 poweredbygay.social (mastodon instance):
   url: https://poweredbygay.social/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: poweredbygay.social (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -4987,7 +4987,7 @@ poweredbygay.social (mastodon instance):
 pr0gramm:
   url: https://pr0gramm.com/api/profile/info?name={username}
   timeout: 20
-  ua_profile: pr0gramm_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"user":'
@@ -4997,7 +4997,7 @@ pr0gramm:
 pravda.me:
   url: https://pravda.me/@{username}
   timeout: 20
-  ua_profile: pravda.me_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Российская социальная сеть (by mastodon)</title>
@@ -5007,7 +5007,7 @@ pravda.me:
 privacy guides:
   url: https://discuss.privacyguides.net/u/{username}.json
   timeout: 20
-  ua_profile: privacy guides_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - assign_path
@@ -5017,7 +5017,7 @@ privacy guides:
 producthunt:
   url: https://www.producthunt.com/@{username}
   timeout: 20
-  ua_profile: producthunt_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s profile on Product Hunt
@@ -5027,7 +5027,7 @@ producthunt:
 promodj:
   url: https://promodj.com/ajax/register.html?lang=en
   timeout: 20
-  ua_profile: promodj_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Address you entered is already taken
@@ -5037,7 +5037,7 @@ promodj:
 pronouns.page:
   url: https://pronouns.page/api/profile/get/{username}?version=2
   timeout: 20
-  ua_profile: pronouns.page_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - username
@@ -5047,7 +5047,7 @@ pronouns.page:
 pronouny:
   url: https://pronouny.xyz/api/users/profile/username/{username}
   timeout: 20
-  ua_profile: pronouny_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -5057,7 +5057,7 @@ pronouny:
 prose:
   url: https://prose.astral.camp/{username}/
   timeout: 20
-  ua_profile: prose_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - blog-title
@@ -5067,7 +5067,7 @@ prose:
 prv.pl:
   url: https://www.prv.pl/osoba/{username}
   timeout: 20
-  ua_profile: prv.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - LOGIN
@@ -5077,7 +5077,7 @@ prv.pl:
 public.com:
   url: https://public.com/@{username}
   timeout: 20
-  ua_profile: public.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"publicId":'
@@ -5087,7 +5087,7 @@ public.com:
 pypi:
   url: https://pypi.org/user/{username}/
   timeout: 20
-  ua_profile: pypi_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Profile of
@@ -5097,7 +5097,7 @@ pypi:
 queer pl:
   url: https://queer.pl/user/{username}
   timeout: 20
-  ua_profile: queer pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Ostatnio on-line
@@ -5107,7 +5107,7 @@ queer pl:
 quitter.pl:
   url: https://quitter.pl/api/v1/accounts/{username}
   timeout: 20
-  ua_profile: quitter.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - avatar_static
@@ -5117,7 +5117,7 @@ quitter.pl:
 quizlet:
   url: https://quizlet.com/webapi/3.2/users/check-username?username={username}
   timeout: 20
-  ua_profile: quizlet_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"identifier":"username_is_taken"'
@@ -5127,7 +5127,7 @@ quizlet:
 quora:
   url: https://www.quora.com/profile/{username}
   timeout: 20
-  ua_profile: quora_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Credentials
@@ -5137,7 +5137,7 @@ quora:
 raddle.me:
   url: https://raddle.me/user/{username}
   timeout: 20
-  ua_profile: raddle.me_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - sidebar__title
@@ -5147,7 +5147,7 @@ raddle.me:
 raidforums - archive:
   url: https://rf-archive.com/users.php?s_tag={username}
   timeout: 20
-  ua_profile: raidforums - archive_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -5157,7 +5157,7 @@ raidforums - archive:
 rant.li:
   url: https://rant.li/{username}/
   timeout: 20
-  ua_profile: rant.li_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - blog-title
@@ -5167,7 +5167,7 @@ rant.li:
 rarible:
   url: https://rarible.com/marketplace/api/v4/urls/{username}
   timeout: 20
-  ua_profile: rarible_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -5177,7 +5177,7 @@ rarible:
 rblxtrade:
   url: https://rblx.trade/api/v1/user/get-by-username?username={username}
   timeout: 20
-  ua_profile: rblxtrade_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userId":'
@@ -5187,7 +5187,7 @@ rblxtrade:
 redbubble:
   url: https://www.redbubble.com/people/{username}/shop
   timeout: 20
-  ua_profile: redbubble_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Shop | Redbubble
@@ -5197,7 +5197,7 @@ redbubble:
 reddit:
   url: https://www.reddit.com/user/{username}/about/.json
   timeout: 15
-  ua_profile: reddit_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - total_karma
   error_patterns:
@@ -5206,7 +5206,7 @@ reddit:
 redgifs:
   url: https://api.redgifs.com/v1/users/{username}
   timeout: 20
-  ua_profile: redgifs_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - followers
@@ -5216,7 +5216,7 @@ redgifs:
 refsheet:
   url: https://refsheet.net/{username}
   timeout: 20
-  ua_profile: refsheet_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - og:title
@@ -5226,7 +5226,7 @@ refsheet:
 replit:
   url: https://replit.com/@{username}
   timeout: 20
-  ua_profile: replit_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"__typename":"User"'
@@ -5236,7 +5236,7 @@ replit:
 researchgate:
   url: https://www.researchgate.net/profile/{username}
   timeout: 20
-  ua_profile: researchgate_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " | "
@@ -5246,7 +5246,7 @@ researchgate:
 resumes_actorsaccess:
   url: https://resumes.actorsaccess.com/{username}
   timeout: 20
-  ua_profile: resumes_actorsaccess_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Resume | Actors Access</title>"
@@ -5256,7 +5256,7 @@ resumes_actorsaccess:
 revolut:
   url: https://revolut.me/api/web-profile/{username}
   timeout: 20
-  ua_profile: revolut_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"firstName"'
@@ -5266,7 +5266,7 @@ revolut:
 risk.ru:
   url: https://risk.ru/people/{username}
   timeout: 20
-  ua_profile: risk.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - — Люди — Risk.ru
@@ -5286,7 +5286,7 @@ roblox:
 routinehub:
   url: https://routinehub.co/user/{username}
   timeout: 20
-  ua_profile: routinehub_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Downloads: "
@@ -5296,7 +5296,7 @@ routinehub:
 rsi:
   url: https://robertsspaceindustries.com/citizens/{username}
   timeout: 20
-  ua_profile: rsi_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - CITIZEN DOSSIER
@@ -5306,7 +5306,7 @@ rsi:
 ru_123rf:
   url: https://ru.123rf.com/profile_{username}
   timeout: 20
-  ua_profile: ru_123rf_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userID
@@ -5317,7 +5317,7 @@ ru_123rf:
 rubygems.org:
   url: https://rubygems.org/profiles/{username}
   timeout: 20
-  ua_profile: rubygems.org_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="profile__header"
@@ -5327,7 +5327,7 @@ rubygems.org:
 rumblechannel:
   url: https://rumble.com/c/{username}
   timeout: 20
-  ua_profile: rumblechannel_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - href=https://rumble.com/c/
@@ -5337,7 +5337,7 @@ rumblechannel:
 rumbleuser:
   url: https://rumble.com/user/{username}
   timeout: 20
-  ua_profile: rumbleuser_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - href=https://rumble.com/user/
@@ -5347,7 +5347,7 @@ rumbleuser:
 runescape:
   url: https://apps.runescape.com/runemetrics/profile/profile?user={username}
   timeout: 20
-  ua_profile: runescape_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"name":'
@@ -5357,7 +5357,7 @@ runescape:
 rutracker.org:
   url: https://rutracker.org/forum/profile.php?mode=viewprofile&u={username}
   timeout: 20
-  ua_profile: rutracker.org_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Профиль пользователя
@@ -5367,7 +5367,7 @@ rutracker.org:
 ruvoip.net:
   url: https://ruvoip.net/members/{username}/
   timeout: 20
-  ua_profile: ruvoip.net_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - id="user-xprofile"
@@ -5377,7 +5377,7 @@ ruvoip.net:
 salon24:
   url: https://www.salon24.pl/u/{username}/
   timeout: 20
-  ua_profile: salon24_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <span>Obserwujących</span>
@@ -5387,7 +5387,7 @@ salon24:
 scammer.info:
   url: https://scammer.info/u/{username}.json
   timeout: 20
-  ua_profile: scammer.info_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - avatar_template
@@ -5397,7 +5397,7 @@ scammer.info:
 scored:
   url: https://scored.co/api/v2/user/about.json?user={username}
   timeout: 20
-  ua_profile: scored_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"status":true'
@@ -5407,7 +5407,7 @@ scored:
 scoutwiki:
   url: https://en.scoutwiki.org/User:{username}
   timeout: 20
-  ua_profile: scoutwiki_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - NewPP limit report
@@ -5417,7 +5417,7 @@ scoutwiki:
 scratch:
   url: https://api.scratch.mit.edu/accounts/checkusername/{username}/
   timeout: 20
-  ua_profile: scratch_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"msg":"username exists"'
@@ -5427,7 +5427,7 @@ scratch:
 secure_donation:
   url: https://secure.donationpay.org/{username}/
   timeout: 20
-  ua_profile: secure_donation_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| DonationPay</title>"
@@ -5437,7 +5437,7 @@ secure_donation:
 sedisp@ce:
   url: https://sedispace.com/@{username}
   timeout: 20
-  ua_profile: sedisp@ce_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Membre depuis -
@@ -5447,7 +5447,7 @@ sedisp@ce:
 seneporno:
   url: https://seneporno.com/user/{username}
   timeout: 20
-  ua_profile: seneporno_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Dernier Login
@@ -5457,7 +5457,7 @@ seneporno:
 sentimente:
   url: https://www.sentimente.com/amp/{username}.html
   timeout: 20
-  ua_profile: sentimente_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Chat online with
@@ -5467,7 +5467,7 @@ sentimente:
 seoclerks:
   url: https://www.seoclerks.com/user/{username}
   timeout: 20
-  ua_profile: seoclerks_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <div class="user-info container">
@@ -5477,7 +5477,7 @@ seoclerks:
 setlist.fm:
   url: https://www.setlist.fm/user/{username}
   timeout: 20
-  ua_profile: setlist.fm_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s setlist.fm | setlist.fm</title>
@@ -5487,7 +5487,7 @@ setlist.fm:
 sexworker:
   url: https://sexworker.com/api/profile/{username}
   timeout: 20
-  ua_profile: sexworker_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profilePictureUrl
@@ -5497,7 +5497,7 @@ sexworker:
 sfd:
   url: https://www.sfd.pl/profile/{username}
   timeout: 20
-  ua_profile: sfd_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Tematy użytkownika
@@ -5507,7 +5507,7 @@ sfd:
 shesfreaky:
   url: https://www.shesfreaky.com/profile/{username}/
   timeout: 20
-  ua_profile: shesfreaky_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Profile - ShesFreaky</title>
@@ -5516,7 +5516,7 @@ shesfreaky:
 shopify:
   url: https://{username}.myshopify.com
   timeout: 20
-  ua_profile: shopify_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - home
@@ -5526,7 +5526,7 @@ shopify:
 showup.tv:
   url: https://showup.tv/profile/{username}
   timeout: 20
-  ua_profile: showup.tv_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - O mnie
@@ -5536,7 +5536,7 @@ showup.tv:
 shutterstock:
   url: https://www.shutterstock.com/g/{username}
   timeout: 20
-  ua_profile: shutterstock_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Shutterstock"
@@ -5546,7 +5546,7 @@ shutterstock:
 simpleplanes:
   url: https://www.simpleplanes.com/u/{username}
   timeout: 20
-  ua_profile: simpleplanes_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <h5>joined
@@ -5556,7 +5556,7 @@ simpleplanes:
 skeb:
   url: https://skeb.jp/@{username}
   timeout: 20
-  ua_profile: skeb_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ) | Skeb
@@ -5566,7 +5566,7 @@ skeb:
 slackholes:
   url: https://slackholes.com/actor/{username}/
   timeout: 20
-  ua_profile: slackholes_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Pussy and Ass Sizes
@@ -5576,7 +5576,7 @@ slackholes:
 slant:
   url: https://www.slant.co/users/{username}
   timeout: 20
-  ua_profile: slant_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Profile - Slant
@@ -5586,7 +5586,7 @@ slant:
 slides:
   url: https://slides.com/{username}
   timeout: 20
-  ua_profile: slides_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Presentations by
@@ -5596,7 +5596,7 @@ slides:
 slideshare:
   url: https://www.slideshare.net/{username}
   timeout: 20
-  ua_profile: slideshare_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - data-testid="report-button"
@@ -5606,7 +5606,7 @@ slideshare:
 smashrun:
   url: https://smashrun.com/{username}/
   timeout: 20
-  ua_profile: smashrun_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Miles run overall
@@ -5616,7 +5616,7 @@ smashrun:
 smelsy:
   url: https://www.smelsy.com/profile/{username}
   timeout: 20
-  ua_profile: smelsy_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Smelsy -
@@ -5626,7 +5626,7 @@ smelsy:
 smugmug:
   url: https://{username}.smugmug.com
   timeout: 20
-  ua_profile: smugmug_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - schema.org/Person
@@ -5636,7 +5636,7 @@ smugmug:
 smule:
   url: https://www.smule.com/api/profile/?handle={username}
   timeout: 20
-  ua_profile: smule_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - account_id
@@ -5646,7 +5646,7 @@ smule:
 snapchat:
   url: https://www.snapchat.com/@{username}
   timeout: 15
-  ua_profile: snapchat_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - is on Snapchat!
   error_patterns:
@@ -5655,7 +5655,7 @@ snapchat:
 snipfeed:
   url: https://snipfeed.co/{username}
   timeout: 20
-  ua_profile: snipfeed_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - creatorLink
@@ -5665,7 +5665,7 @@ snipfeed:
 soc.citizen4.eu:
   url: https://soc.citizen4.eu/profile/{username}/profile
   timeout: 20
-  ua_profile: soc.citizen4.eu_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@soc.citizen4.eu"
@@ -5675,7 +5675,7 @@ soc.citizen4.eu:
 social.bund.de:
   url: https://social.bund.de/@{username}
   timeout: 20
-  ua_profile: social.bund.de_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "@social.bund.de) - social.bund.de</title>"
@@ -5685,7 +5685,7 @@ social.bund.de:
 social_msdn:
   url: https://social.msdn.microsoft.com/profile/{username}
   timeout: 20
-  ua_profile: social_msdn_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Member Since
@@ -5696,7 +5696,7 @@ social_msdn:
 sofurry:
   url: https://{username}.sofurry.com
   timeout: 20
-  ua_profile: sofurry_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "'s Profile | SoFurry"
@@ -5706,7 +5706,7 @@ sofurry:
 solo.to:
   url: https://solo.to/{username}
   timeout: 20
-  ua_profile: solo.to_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - create your own page
@@ -5716,7 +5716,7 @@ solo.to:
 soundcloud:
   url: https://soundcloud.com/{username}
   timeout: 20
-  ua_profile: soundcloud_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - SoundCloud</title>
@@ -5726,7 +5726,7 @@ soundcloud:
 soup:
   url: https://www.soup.io/author/{username}
   timeout: 20
-  ua_profile: soup_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Author at Soup.io
@@ -5736,7 +5736,7 @@ soup:
 sourceforge:
   url: https://sourceforge.net/user/username/{username}
   timeout: 20
-  ua_profile: sourceforge_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "400"
     - '"error": "invalid"'
@@ -5746,7 +5746,7 @@ sourceforge:
 speaker deck:
   url: https://speakerdeck.com/{username}/
   timeout: 20
-  ua_profile: speaker deck_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ) on Speaker Deck</title>
@@ -5756,7 +5756,7 @@ speaker deck:
 speedrun:
   url: https://www.speedrun.com/user/{username}/
   timeout: 20
-  ua_profile: speedrun_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Runs - "
@@ -5766,7 +5766,7 @@ speedrun:
 spiceworks:
   url: https://community.spiceworks.com/people/{username}
   timeout: 20
-  ua_profile: spiceworks_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Portfolio of IT Projects - Spiceworks
@@ -5776,7 +5776,7 @@ spiceworks:
 spoj:
   url: https://www.spoj.com/users/{username}/
   timeout: 20
-  ua_profile: spoj_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <h3>Activity over the last year</h3>
@@ -5786,7 +5786,7 @@ spoj:
 sporcle:
   url: https://www.sporcle.com/user/{username}/people/
   timeout: 20
-  ua_profile: sporcle_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "'s Sporcle Friends"
@@ -5796,7 +5796,7 @@ sporcle:
 sports tracker:
   url: https://api.sports-tracker.com/apiserver/v1/user/name/{username}
   timeout: 20
-  ua_profile: sports tracker_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"uuid":'
@@ -5806,7 +5806,7 @@ sports tracker:
 spotify:
   url: https://open.spotify.com/user/{username}
   timeout: 20
-  ua_profile: spotify_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - content="profile"
@@ -5816,7 +5816,7 @@ spotify:
 stackoverflow:
   url: https://stackoverflow.com/users/filter?search={username}
   timeout: 20
-  ua_profile: stackoverflow_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - grid--item user-info
@@ -5826,7 +5826,7 @@ stackoverflow:
 stackshare:
   url: https://stackshare.io/{username}
   timeout: 20
-  ua_profile: stackshare_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class='user-container'
@@ -5836,7 +5836,7 @@ stackshare:
 statuspage:
   url: https://{username}.statuspage.io/api/v2/status.json
   timeout: 20
-  ua_profile: statuspage_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - updated_at
@@ -5856,7 +5856,7 @@ steam:
 steamgifts:
   url: https://www.steamgifts.com/user/{username}
   timeout: 20
-  ua_profile: steamgifts_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"identifier":'
@@ -5865,7 +5865,7 @@ steamgifts:
 steemit:
   url: https://signup.steemit.com/api/check_username
   timeout: 20
-  ua_profile: steemit_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"type":"error_api_username_used"'
@@ -5875,7 +5875,7 @@ steemit:
 steller:
   url: https://steller.co/{username}
   timeout: 20
-  ua_profile: steller_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " on Steller</title>"
@@ -5885,7 +5885,7 @@ steller:
 storycorps:
   url: https://archive.storycorps.org/user/{username}/
   timeout: 20
-  ua_profile: storycorps_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - archive author
@@ -5895,7 +5895,7 @@ storycorps:
 strava:
   url: https://www.strava.com/athletes/{username}
   timeout: 20
-  ua_profile: strava_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "301"
     - /athletes/
@@ -5905,7 +5905,7 @@ strava:
 streamelements:
   url: https://api.streamelements.com/kappa/v2/channels/{username}
   timeout: 20
-  ua_profile: streamelements_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"providerId"'
@@ -5915,7 +5915,7 @@ streamelements:
 streamlabs:
   url: https://streamlabs.com/api/v6/user/{username}
   timeout: 20
-  ua_profile: streamlabs_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -5925,7 +5925,7 @@ streamlabs:
 stripchat:
   url: https://stripchat.com/api/front/users/checkUsername?username={username}
   timeout: 20
-  ua_profile: stripchat_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "400"
     - '"error":"This username already exists"'
@@ -5935,7 +5935,7 @@ stripchat:
 subscribestar:
   url: https://subscribestar.adult/{username}
   timeout: 20
-  ua_profile: subscribestar_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - CREATOR STATS
@@ -5945,7 +5945,7 @@ subscribestar:
 substack:
   url: https://substack.com/@{username}
   timeout: 20
-  ua_profile: substack_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Substack</title>"
@@ -5955,7 +5955,7 @@ substack:
 sukebei.nyaa.si:
   url: https://sukebei.nyaa.si/user/{username}
   timeout: 20
-  ua_profile: sukebei.nyaa.si_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "'s torrents"
@@ -5965,7 +5965,7 @@ sukebei.nyaa.si:
 suzuri:
   url: https://suzuri.jp/{username}
   timeout: 20
-  ua_profile: suzuri_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Items
@@ -5975,7 +5975,7 @@ suzuri:
 szmer.info:
   url: https://szmer.info/u/{username}
   timeout: 20
-  ua_profile: szmer.info_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Joined
@@ -5985,7 +5985,7 @@ szmer.info:
 tabletoptournament:
   url: https://www.tabletoptournaments.net/eu/player/{username}
   timeout: 20
-  ua_profile: tabletoptournament_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Player Profile | T³ - TableTop Tournaments"
@@ -5995,7 +5995,7 @@ tabletoptournament:
 tagged:
   url: https://secure.tagged.com/{username}
   timeout: 20
-  ua_profile: tagged_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Profile</title>
@@ -6005,7 +6005,7 @@ tagged:
 tamtam:
   url: https://tamtam.chat/{username}
   timeout: 20
-  ua_profile: tamtam_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - deeplink=tamtam://chat/
@@ -6015,7 +6015,7 @@ tamtam:
 tanuki.pl:
   url: https://tanuki.pl/profil/{username}
   timeout: 20
-  ua_profile: tanuki.pl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Dołączył
@@ -6025,7 +6025,7 @@ tanuki.pl:
 tapitag:
   url: https://account.tapitag.co/tapitag/api/v1/{username}
   timeout: 20
-  ua_profile: tapitag_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - User details are Showing
@@ -6035,7 +6035,7 @@ tapitag:
 tappy:
   url: https://api.tappy.tech/api/profile/username/{username}
   timeout: 20
-  ua_profile: tappy_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - user_id
@@ -6045,7 +6045,7 @@ tappy:
 taringa:
   url: https://www.taringa.net/{username}
   timeout: 20
-  ua_profile: taringa_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " en Taringa!</title>"
@@ -6055,7 +6055,7 @@ taringa:
 taringa archived profile:
   url: https://archive.org/wayback/available?url=https://www.taringa.net/{username}
   timeout: 20
-  ua_profile: taringa archived profile_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"archived_snapshots": {"closest"'
@@ -6065,7 +6065,7 @@ taringa archived profile:
 taskrabbit:
   url: https://www.taskrabbit.com/profile/{username}/about
   timeout: 20
-  ua_profile: taskrabbit_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ’s Profile
@@ -6074,7 +6074,7 @@ taskrabbit:
 teamtreehouse:
   url: https://teamtreehouse.com/{username}
   timeout: 20
-  ua_profile: teamtreehouse_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Member Since
@@ -6084,7 +6084,7 @@ teamtreehouse:
 teddygirls:
   url: https://teddysgirls.net/models/{username}
   timeout: 20
-  ua_profile: teddygirls_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ;s exclusive page to subscribe to her
@@ -6094,7 +6094,7 @@ teddygirls:
 teespring:
   url: https://commerce.teespring.com/v1/stores?slug={username}
   timeout: 20
-  ua_profile: teespring_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - sellerToken
@@ -6104,7 +6104,7 @@ teespring:
 teknik:
   url: https://user.teknik.io/{username}
   timeout: 20
-  ua_profile: teknik_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Public Key
@@ -6114,7 +6114,7 @@ teknik:
 telegram:
   url: https://t.me/{username}
   timeout: 20
-  ua_profile: telegram_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - tgme_page_title
@@ -6124,7 +6124,7 @@ telegram:
 teletype:
   url: https://teletype.in/@{username}
   timeout: 20
-  ua_profile: teletype_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="layout__content m_main blog"
@@ -6134,7 +6134,7 @@ teletype:
 tellonym:
   url: https://api.tellonym.me/profiles/name/{username}
   timeout: 20
-  ua_profile: tellonym_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -6144,7 +6144,7 @@ tellonym:
 tenor:
   url: https://tenor.com/users/{username}
   timeout: 20
-  ua_profile: tenor_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="ProfilePage page"
@@ -6154,7 +6154,7 @@ tenor:
 tetr.io:
   url: https://ch.tetr.io/api/users/{username}
   timeout: 20
-  ua_profile: tetr.io_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"success":true'
@@ -6164,7 +6164,7 @@ tetr.io:
 tf2 backpack examiner:
   url: http://www.tf2items.com/id/{username}/
   timeout: 20
-  ua_profile: tf2 backpack examiner_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title>TF2 Backpack -
@@ -6173,7 +6173,7 @@ tf2 backpack examiner:
 thegatewaypundit:
   url: https://www.thegatewaypundit.com/author/{username}/
   timeout: 20
-  ua_profile: thegatewaypundit_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - summary
@@ -6183,7 +6183,7 @@ thegatewaypundit:
 theguardian:
   url: https://www.theguardian.com/profile/{username}
   timeout: 20
-  ua_profile: theguardian_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <h2 class="dcr-1ln6kec">
@@ -6193,7 +6193,7 @@ theguardian:
 themeforest:
   url: https://themeforest.net/user/{username}
   timeout: 20
-  ua_profile: themeforest_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s profile on ThemeForest
@@ -6203,7 +6203,7 @@ themeforest:
 thetattooforum:
   url: https://www.thetattooforum.com/members/{username}/
   timeout: 20
-  ua_profile: thetattooforum_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Insert This Gallery
@@ -6213,7 +6213,7 @@ thetattooforum:
 thoughts:
   url: https://thoughts.com/members/{username}/
   timeout: 20
-  ua_profile: thoughts_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <span class="activity
@@ -6223,7 +6223,7 @@ thoughts:
 threads.net:
   url: https://www.threads.net/@{username}
   timeout: 20
-  ua_profile: threads.net_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ) on Threads</title>
@@ -6233,7 +6233,7 @@ threads.net:
 tiktok:
   url: https://www.tiktok.com/oembed?url=https://www.tiktok.com/@{username}
   timeout: 15
-  ua_profile: tiktok_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - author_url
   error_patterns:
@@ -6242,7 +6242,7 @@ tiktok:
 tilde.zone (mastodon instance):
   url: https://tilde.zone/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: tilde.zone (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -6252,7 +6252,7 @@ tilde.zone (mastodon instance):
 tinder:
   url: https://tinder.com/@{username}
   timeout: 20
-  ua_profile: tinder_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ) | Tinder</title>
@@ -6262,7 +6262,7 @@ tinder:
 tindie:
   url: https://www.tindie.com/accounts/check_username/
   timeout: 20
-  ua_profile: tindie_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"errors": ["Username taken!"]'
@@ -6272,7 +6272,7 @@ tindie:
 tipeeestream:
   url: https://www.tipeeestream.com/v3.0/pages/{username}
   timeout: 20
-  ua_profile: tipeeestream_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -6282,7 +6282,7 @@ tipeeestream:
 tooting.ch (mastodon instance):
   url: https://tooting.ch/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: tooting.ch (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -6292,7 +6292,7 @@ tooting.ch (mastodon instance):
 topcoder:
   url: https://api.topcoder.com/v5/members/{username}
   timeout: 20
-  ua_profile: topcoder_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userId":'
@@ -6302,7 +6302,7 @@ topcoder:
 toyhou.se:
   url: https://toyhou.se/{username}
   timeout: 20
-  ua_profile: toyhou.se_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display-user
@@ -6312,7 +6312,7 @@ toyhou.se:
 tradingview:
   url: https://www.tradingview.com/u/{username}/
   timeout: 20
-  ua_profile: tradingview_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - — Trading Ideas &amp;
@@ -6322,7 +6322,7 @@ tradingview:
 trakt:
   url: https://trakt.tv/users/{username}
   timeout: 20
-  ua_profile: trakt_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s profile - Trakt
@@ -6332,7 +6332,7 @@ trakt:
 traktrain:
   url: https://traktrain.com/{username}
   timeout: 20
-  ua_profile: traktrain_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - id="userId"
@@ -6342,7 +6342,7 @@ traktrain:
 trello:
   url: https://trello.com/1/Members/{username}
   timeout: 20
-  ua_profile: trello_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -6352,7 +6352,7 @@ trello:
 tripadvisor:
   url: https://www.tripadvisor.com/Profile/{username}
   timeout: 20
-  ua_profile: tripadvisor_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Contributions
@@ -6362,7 +6362,7 @@ tripadvisor:
 truckersmp:
   url: https://truckersmp.com/user/search?search={username}
   timeout: 20
-  ua_profile: truckersmp_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="team-v2"
@@ -6372,7 +6372,7 @@ truckersmp:
 truckersmp.ru:
   url: https://truckersmp.ru/{username}
   timeout: 20
-  ua_profile: truckersmp.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="b-user-page"
@@ -6382,7 +6382,7 @@ truckersmp.ru:
 truth social:
   url: https://truthsocial.com/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: truth social_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"id":'
@@ -6392,7 +6392,7 @@ truth social:
 tryhackme:
   url: https://tryhackme.com/api/user/exist/{username}
   timeout: 20
-  ua_profile: tryhackme_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"success":true'
@@ -6402,7 +6402,7 @@ tryhackme:
 tryst:
   url: https://tryst.link/escort/{username}
   timeout: 20
-  ua_profile: tryst_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Caters to</div>
@@ -6412,7 +6412,7 @@ tryst:
 tumblr:
   url: https://{username}.tumblr.com
   timeout: 20
-  ua_profile: tumblr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - avatar
@@ -6422,7 +6422,7 @@ tumblr:
 tunefind:
   url: https://www.tunefind.com/api-request/account/profile?userName={username}
   timeout: 20
-  ua_profile: tunefind_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"user-stats-engagement":'
@@ -6432,7 +6432,7 @@ tunefind:
 twitcasting:
   url: https://twitcasting.tv/{username}
   timeout: 20
-  ua_profile: twitcasting_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Live History
@@ -6442,7 +6442,7 @@ twitcasting:
 twitch:
   url: https://twitchtracker.com/{username}
   timeout: 15
-  ua_profile: twitch_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "Followers"
     - "Stream history"
@@ -6451,28 +6451,22 @@ twitch:
     - "Page not found"
 twitter archived profile:
   url: http://archive.org/wayback/available?url=https://twitter.com/{username}
-  timeout: 20
-  ua_profile: twitter archived profile_android
-  success_patterns:
-    - "200"
-    - '"archived_snapshots": {"closest"'
-  error_patterns:
-    - "200"
-    - '"archived_snapshots": {}'
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["Showing"]
+  error_patterns: ["No URL has been captured for this URL prefix."]
+  note: "Twitter archives"
 twitter archived tweets:
-  url: http://archive.org/wayback/available?url=https://twitter.com/{username}/status/*
-  timeout: 20
-  ua_profile: twitter archived tweets_android
-  success_patterns:
-    - "200"
-    - '"archived_snapshots": {"closest"'
-  error_patterns:
-    - "200"
-    - '"archived_snapshots": {}'
+  url: "https://web.archive.org/web/*/twitter.com/{username}/status/*"
+  timeout: 10
+  ua_profile: "desktop_chrome"
+  success_patterns: ["Showing"]
+  error_patterns: ["No URL has been captured for this URL prefix."]
+  note: "Twitter archives"
 twoplustwo:
   url: https://forumserver.twoplustwo.com/ajax.php?do=usersearch
   timeout: 20
-  ua_profile: twoplustwo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userid=
@@ -6481,7 +6475,7 @@ twoplustwo:
 twpro:
   url: https://twpro.jp/{username}
   timeout: 20
-  ua_profile: twpro_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - おとなりさん
@@ -6491,7 +6485,7 @@ twpro:
 ubisoft:
   url: https://discussions.ubisoft.com/user/{username}
   timeout: 20
-  ua_profile: ubisoft_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Ubisoft Discussion Forums"
@@ -6501,7 +6495,7 @@ ubisoft:
 udemy:
   url: https://www.udemy.com/user/{username}/
   timeout: 20
-  ua_profile: udemy_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Udemy</title>"
@@ -6511,7 +6505,7 @@ udemy:
 uef connect:
   url: https://uefconnect.uef.fi/en/{username}/
   timeout: 20
-  ua_profile: uef connect_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile-page-header__info
@@ -6521,7 +6515,7 @@ uef connect:
 uid:
   url: http://uid.me/{username}
   timeout: 20
-  ua_profile: uid_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- uID.me"
@@ -6531,7 +6525,7 @@ uid:
 ultimate guitar:
   url: https://www.ultimate-guitar.com/u/{username}
   timeout: 20
-  ua_profile: ultimate guitar_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " | Ultimate-Guitar.Com</title>"
@@ -6541,7 +6535,7 @@ ultimate guitar:
 ultras diary:
   url: http://ultrasdiary.pl/u/{username}/
   timeout: 20
-  ua_profile: ultras diary_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Mecze wyjazdowe:"
@@ -6551,7 +6545,7 @@ ultras diary:
 unlisted videos:
   url: https://unlistedvideos.com/search.php?user={username}
   timeout: 20
-  ua_profile: unlisted videos_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Date submitted
@@ -6561,7 +6555,7 @@ unlisted videos:
 unsplash:
   url: https://unsplash.com/@{username}
   timeout: 20
-  ua_profile: unsplash_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "| Unsplash Photo Community"
@@ -6571,7 +6565,7 @@ unsplash:
 untappd:
   url: https://untappd.com/user/{username}/
   timeout: 20
-  ua_profile: untappd_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="cont user_profile"
@@ -6581,7 +6575,7 @@ untappd:
 usa life:
   url: https://usa.life/{username}
   timeout: 20
-  ua_profile: usa life_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Please log in to like, share and comment
@@ -6591,7 +6585,7 @@ usa life:
 utip.io:
   url: https://utip.io/creator/profile/{username}
   timeout: 20
-  ua_profile: utip.io_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userName"'
@@ -6601,7 +6595,7 @@ utip.io:
 uwu.ai:
   url: https://{username}.uwu.ai/
   timeout: 20
-  ua_profile: uwu.ai_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - property="twitter:card"
@@ -6611,7 +6605,7 @@ uwu.ai:
 uwumarket:
   url: https://uwumarket.us/collections/{username}
   timeout: 20
-  ua_profile: uwumarket_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - collection-hero__text-wrapper
@@ -6621,7 +6615,7 @@ uwumarket:
 vapenews:
   url: https://vapenews.ru/profile/{username}
   timeout: 20
-  ua_profile: vapenews_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <title inertia>Профиль</title></head>
@@ -6631,7 +6625,7 @@ vapenews:
 venmo:
   url: https://account.venmo.com/u/{username}
   timeout: 20
-  ua_profile: venmo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profileInfo_username__
@@ -6641,7 +6635,7 @@ venmo:
 vero:
   url: https://vero.co/{username}
   timeout: 20
-  ua_profile: vero_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - name="username
@@ -6651,7 +6645,7 @@ vero:
 vibilagare:
   url: https://www.vibilagare.se/users/{username}
   timeout: 20
-  ua_profile: vibilagare_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Profil på vibilagare.se
@@ -6661,7 +6655,7 @@ vibilagare:
 viewbug:
   url: https://www.viewbug.com/member/{username}
   timeout: 20
-  ua_profile: viewbug_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="top-profile-since"
@@ -6671,7 +6665,7 @@ viewbug:
 vimeo:
   url: https://vimeo.com/{username}
   timeout: 20
-  ua_profile: vimeo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - og:type
@@ -6681,7 +6675,7 @@ vimeo:
 vine:
   url: https://vine.co/api/users/profiles/vanity/{username}
   timeout: 20
-  ua_profile: vine_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - userId
@@ -6691,7 +6685,7 @@ vine:
 vip-blog:
   url: http://{username}.vip-blog.com
   timeout: 20
-  ua_profile: vip-blog_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "blog : "
@@ -6701,7 +6695,7 @@ vip-blog:
 virustotal:
   url: https://www.virustotal.com/ui/users/{username}
   timeout: 20
-  ua_profile: virustotal_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"data"'
@@ -6711,7 +6705,7 @@ virustotal:
 visnesscard:
   url: https://my.visnesscard.com/Home/GetCard/{username}
   timeout: 20
-  ua_profile: visnesscard_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - end_point
@@ -6721,7 +6715,7 @@ visnesscard:
 vivino:
   url: https://www.vivino.com/users/{username}
   timeout: 20
-  ua_profile: vivino_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <!-- User details -->
@@ -6731,7 +6725,7 @@ vivino:
 vk:
   url: https://vk.com/{username}
   timeout: 20
-  ua_profile: vk_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - content="profile"
@@ -6741,7 +6735,7 @@ vk:
 vkl.world (mastodon instance):
   url: https://vkl.world/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: vkl.world (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -6751,7 +6745,7 @@ vkl.world (mastodon instance):
 vmst.io (mastodon instance):
   url: https://vmst.io/api/v1/accounts/lookup?acct={username}
   timeout: 20
-  ua_profile: vmst.io (mastodon instance)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - display_name
@@ -6761,7 +6755,7 @@ vmst.io (mastodon instance):
 voice123:
   url: https://voice123.com/api/providers/search/{username}
   timeout: 20
-  ua_profile: voice123_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - user_id
@@ -6771,7 +6765,7 @@ voice123:
 voices.com:
   url: https://www.voices.com/profile/{username}/
   timeout: 20
-  ua_profile: voices.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Last Online</h3>
@@ -6781,7 +6775,7 @@ voices.com:
 vsco:
   url: https://vsco.co/{username}/gallery
   timeout: 20
-  ua_profile: vsco_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - permaSubdomain
@@ -6791,7 +6785,7 @@ vsco:
 w3schools:
   url: https://pathfinder-api.kai.w3spaces.com/public-profile-api/{username}
   timeout: 20
-  ua_profile: w3schools_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userId":'
@@ -6801,7 +6795,7 @@ w3schools:
 wakatime:
   url: https://wakatime.com/@{username}
   timeout: 20
-  ua_profile: wakatime_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - ) - WakaTime</title>
@@ -6811,7 +6805,7 @@ wakatime:
 warmerise:
   url: https://warmerise.com/profile/{username}
   timeout: 20
-  ua_profile: warmerise_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <div id='profile_photo
@@ -6821,7 +6815,7 @@ warmerise:
 warriorforum:
   url: https://www.warriorforum.com/members/{username}.html
   timeout: 20
-  ua_profile: warriorforum_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "Last Activity:"
@@ -6831,7 +6825,7 @@ warriorforum:
 watchmemore.com:
   url: https://api.watchmemore.com/api4/profile/{username}/
   timeout: 20
-  ua_profile: watchmemore.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - displayName
@@ -6841,7 +6835,7 @@ watchmemore.com:
 watchmyfeed:
   url: https://watchmyfeed.com/{username}
   timeout: 20
-  ua_profile: watchmyfeed_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - SEND ME A TIP
@@ -6850,7 +6844,7 @@ watchmyfeed:
 wattpad:
   url: https://www.wattpad.com/api/v3/users/{username}
   timeout: 20
-  ua_profile: wattpad_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -6860,7 +6854,7 @@ wattpad:
 waytohey:
   url: https://waytohey.com/{username}
   timeout: 20
-  ua_profile: waytohey_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Send message</span>
@@ -6870,7 +6864,7 @@ waytohey:
 weasyl:
   url: https://www.weasyl.com/~{username}
   timeout: 20
-  ua_profile: weasyl_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile — Weasyl</title>
@@ -6880,7 +6874,7 @@ weasyl:
 weblancer:
   url: https://www.weblancer.net/users/{username}/
   timeout: 20
-  ua_profile: weblancer_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"user":'
@@ -6890,7 +6884,7 @@ weblancer:
 weblate:
   url: https://hosted.weblate.org/user/{username}/
   timeout: 20
-  ua_profile: weblate_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - class="user-page text-center"
@@ -6900,7 +6894,7 @@ weblate:
 weebly:
   url: https://{username}.weebly.com/
   timeout: 20
-  ua_profile: weebly_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <div id="navigation">
@@ -6910,7 +6904,7 @@ weebly:
 wego:
   url: https://wego.social/{username}
   timeout: 20
-  ua_profile: wego_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Following</span>
@@ -6920,7 +6914,7 @@ wego:
 weheartit:
   url: https://weheartit.com/{username}
   timeout: 20
-  ua_profile: weheartit_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " on We Heart It</title>"
@@ -6930,7 +6924,7 @@ weheartit:
 weibo:
   url: https://weibo.com/ajax/profile/info?custom={username}
   timeout: 20
-  ua_profile: weibo_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"user":'
@@ -6940,7 +6934,7 @@ weibo:
 wetransfer:
   url: https://{username}.wetransfer.com
   timeout: 20
-  ua_profile: wetransfer_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - workspaceName
@@ -6949,7 +6943,7 @@ wetransfer:
 wikidot:
   url: http://www.wikidot.com/user:info/{username}
   timeout: 20
-  ua_profile: wikidot_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <h1 class="profile-title">
@@ -6959,7 +6953,7 @@ wikidot:
 wikimapia:
   url: https://wikimapia.org/user/register/?check=username&value={username}
   timeout: 20
-  ua_profile: wikimapia_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"ok":false'
@@ -6969,7 +6963,7 @@ wikimapia:
 wikipedia:
   url: https://meta.wikimedia.org/w/api.php?action=query&format=json&list=globalallusers&aguprefix={username}&agulimit=100
   timeout: 20
-  ua_profile: wikipedia_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '{"id":'
@@ -6979,7 +6973,7 @@ wikipedia:
 wimkin-publicprofile:
   url: https://wimkin.com/{username}
   timeout: 20
-  ua_profile: wimkin-publicprofile_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - is on WIMKIN
@@ -6989,7 +6983,7 @@ wimkin-publicprofile:
 wireclub:
   url: https://www.wireclub.com/users/{username}
   timeout: 20
-  ua_profile: wireclub_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Chat With
@@ -6999,7 +6993,7 @@ wireclub:
 wishlistr:
   url: https://www.wishlistr.com/sign-up/?rs=checkUserName&rsargs[]={username}
   timeout: 20
-  ua_profile: wishlistr_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - +:var res = "
@@ -7009,7 +7003,7 @@ wishlistr:
 wordnik:
   url: https://www.wordnik.com/users/{username}
   timeout: 20
-  ua_profile: wordnik_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Welcome,
@@ -7019,7 +7013,7 @@ wordnik:
 wordpress.com (deleted):
   url: https://public-api.wordpress.com/rest/v1.1/sites/{username}.wordpress.com
   timeout: 20
-  ua_profile: wordpress.com (deleted)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "403"
     - '"message":"API calls to this endpoint have been disabled."'
@@ -7029,7 +7023,7 @@ wordpress.com (deleted):
 wordpress.com (private):
   url: https://public-api.wordpress.com/rest/v1.1/sites/{username}.wordpress.com
   timeout: 20
-  ua_profile: wordpress.com (private)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "403"
     - '"message":"User cannot access this private blog."'
@@ -7039,7 +7033,7 @@ wordpress.com (private):
 wordpress.com (public):
   url: https://public-api.wordpress.com/rest/v1.1/sites/{username}.wordpress.com
   timeout: 20
-  ua_profile: wordpress.com (public)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"ID":'
@@ -7049,7 +7043,7 @@ wordpress.com (public):
 wordpress.org (forums):
   url: https://login.wordpress.org/wp-json/wporg/v1/username-available/{username}
   timeout: 20
-  ua_profile: wordpress.org (forums)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"error":"That username is already in use.'
@@ -7059,7 +7053,7 @@ wordpress.org (forums):
 wordpress.org (profiles):
   url: https://login.wordpress.org/wp-json/wporg/v1/username-available/{username}
   timeout: 20
-  ua_profile: wordpress.org (profiles)_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"error":"That username is already in use.'
@@ -7069,7 +7063,7 @@ wordpress.org (profiles):
 wowhead:
   url: https://www.wowhead.com/user={username}
   timeout: 20
-  ua_profile: wowhead_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - " Profile - Wowhead"
@@ -7079,7 +7073,7 @@ wowhead:
 wykop:
   url: https://wykop.pl/ludzie/{username}
   timeout: 20
-  ua_profile: wykop_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "<title>Profil:"
@@ -7097,7 +7091,7 @@ x_twitter:
 xakep.ru:
   url: https://xakep.ru/author/{username}/
   timeout: 20
-  ua_profile: xakep.ru_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - authorBlock-avatar
@@ -7107,7 +7101,7 @@ xakep.ru:
 xanga:
   url: http://{username}.xanga.com/
   timeout: 20
-  ua_profile: xanga_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s Xanga Site | Just
@@ -7126,7 +7120,7 @@ xbox_gamertag:
 xhamster:
   url: https://xhamster.com/users/{username}
   timeout: 20
-  ua_profile: xhamster_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - s profile | xHamster</title>
@@ -7136,7 +7130,7 @@ xhamster:
 xing:
   url: https://www.xing.com/profile/{username}
   timeout: 20
-  ua_profile: xing_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <meta data-rh=
@@ -7146,7 +7140,7 @@ xing:
 xnxx:
   url: https://www.xnxx.com/mobile/profile/{username}
   timeout: 20
-  ua_profile: xnxx_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <table id="profile">
@@ -7156,7 +7150,7 @@ xnxx:
 xvideos-models:
   url: https://www.xvideos.com/models/{username}
   timeout: 20
-  ua_profile: xvideos-models_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Total video views
@@ -7166,7 +7160,7 @@ xvideos-models:
 xvideos-profiles:
   url: https://www.xvideos.com/profiles/{username}
   timeout: 20
-  ua_profile: xvideos-profiles_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - page - XVIDEOS.COM
@@ -7176,7 +7170,7 @@ xvideos-profiles:
 yahoo! japan auction:
   url: https://auctions.yahoo.co.jp/follow/list/{username}
   timeout: 20
-  ua_profile: yahoo! japan auction_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 出品者
@@ -7186,7 +7180,7 @@ yahoo! japan auction:
 yapishu:
   url: https://yapishu.net/user/{username}
   timeout: 20
-  ua_profile: yapishu_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - for_profile
@@ -7196,7 +7190,7 @@ yapishu:
 yazawaj:
   url: https://www.yazawaj.com/profile/{username}
   timeout: 20
-  ua_profile: yazawaj_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - profile-description
@@ -7206,7 +7200,7 @@ yazawaj:
 yeswehack:
   url: https://api.yeswehack.com/hunters/{username}
   timeout: 20
-  ua_profile: yeswehack_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"username":'
@@ -7216,7 +7210,7 @@ yeswehack:
 younow:
   url: https://api.younow.com/php/api/broadcast/info/user={username}
   timeout: 20
-  ua_profile: younow_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"userId":'
@@ -7226,7 +7220,7 @@ younow:
 youpic:
   url: https://youpic.com/photographer/{username}
   timeout: 20
-  ua_profile: youpic_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <meta name="og:title"
@@ -7236,7 +7230,7 @@ youpic:
 youtube channel:
   url: https://www.youtube.com/c/{username}/about
   timeout: 20
-  ua_profile: youtube channel_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - joinedDateText
@@ -7246,7 +7240,7 @@ youtube channel:
 youtube user:
   url: https://www.youtube.com/user/{username}/about
   timeout: 20
-  ua_profile: youtube user_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - joinedDateText
@@ -7256,7 +7250,7 @@ youtube user:
 youtube user2:
   url: https://www.youtube.com/@{username}
   timeout: 20
-  ua_profile: youtube user2_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - canonicalBaseUrl
@@ -7266,7 +7260,7 @@ youtube user2:
 zbiornik:
   url: https://mini.zbiornik.com/{username}
   timeout: 20
-  ua_profile: zbiornik_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - INFO
@@ -7275,7 +7269,7 @@ zbiornik:
 zenn:
   url: https://zenn.dev/{username}
   timeout: 20
-  ua_profile: zenn_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - <div class="UserHeader_profileMain__6Itxi">
@@ -7285,7 +7279,7 @@ zenn:
 zepeto:
   url: https://gw-napi.zepeto.io/profiles/{username}
   timeout: 20
-  ua_profile: zepeto_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - 'zepetoId":'
@@ -7295,7 +7289,7 @@ zepeto:
 zhihu:
   url: https://api.zhihu.com/books/people/{username}/publications?offset=0&limit=5
   timeout: 20
-  ua_profile: zhihu_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"is_start": true'
@@ -7305,7 +7299,7 @@ zhihu:
 zillow:
   url: https://www.zillow.com/profile/{username}/
   timeout: 20
-  ua_profile: zillow_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - "- Real Estate Agent"
@@ -7314,7 +7308,7 @@ zillow:
 zmarsa.com:
   url: https://zmarsa.com/uzytkownik/{username}
   timeout: 20
-  ua_profile: zmarsa.com_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Statystyki
@@ -7324,7 +7318,7 @@ zmarsa.com:
 znanija:
   url: https://znanija.com/graphql/ru?operationName=NickAvailability&query=query NickAvailability($nick:String!){nickAvailability(nick:$nick){isAvailable}}&variables={"nick":"{username}"}
   timeout: 20
-  ua_profile: znanija_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - '"isAvailable":false'
@@ -7334,7 +7328,7 @@ znanija:
 zomato:
   url: https://www.zomato.com/{username}/reviews
   timeout: 20
-  ua_profile: zomato_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - Activity</h4>
@@ -7344,7 +7338,7 @@ zomato:
 zoomitir:
   url: https://www.zoomit.ir/user/{username}/
   timeout: 20
-  ua_profile: zoomitir_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "301"
   error_patterns:
@@ -7353,7 +7347,7 @@ zoomitir:
 чатовка.net:
   url: https://chatovka.net/search?user_nick=+{username}&user_sex_m=on&user_sex_f=on
   timeout: 20
-  ua_profile: чатовка.net_android
+  ua_profile: "desktop_chrome"
   success_patterns:
     - "200"
     - href="/user/
