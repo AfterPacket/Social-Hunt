@@ -60,7 +60,7 @@ def is_demo_mode() -> bool:
     """Check if the application is running in demo mode."""
     env = os.getenv("SOCIAL_HUNT_DEMO_MODE")
     if env is not None and env.strip() != "":
-        return env.strip() == "1"
+        return env.strip().lower() in ("1", "true", "yes", "on")
 
     val = _read_demo_mode_from_settings()
     return bool(val)
