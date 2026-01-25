@@ -826,6 +826,44 @@ async def api_plugin_upload(
     }
 
 
+@app.delete("/api/plugin/delete")
+async def api_plugin_delete(
+    name: str,
+    x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
+):
+    if (os.getenv("SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD") or "0").strip() != "1":
+        raise HTTPException(
+            status_code=403,
+            detail="Plugin management is disabled",
+        )
+    require_admin(x_plugin_token)
+
+    # Basic path safety
+    if ".." in name or name.startswith("/") or name.startswith("\\"):
+        raise HTTPException(status_code=400, detail="Invalid plugin name")
+
+    plugins_root = _resolve_env_path("SOCIAL_HUNT_PLUGINS_DIR", "plugins")
+    target = (plugins_root / name).resolve()
+
+    if not str(target).startswith(str(plugins_root)):
+        raise HTTPException(status_code=400, detail="Path traversal detected")
+
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="Plugin not found")
+
+    if not target.is_file():
+        raise HTTPException(status_code=400, detail="Target is not a file")
+
+    try:
+        os.remove(target)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    reload_registry()
+
+    return {"ok": True, "deleted": name}
+
+
 @app.post("/api/demask")
 async def api_demask(
     file: UploadFile = File(...),
