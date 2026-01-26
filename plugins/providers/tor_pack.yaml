@@ -50,5 +50,26 @@ danwin_files:
   error_patterns:
     - "404 Not Found"
 
+exploit_in_onion:
+  url: "http://wmj5kiic7b6kjplpbvwadnht2nh2qnkbnqtcv3dyvpqtz7ssbssftxid.onion/index.php?members/find&q={username}"
+  timeout: 60
+  success_patterns:
+    - "{username}"
+  error_patterns:
+    - "Log in"
+    - "Register"
+    - "Security error"
+    - "The requested user could not be found"
+
+xss_is_onion:
+  url: "http://xssis37365q4sh5s2vsq2isw37s7x4hkymst4fmo63of5i77y26fobyd.onion/members/?username={username}"
+  timeout: 60
+  success_patterns:
+    - "{username}"
+  error_patterns:
+    - "Log in"
+    - "Register"
+    - "The requested member could not be found"
+
 # Note: Many forums require login or have heavy captchas (Dread, etc.)
 # and are excluded here for reliability.
