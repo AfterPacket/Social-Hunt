@@ -8,6 +8,7 @@ Social-Hunt is an OSINT framework for cross-platform username discovery, breach 
 - Breach intelligence via Have I Been Pwned (HIBP) and BreachVIP.
 - Face matching against profile avatars using face recognition and image hashing.
 - Reverse image OSINT links (Google Lens, Bing, Yandex, etc.).
+- Tor/Onion site support via SOCKS proxy (split-tunneling).
 - Optional AI face restoration/demasking via Replicate or a self-hosted worker.
 - Plugin system with hot-reload and optional web uploader.
 - Demo mode that censors sensitive data for safe demonstrations.
@@ -33,6 +34,8 @@ Open `http://localhost:8000`.
 git clone https://github.com/AfterPacket/Social-Hunt.git
 cd Social-Hunt
 python -m pip install -r requirements.txt
+# For Tor/SOCKS support, ensure httpx-socks is installed:
+python -m pip install httpx[socks]
 python run.py
 ```
 Open `http://localhost:8000`.
@@ -88,6 +91,34 @@ Settings resolution order is:
 | `SOCIAL_HUNT_DEMO_MODE` | Censor sensitive fields in results |
 | `SOCIAL_HUNT_FACE_AI_URL` | External face restoration endpoint |
 | `REPLICATE_API_TOKEN` | Replicate API token for demasking |
+| `SOCIAL_HUNT_PROXY` | SOCKS Proxy URL for .onion/darkweb access (e.g., `socks5h://127.0.0.1:9050`) |
+
+## Tor / Darkweb Support
+
+Social-Hunt supports scanning `.onion` sites by routing traffic through a Tor proxy. It uses split-tunneling, so regular sites (like Twitter) use your direct connection while `.onion` sites go through the proxy.
+
+### Prerequisites
+1. Install Tor (e.g., `sudo apt install tor` or use Tor Browser).
+2. Install SOCKS dependencies:
+   ```bash
+   pip install httpx[socks]
+   ```
+
+### Configuration
+Set the `SOCIAL_HUNT_PROXY` environment variable before starting the app. Use `socks5h://` to ensure DNS resolution happens over Tor.
+
+**Linux/Mac:**
+```bash
+export SOCIAL_HUNT_PROXY="socks5h://127.0.0.1:9050"
+python run.py
+```
+
+**Windows:**
+```powershell
+$env:SOCIAL_HUNT_PROXY="socks5h://127.0.0.1:9150"
+python run.py
+```
+*(Note: Standard Tor service uses port 9050; Tor Browser usually uses 9150).*
 
 ## Plugins
 
