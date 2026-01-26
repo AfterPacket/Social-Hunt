@@ -752,6 +752,7 @@ def _install_py_bytes(category: str, filename: str, data: bytes) -> str:
         out_name += ".py"
 
     out_path = target_dir / out_name
+    print(f"[UPLOAD] Installing python plugin: {out_path}")
     out_path.write_bytes(data)
     return str(out_path)
 
@@ -759,6 +760,7 @@ def _install_py_bytes(category: str, filename: str, data: bytes) -> str:
 def _extract_plugins_from_zip(zbytes: bytes) -> List[str]:
     installed: List[str] = []
     allow_py = os.getenv("SOCIAL_HUNT_ALLOW_PY_PLUGINS", "").strip() == "1"
+    print(f"[UPLOAD] Extracting ZIP. allow_py={allow_py}")
 
     with zipfile.ZipFile(BytesIO(zbytes)) as z:
         for info in z.infolist():
@@ -767,10 +769,12 @@ def _extract_plugins_from_zip(zbytes: bytes) -> List[str]:
             name = info.filename.replace("\\", "/")
             # block traversal
             if name.startswith("/") or ".." in name:
+                print(f"[UPLOAD] SKIP (unsafe path): {name}")
                 continue
             lower = name.lower()
             data = z.read(info)
             fname = Path(name).name
+            print(f"[UPLOAD] Processing zip entry: {name}")
 
             if lower.endswith(".yaml") or lower.endswith(".yml"):
                 installed.append(_install_yaml_bytes(fname, data))
@@ -781,6 +785,10 @@ def _extract_plugins_from_zip(zbytes: bytes) -> List[str]:
                     installed.append(_install_py_bytes("providers", fname, data))
                 elif "python/addons/" in name:
                     installed.append(_install_py_bytes("addons", fname, data))
+                else:
+                    print(f"[UPLOAD] SKIP (py not in correct folder): {name}")
+            elif lower.endswith(".py") and not allow_py:
+                print(f"[UPLOAD] SKIP (py disabled): {name}")
 
     return installed
 
@@ -817,6 +825,7 @@ async def api_plugin_upload(
 
     fname = (file.filename or "plugin").strip()
     lower = fname.lower()
+    print(f"[UPLOAD] Received file: {fname} ({len(raw)} bytes)")
 
     installed: List[str] = []
 
@@ -829,8 +838,10 @@ async def api_plugin_upload(
     elif lower.endswith(".yaml") or lower.endswith(".yml"):
         installed = [_install_yaml_bytes(fname, raw)]
     else:
+        print("[UPLOAD] Rejected: invalid extension")
         raise HTTPException(status_code=400, detail="upload must be .yaml/.yml or .zip")
 
+    print(f"[UPLOAD] Installed files: {installed}")
     reload_registry()
 
     return {
@@ -840,9 +851,13 @@ async def api_plugin_upload(
     }
 
 
-@app.delete("/api/plugin/delete")
+class PluginDeleteReq(BaseModel):
+    name: str
+
+
+@app.post("/api/plugin/delete")
 async def api_plugin_delete(
-    name: str,
+    req: PluginDeleteReq,
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
     if (os.getenv("SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD") or "0").strip() != "1":
@@ -853,20 +868,26 @@ async def api_plugin_delete(
     require_admin(x_plugin_token)
 
     # Basic path safety
-    name = name.replace("\\", "/")
-    if ".." in name or name.startswith("/"):
+    name = req.name.replace("\\", "/")
+    if ".." in name:
         raise HTTPException(status_code=400, detail="Invalid plugin name")
 
     plugins_root = _resolve_env_path("SOCIAL_HUNT_PLUGINS_DIR", "plugins").resolve()
     target = (plugins_root / name).resolve()
 
+    print(f"[DELETE] Root: {plugins_root}")
+    print(f"[DELETE] Target: {target}")
+    print(f"[DELETE] Name param: {name}")
+
     # Robust check for path containment
     try:
         target.relative_to(plugins_root)
     except ValueError:
+        print(f"[DELETE] Path traversal detected for {target} vs {plugins_root}")
         raise HTTPException(status_code=400, detail="Path traversal detected")
 
     if not target.exists():
+        print(f"[DELETE] Target does not exist: {target}")
         raise HTTPException(status_code=404, detail=f"Plugin not found: {name}")
 
     if not target.is_file():

@@ -4,13 +4,14 @@ import hashlib
 import importlib.util
 import os
 from pathlib import Path
-from typing import Dict, Any, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar
 
 import yaml
 
+from .addons_base import BaseAddon
+from .paths import resolve_path
 from .providers_base import BaseProvider
 from .providers_yaml import PatternProvider
-from .addons_base import BaseAddon
 
 T = TypeVar("T")
 
@@ -20,7 +21,7 @@ def plugins_dir() -> Path:
 
     Defaults to ./plugins (relative to repo root / working dir).
     """
-    return Path(os.getenv("SOCIAL_HUNT_PLUGINS_DIR", "plugins")).resolve()
+    return resolve_path(os.getenv("SOCIAL_HUNT_PLUGINS_DIR", "plugins"))
 
 
 def _safe_glob(base: Path, pattern: str) -> List[Path]:
@@ -141,6 +142,8 @@ def load_python_plugin_addons(allow: bool) -> Dict[str, BaseAddon]:
 def list_installed_plugins() -> Dict[str, Any]:
     """Return a simple inventory of plugin files present on disk."""
     root = plugins_dir()
+    print(f"[PLUGIN_LIST] Scanning plugins root: {root} (exists={root.exists()})")
+
     inv: Dict[str, Any] = {
         "root": str(root),
         "yaml_providers": [],
@@ -148,9 +151,22 @@ def list_installed_plugins() -> Dict[str, Any]:
         "python_addons": [],
     }
     inv["yaml_providers"] = [
-        str(p.relative_to(root))
-        for p in (_safe_glob(root / "providers", "*.yaml") + _safe_glob(root / "providers", "*.yml"))
+        p.relative_to(root).as_posix()
+        for p in (
+            _safe_glob(root / "providers", "*.yaml")
+            + _safe_glob(root / "providers", "*.yml")
+        )
     ]
-    inv["python_providers"] = [str(p.relative_to(root)) for p in _safe_glob(root / "python" / "providers", "*.py")]
-    inv["python_addons"] = [str(p.relative_to(root)) for p in _safe_glob(root / "python" / "addons", "*.py")]
+    inv["python_providers"] = [
+        p.relative_to(root).as_posix()
+        for p in _safe_glob(root / "python" / "providers", "*.py")
+    ]
+    inv["python_addons"] = [
+        p.relative_to(root).as_posix()
+        for p in _safe_glob(root / "python" / "addons", "*.py")
+    ]
+
+    print(
+        f"[PLUGIN_LIST] Found {len(inv['yaml_providers'])} YAML, {len(inv['python_providers'])} Providers, {len(inv['python_addons'])} Addons"
+    )
     return inv
