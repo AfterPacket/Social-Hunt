@@ -1,0 +1,3 @@
+[submodule "DeepMosaics"]
+	path = DeepMosaics
+	url = https://github.com/HypoX64/DeepMosaics.git
