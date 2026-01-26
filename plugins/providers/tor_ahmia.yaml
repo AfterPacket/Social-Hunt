@@ -1,8 +1,0 @@
-ahmia_tor:
-  url: "http://juhanurmihxlp77nkq76byazcldy2hlmovfu2epvl5ankdibsot4csyd.onion/search/?q={username}"
-  timeout: 30
-  ua_profile: "desktop_chrome"
-  success_patterns:
-    - "{username}"
-  error_patterns:
-    - "No results found"
