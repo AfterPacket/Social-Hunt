@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from contextlib import AsyncExitStack
 from typing import Callable, Dict, List, Optional
 
 import httpx
@@ -43,9 +44,18 @@ class SocialHuntEngine:
 
         # Allow optional proxy configuration (e.g. socks5://127.0.0.1:9050 for Tor)
         # Note: SOCKS support requires 'pip install httpx-socks'
-        proxy = os.getenv("SOCIAL_HUNT_PROXY")
+        proxy_url = os.getenv("SOCIAL_HUNT_PROXY")
 
-        async with httpx.AsyncClient(proxy=proxy) as client:
+        async with AsyncExitStack() as stack:
+            # Default direct client
+            client_direct = await stack.enter_async_context(httpx.AsyncClient())
+
+            # Optional proxy client for .onion addresses
+            client_proxy = None
+            if proxy_url:
+                client_proxy = await stack.enter_async_context(
+                    httpx.AsyncClient(proxy=proxy_url)
+                )
 
             async def run_one(name: str) -> ProviderResult:
                 prov = self.registry[name]
@@ -59,8 +69,13 @@ class SocialHuntEngine:
 
                 await self.limiter.wait(url)
 
+                # Select client based on URL (Tor split-tunneling)
+                use_client = client_direct
+                if ".onion" in url and client_proxy:
+                    use_client = client_proxy
+
                 async with sem:
-                    res = await prov.check(username, client, headers)
+                    res = await prov.check(username, use_client, headers)
 
                     # Demo mode censorship
                     from .demo import censor_value, is_demo_mode
@@ -111,7 +126,7 @@ class SocialHuntEngine:
             if addons_to_run:
                 addon_tasks = [
                     asyncio.create_task(
-                        addon.run(username, results, client, self.limiter)
+                        addon.run(username, results, client_direct, self.limiter)
                     )
                     for addon in addons_to_run
                 ]
