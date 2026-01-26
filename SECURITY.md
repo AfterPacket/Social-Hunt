@@ -19,7 +19,7 @@ We take the security of Social-Hunt seriously. If you have discovered a security
 
 Please **do not** report security vulnerabilities through public GitHub issues.
 
-Instead, please report vulnerabilities by emailing **afterpacket@whodisnewdomain.com**.
+Instead, please report vulnerabilities by emailing **afterpacket@0xdeadbeef.email**.
 
 Please include the following details in your report:
 
