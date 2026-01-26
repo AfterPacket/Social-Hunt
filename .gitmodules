@@ -1,3 +1,6 @@
 [submodule "DeepMosaics"]
 	path = DeepMosaics
 	url = https://github.com/HypoX64/DeepMosaics.git
+[submodule "iopaint"]
+	path = iopaint
+	url = git@github.com:Sanster/IOPaint.git
