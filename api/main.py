@@ -959,7 +959,7 @@ async def api_demask(
         # Programmatically fetch latest versions to avoid 404 errors
         try:
             model_pix2pix = await asyncio.to_thread(
-                rep_client.models.get, "timbrooks/instruct-pix2pix"
+                rep_client.models.get, "timothybrooks/instruct-pix2pix"
             )
             model_codeformer = await asyncio.to_thread(
                 rep_client.models.get, "sczhou/codeformer"
@@ -980,7 +980,7 @@ async def api_demask(
             # Using asyncio.to_thread because replicate-python is synchronous
             output_1 = await asyncio.to_thread(
                 rep_client.run,
-                f"timbrooks/instruct-pix2pix:{v_pix2pix}",
+                f"timothybrooks/instruct-pix2pix:{v_pix2pix}",
                 input={
                     "image": b64_img,
                     "prompt": "remove the face mask, reveal the underlying face, forensic detail, high quality",
@@ -1008,7 +1008,7 @@ async def api_demask(
                         file_url = cres.text.strip()
                         output_1 = await asyncio.to_thread(
                             rep_client.run,
-                            f"timbrooks/instruct-pix2pix:{v_pix2pix}",
+                            f"timothybrooks/instruct-pix2pix:{v_pix2pix}",
                             input={
                                 "image": file_url,
                                 "prompt": "remove the face mask, reveal the underlying face, forensic detail, high quality",
