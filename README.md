@@ -146,6 +146,35 @@ Reverse-image links require a public base URL for your instance:
 
 - Set `public_url` in settings or `SOCIAL_HUNT_PUBLIC_URL` in the environment.
 
+## AI Demasking (Replicate or Self-Hosted)
+
+Social-Hunt can run the demasking pipeline with Replicate or a self-hosted worker.
+
+### Replicate API
+Set a Replicate API token in either:
+- Settings: `replicate_api_token`
+- Environment: `REPLICATE_API_TOKEN`
+
+When configured, the server uses Replicate models to remove masks and restore facial detail.
+
+### Self-hosted (DeepMosaics or custom)
+Set `SOCIAL_HUNT_FACE_AI_URL` to an HTTP endpoint that accepts JSON:
+```json
+{
+  "image": "<base64 image bytes>",
+  "fidelity": 0.7,
+  "task": "face_restoration"
+}
+```
+and returns:
+```json
+{ "image": "<base64 restored image bytes>" }
+```
+
+The repo includes a `DeepMosaics/` submodule you can use to build a local restoration service,
+but it does not match the `/restore` JSON contract out of the box. Add a small adapter or
+proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_URL` at it.
+
 ## Troubleshooting
 
 - BreachVIP 403: Cloudflare may block datacenter IPs. Try manual search or change IP.
