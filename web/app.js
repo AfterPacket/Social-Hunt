@@ -668,22 +668,15 @@ async function startScan() {
       return;
     }
     statusEl.textContent = "Starting face scan...";
-    const images = await Promise.all(
-      [...faceImages].map(
-        (file) =>
-          new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result || ""));
-            reader.onerror = () =>
-              reject(reader.error || new Error("read failed"));
-            reader.readAsDataURL(file);
-          }),
-      ),
-    );
-    res = await fetch("/api/face-search-json", {
+    const formData = new FormData();
+    formData.append("username", username);
+    for (const file of faceImages) {
+      formData.append("files", file);
+    }
+    res = await fetch("/api/face-search", {
       method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ username, images }),
+      headers: authHeaders(),
+      body: formData,
     });
   } else {
     const providers = selectedProviders();
