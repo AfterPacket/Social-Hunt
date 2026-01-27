@@ -1050,7 +1050,7 @@ async def api_demask(
                     "image": inpainted_url,
                     "upscale": 1,
                     "face_upsample": True,
-                    "codeformer_fidelity": 0.65,  # Balanced fidelity for smoother blending
+                    "codeformer_fidelity": 0.9,  # Increased fidelity to reduce hallucinations
                 },
             )
             # Ensure output is converted from FileOutput object to string URL
