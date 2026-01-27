@@ -928,8 +928,6 @@ async def api_demask(
             content = await file.read()
             restored_bytes = await restore_face(content, strength=0.7)
             if restored_bytes:
-                from fastapi.responses import StreamingResponse
-
                 return StreamingResponse(
                     BytesIO(restored_bytes), media_type="image/png"
                 )
