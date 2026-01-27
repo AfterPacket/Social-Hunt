@@ -958,9 +958,10 @@ async def api_demask(
 
         try:
             # Using asyncio.to_thread because replicate-python is synchronous
+            # Using latest model versions instead of pinned hashes to avoid 404s
             output_1 = await asyncio.to_thread(
                 rep_client.run,
-                "timbrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f",
+                "timbrooks/instruct-pix2pix",
                 input={
                     "image": b64_img,
                     "prompt": "remove the face mask, reveal the underlying face, forensic detail, high quality",
@@ -971,7 +972,41 @@ async def api_demask(
             inpainted_url = output_1[0] if isinstance(output_1, list) else output_1
         except Exception as e:
             print(f"[ERROR] Demasking Step 1 failed: {e}")
-            raise HTTPException(status_code=500, detail=f"AI Step 1 failed: {str(e)}")
+
+            # Fallback to Catbox if Base64 failed (sometimes happens with large payloads or 404s)
+            print("[DEBUG] Attempting Catbox fallback for Step 1...")
+            inpainted_url = ""
+            try:
+                async with httpx.AsyncClient() as hc:
+                    files = {
+                        "fileToUpload": (file.filename, content, file.content_type)
+                    }
+                    data = {"reqtype": "fileupload", "userhash": ""}
+                    cres = await hc.post(
+                        "https://catbox.moe/user/api.php", data=data, files=files
+                    )
+                    if cres.status_code == 200:
+                        file_url = cres.text.strip()
+                        output_1 = await asyncio.to_thread(
+                            rep_client.run,
+                            "timbrooks/instruct-pix2pix",
+                            input={
+                                "image": file_url,
+                                "prompt": "remove the face mask, reveal the underlying face, forensic detail, high quality",
+                                "negative_prompt": "blurry, distorted, mask remains",
+                                "num_inference_steps": 30,
+                            },
+                        )
+                        inpainted_url = (
+                            output_1[0] if isinstance(output_1, list) else output_1
+                        )
+            except Exception as fe:
+                print(f"[ERROR] Fallback failed: {fe}")
+
+            if not inpainted_url:
+                raise HTTPException(
+                    status_code=500, detail=f"AI Step 1 failed: {str(e)}"
+                )
 
         if not inpainted_url:
             raise HTTPException(status_code=504, detail="AI Step 1 returned no output.")
@@ -983,7 +1018,7 @@ async def api_demask(
         try:
             output_2 = await asyncio.to_thread(
                 rep_client.run,
-                "sczhou/codeformer:7de2ea4a352033cfa2f21683c7a9511da922ec5ad9f9e61298d0b3dd16742617",
+                "sczhou/codeformer",
                 input={
                     "image": inpainted_url,
                     "upscale": 1,
