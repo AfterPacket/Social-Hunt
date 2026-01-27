@@ -982,7 +982,7 @@ async def api_demask(
                 input={
                     "image": b64_img,
                     "prompt": "remove face mask, balaclava, ski mask, sunglasses, face covering, reveal the underlying human face, preserve identity, realistic features",
-                    "negative_prompt": "jungle, trees, nature, psychedelic, abstract, colorful, distorted, blurry, cartoon, mask remains, makeup, change gender, extra fingers, mutated hands, poorly drawn face, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
+                    "negative_prompt": "jungle, trees, nature, psychedelic, abstract, colorful, distorted, blurry, cartoon, mask remains, makeup, change gender, female, feminine, extra fingers, mutated hands, poorly drawn face, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
                     "num_inference_steps": 25,
                     \"image_guidance_scale\": 1.8,  # Maximized to strongly preserve structure and reduce hallucinations
                     "guidance_scale": 7.0,  # Prevent aggressive hallucinations
@@ -1016,7 +1016,7 @@ async def api_demask(
                             input={
                                 "image": file_url,
                                 "prompt": "remove face mask, balaclava, ski mask, sunglasses, face covering, reveal the underlying human face, preserve identity, realistic features",
-                                "negative_prompt": "jungle, trees, nature, psychedelic, abstract, colorful, distorted, blurry, cartoon, mask remains, makeup, change gender, extra fingers, mutated hands, poorly drawn face, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
+                                "negative_prompt": "jungle, trees, nature, psychedelic, abstract, colorful, distorted, blurry, cartoon, mask remains, makeup, change gender, female, feminine, extra fingers, mutated hands, poorly drawn face, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
                                 "num_inference_steps": 25,
                                 \"image_guidance_scale\": 1.8,
                                 "guidance_scale": 7.0,
