@@ -122,12 +122,12 @@ function addReverseHistoryEntry({ image_url, links }) {
   saveJsonArray(KEY_REVERSE_HISTORY, items);
 }
 
-function addDemaskHistoryEntry(data) {
+function addDemaskHistoryEntry(original_src, result_data_url) {
   const items = loadJsonArray(KEY_DEMASK_HISTORY);
   items.unshift({
     ts: Math.floor(Date.now() / 1000),
-    original: data.original,
-    result: data.result,
+    original: original_src,
+    result: result_data_url,
   });
   saveJsonArray(KEY_DEMASK_HISTORY, items);
 }
@@ -2126,13 +2126,10 @@ async function initDemaskView() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
 
-      // Save to local history
+      // Add to history
       const reader = new FileReader();
       reader.onloadend = () => {
-        addDemaskHistoryEntry({
-          original: originalPreview.src,
-          result: reader.result,
-        });
+        addDemaskHistoryEntry(originalPreview.src, reader.result);
       };
       reader.readAsDataURL(blob);
 
