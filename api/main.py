@@ -132,6 +132,11 @@ class AdminTokenPutReq(BaseModel):
     token: str
 
 
+class FaceSearchJsonReq(BaseModel):
+    username: str
+    images: List[str]
+
+
 @app.get("/api/admin/status")
 async def api_admin_status():
     env_token = (os.getenv("SOCIAL_HUNT_PLUGIN_TOKEN") or "").strip()
@@ -534,6 +539,114 @@ async def api_face_search(
             _save_job_to_disk(job_id)
 
             # Clean up the temporary files
+            for path in image_paths:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+            try:
+                os.rmdir(temp_dir)
+            except OSError:
+                pass
+
+    asyncio.create_task(runner())
+    return {"job_id": job_id}
+
+
+@app.post("/api/face-search-json")
+async def api_face_search_json(req: FaceSearchJsonReq):
+    username = (req.username or "").strip()
+    if not username:
+        raise HTTPException(status_code=400, detail="username required")
+    if not req.images:
+        raise HTTPException(status_code=400, detail="at least one image is required")
+
+    job_id = str(uuid.uuid4())
+    JOBS[job_id] = {
+        "id": job_id,
+        "ts": int(time.time()),
+        "state": "running",
+        "results": [],
+        "username": username,
+        "providers_count": len(list(registry.keys())),
+        "results_count": 0,
+        "found_count": 0,
+        "failed_count": 0,
+    }
+
+    temp_dir = APP_ROOT / "temp" / job_id
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    def _decode_image_data(data: str) -> tuple[bytes, str]:
+        raw = (data or "").strip()
+        if raw.startswith("data:") and ";base64," in raw:
+            header, b64 = raw.split(",", 1)
+            mime = header.split(":", 1)[1].split(";", 1)[0].lower()
+        else:
+            b64 = raw
+            mime = "image/jpeg"
+        try:
+            content = base64.b64decode(b64, validate=True)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"invalid image data: {e}")
+        return content, mime
+
+    def _ext_for_mime(mime: str) -> str:
+        if mime == "image/png":
+            return ".png"
+        if mime == "image/webp":
+            return ".webp"
+        if mime == "image/gif":
+            return ".gif"
+        return ".jpg"
+
+    image_paths = []
+    for idx, img in enumerate(req.images):
+        content, mime = _decode_image_data(img)
+        filename = f"face_{idx + 1}{_ext_for_mime(mime)}"
+        file_path = temp_dir / filename
+        try:
+            with open(file_path, "wb") as buffer:
+                buffer.write(content)
+            image_paths.append(str(file_path))
+        except Exception:
+            JOBS[job_id]["state"] = "failed"
+            JOBS[job_id]["error"] = "Failed to save uploaded file."
+            return {"job_id": job_id}
+
+    from social_hunt.addons.face_matcher import FaceMatcherAddon
+
+    face_matcher_addon = FaceMatcherAddon(target_image_paths=image_paths)
+
+    def progress(res):
+        if job_id in JOBS:
+            job = JOBS[job_id]
+            job["results"].append(res.to_dict())
+            job["results_count"] = int(job.get("results_count", 0)) + 1
+            status = getattr(res, "status", None)
+            status_val = status.value if status is not None else None
+            if status_val == "found":
+                job["found_count"] = int(job.get("found_count", 0)) + 1
+            elif status_val in ("error", "unknown", "blocked", "not_found"):
+                job["failed_count"] = int(job.get("failed_count", 0)) + 1
+
+    async def runner():
+        try:
+            final_res = await engine.scan_username(
+                username,
+                dynamic_addons=[face_matcher_addon],
+                progress_callback=progress,
+            )
+            final_dicts = [r.to_dict() for r in final_res]
+            JOBS[job_id]["results"] = final_dicts
+            JOBS[job_id]["state"] = "done"
+            JOBS[job_id].update(_summarize_results(final_dicts))
+        except Exception as e:
+            JOBS[job_id]["state"] = "failed"
+            JOBS[job_id]["error"] = str(e)
+        finally:
+            _save_job_to_disk(job_id)
+
             for path in image_paths:
                 try:
                     os.remove(path)
