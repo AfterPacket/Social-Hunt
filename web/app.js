@@ -63,7 +63,8 @@ async function loadView(name) {
 // ----------------------
 const HISTORY_MAX = 200;
 const KEY_SEARCH_HISTORY = "socialhunt_search_history";
-const KEY_REVERSE_HISTORY = "socialhunt_reverse_history";
+const KEY_REVERSE_HISTORY = "sh_reverse_history";
+const KEY_DEMASK_HISTORY = "sh_demask_history";
 const RESULTS_RENDER_LIMIT = 300;
 const RESULTS_RENDER_INTERVAL_MS = 2000;
 const RESULTS_POLL_INTERVAL_MS = 2000;
@@ -119,6 +120,16 @@ function addReverseHistoryEntry({ image_url, links }) {
     links: Array.isArray(links) ? links : [],
   });
   saveJsonArray(KEY_REVERSE_HISTORY, items);
+}
+
+function addDemaskHistoryEntry(data) {
+  const items = loadJsonArray(KEY_DEMASK_HISTORY);
+  items.unshift({
+    ts: Math.floor(Date.now() / 1000),
+    original: data.original,
+    result: data.result,
+  });
+  saveJsonArray(KEY_DEMASK_HISTORY, items);
 }
 
 // ----------------------
@@ -1152,10 +1163,13 @@ function fmtWhen(ts) {
 function initHistoryView() {
   const searchBody = document.getElementById("searchHistoryBody");
   const reverseBody = document.getElementById("reverseHistoryBody");
+  const demaskBody = document.getElementById("demaskHistoryBody");
   const searchEmpty = document.getElementById("searchHistoryEmpty");
   const reverseEmpty = document.getElementById("reverseHistoryEmpty");
+  const demaskEmpty = document.getElementById("demaskHistoryEmpty");
   const clearSearch = document.getElementById("searchHistoryClear");
   const clearReverse = document.getElementById("reverseHistoryClear");
+  const clearDemask = document.getElementById("demaskHistoryClear");
   const refreshBtn = document.getElementById("historyRefresh");
 
   function render() {
@@ -1225,6 +1239,22 @@ function initHistoryView() {
         })
         .join("");
     }
+
+    // Demask
+    const demasks = loadJsonArray(KEY_DEMASK_HISTORY);
+    if (demaskEmpty)
+      demaskEmpty.style.display = demasks.length ? "none" : "block";
+    if (demaskBody) {
+      demaskBody.innerHTML = demasks
+        .map((x) => {
+          return `<tr>
+          <td>${escapeHtml(fmtWhen(x.ts))}</td>
+          <td><img src="${x.original}" style="max-height:50px; cursor:pointer; border-radius:4px" onclick="window.open(this.src)"></td>
+          <td><img src="${x.result}" style="max-height:50px; cursor:pointer; border-radius:4px" onclick="window.open(this.src)"></td>
+        </tr>`;
+        })
+        .join("");
+    }
   }
 
   if (clearSearch) {
@@ -1236,6 +1266,12 @@ function initHistoryView() {
   if (clearReverse) {
     clearReverse.onclick = () => {
       localStorage.removeItem(KEY_REVERSE_HISTORY);
+      render();
+    };
+  }
+  if (clearDemask) {
+    clearDemask.onclick = () => {
+      localStorage.removeItem(KEY_DEMASK_HISTORY);
       render();
     };
   }
@@ -2089,6 +2125,16 @@ async function initDemaskView() {
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
+
+      // Save to local history
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        addDemaskHistoryEntry({
+          original: originalPreview.src,
+          result: reader.result,
+        });
+      };
+      reader.readAsDataURL(blob);
 
       resultImg.src = url;
       resultImg.style.display = "block";

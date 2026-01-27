@@ -2,50 +2,107 @@
 <p class="muted">Local history stored in your browser (this device only).</p>
 
 <div class="grid">
-  <div class="card half">
-    <div class="row" style="justify-content:space-between;align-items:center;">
-      <h3 style="margin:0">Search history</h3>
-      <div class="row">
-        <button class="btn" id="historyRefresh" type="button">Refresh</button>
-        <button class="btn danger" id="searchHistoryClear" type="button">Clear</button>
-      </div>
+    <div class="card half">
+        <div
+            class="row"
+            style="justify-content: space-between; align-items: center"
+        >
+            <h3 style="margin: 0">Search history</h3>
+            <div class="row">
+                <button class="btn" id="historyRefresh" type="button">
+                    Refresh
+                </button>
+                <button
+                    class="btn danger"
+                    id="searchHistoryClear"
+                    type="button"
+                >
+                    Clear
+                </button>
+            </div>
+        </div>
+        <div id="searchHistoryEmpty" class="muted" style="display: none">
+            No searches yet.
+        </div>
+        <div class="tablewrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Username</th>
+                        <th>Providers</th>
+                        <th>Job</th>
+                        <th>Results</th>
+                    </tr>
+                </thead>
+                <tbody id="searchHistoryBody"></tbody>
+            </table>
+        </div>
     </div>
-    <div id="searchHistoryEmpty" class="muted" style="display:none;">No searches yet.</div>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Username</th>
-            <th>Providers</th>
-            <th>Job</th>
-            <th>Results</th>
-          </tr>
-        </thead>
-        <tbody id="searchHistoryBody"></tbody>
-      </table>
-    </div>
-  </div>
 
-  <div class="card half">
-    <div class="row" style="justify-content:space-between;align-items:center;">
-      <h3 style="margin:0">Reverse image history</h3>
-      <div class="row">
-        <button class="btn danger" id="reverseHistoryClear" type="button">Clear</button>
-      </div>
+    <div class="card half">
+        <div
+            class="row"
+            style="justify-content: space-between; align-items: center"
+        >
+            <h3 style="margin: 0">Reverse image history</h3>
+            <div class="row">
+                <button
+                    class="btn danger"
+                    id="reverseHistoryClear"
+                    type="button"
+                >
+                    Clear
+                </button>
+            </div>
+        </div>
+        <div id="reverseHistoryEmpty" class="muted" style="display: none">
+            No reverse searches yet.
+        </div>
+        <div class="tablewrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Image URL</th>
+                        <th>Open</th>
+                    </tr>
+                </thead>
+                <tbody id="reverseHistoryBody"></tbody>
+            </table>
+        </div>
     </div>
-    <div id="reverseHistoryEmpty" class="muted" style="display:none;">No reverse searches yet.</div>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Image URL</th>
-            <th>Open</th>
-          </tr>
-        </thead>
-        <tbody id="reverseHistoryBody"></tbody>
-      </table>
+
+    <div class="card half">
+        <div
+            class="row"
+            style="justify-content: space-between; align-items: center"
+        >
+            <h3 style="margin: 0">Demasking history</h3>
+            <div class="row">
+                <button
+                    class="btn danger"
+                    id="demaskHistoryClear"
+                    type="button"
+                >
+                    Clear
+                </button>
+            </div>
+        </div>
+        <div id="demaskHistoryEmpty" class="muted" style="display: none">
+            No demasking history yet.
+        </div>
+        <div class="tablewrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Original</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody id="demaskHistoryBody"></tbody>
+            </table>
+        </div>
     </div>
-  </div>
 </div>
