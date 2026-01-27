@@ -988,7 +988,11 @@ async def api_demask(
                     "num_inference_steps": 30,
                 },
             )
-            inpainted_url = output_1[0] if isinstance(output_1, list) else output_1
+            # Ensure output is converted from FileOutput object to string URL
+            if isinstance(output_1, list) and len(output_1) > 0:
+                inpainted_url = str(output_1[0])
+            else:
+                inpainted_url = str(output_1)
         except Exception as e:
             print(f"[ERROR] Demasking Step 1 failed: {e}")
 
@@ -1016,9 +1020,11 @@ async def api_demask(
                                 "num_inference_steps": 30,
                             },
                         )
-                        inpainted_url = (
-                            output_1[0] if isinstance(output_1, list) else output_1
-                        )
+                        # Ensure output is converted from FileOutput object to string URL
+                        if isinstance(output_1, list) and len(output_1) > 0:
+                            inpainted_url = str(output_1[0])
+                        else:
+                            inpainted_url = str(output_1)
             except Exception as fe:
                 print(f"[ERROR] Fallback failed: {fe}")
 
@@ -1045,7 +1051,11 @@ async def api_demask(
                     "codeformer_fidelity": 0.7,
                 },
             )
-            final_output_url = output_2
+            # Ensure output is converted from FileOutput object to string URL
+            if isinstance(output_2, list) and len(output_2) > 0:
+                final_output_url = str(output_2[0])
+            else:
+                final_output_url = str(output_2) if output_2 else None
 
             if final_output_url:
                 async with httpx.AsyncClient() as hc:
