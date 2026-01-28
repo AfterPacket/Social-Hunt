@@ -41,6 +41,10 @@ function renderTokenStatus() {
   tokenStatus.textContent = getToken() ? "Token: set" : "Token: not set";
 }
 
+function getCacheBust() {
+  return localStorage.getItem("sh_cache_bust") || "2.2.2";
+}
+
 const viewTitles = {
   dashboard: "Dashboard",
   search: "Search",
@@ -86,7 +90,7 @@ async function loadView(name) {
 
   viewTitle.textContent = viewTitles[name] || name;
 
-  const res = await fetch(`/static/views/${name}.html?v=2.2.2`, {
+  const res = await fetch(`/static/views/${name}.html?v=${getCacheBust()}`, {
     cache: "no-store",
   });
   viewContainer.innerHTML = await res.text();
@@ -1538,6 +1542,7 @@ function initSettingsView() {
   const restartBtn = document.getElementById("restartBtn");
   const demoModeToggle = document.getElementById("demoModeToggle");
   const saveDemoModeBtn = document.getElementById("saveDemoMode");
+  let demoModeSaving = false;
 
   function showMsg(txt) {
     msgEl.style.display = "block";
@@ -1775,20 +1780,48 @@ function initSettingsView() {
     };
   }
 
-  if (saveDemoModeBtn && demoModeToggle) {
-    saveDemoModeBtn.onclick = async () => {
-      if (!getToken()) return alert("Set token first (Token page).");
-      const demo_mode = demoModeToggle.checked;
+  async function updateDemoMode() {
+    if (!demoModeToggle) return;
+    if (!getToken()) {
+      demoModeToggle.checked = !demoModeToggle.checked;
+      return alert("Set token first (Token page).");
+    }
+    if (demoModeSaving) return;
+    demoModeSaving = true;
+    const demo_mode = demoModeToggle.checked;
+    const originalText = saveDemoModeBtn ? saveDemoModeBtn.textContent : "";
+    if (saveDemoModeBtn) {
+      saveDemoModeBtn.disabled = true;
+      saveDemoModeBtn.textContent = "Saving...";
+    }
+    try {
       const r = await fetch("/api/settings", {
         method: "PUT",
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ settings: { demo_mode } }),
       });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) return showMsg(j.detail || `Save failed (${r.status})`);
-      showMsg("Demo mode updated.");
-      load();
-    };
+      if (!r.ok) {
+        demoModeToggle.checked = !demo_mode;
+        return showMsg(j.detail || `Save failed (${r.status})`);
+      }
+      showMsg("Demo mode updated. Reloading...");
+      localStorage.setItem("sh_cache_bust", String(Date.now()));
+      setTimeout(() => {
+        window.location.replace(`/?v=${Date.now()}`);
+      }, 300);
+    } finally {
+      demoModeSaving = false;
+      if (saveDemoModeBtn) {
+        saveDemoModeBtn.disabled = false;
+        saveDemoModeBtn.textContent = originalText || "Save";
+      }
+    }
+  }
+
+  if (saveDemoModeBtn && demoModeToggle) {
+    saveDemoModeBtn.onclick = updateDemoMode;
+    demoModeToggle.addEventListener("change", updateDemoMode);
   }
 
   load();
