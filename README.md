@@ -196,6 +196,7 @@ proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_
 - `README_RUN.md` execution and configuration guide
 - `PLUGINS.md` plugin formats and uploader
 - `APACHE_SETUP.md` Apache reverse proxy notes
+- `NGINX_SETUP.md` Nginx reverse proxy notes
 - `LICENSE` GPL-3.0
 
 ## Reverse Proxy Notes (IOPaint on same domain)

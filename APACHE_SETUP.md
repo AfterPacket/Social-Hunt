@@ -171,6 +171,60 @@ Social-Hunt API to `/sh-api` (so IOPaint can use `/api` and `/socket.io`).
 </VirtualHost>
 ```
 
+### SSL version of the example (recommended)
+
+```apache
+<VirtualHost *:443>
+  ServerName osint.example.com
+
+  SSLEngine on
+  SSLCertificateFile /etc/ssl/your_cert/ssl.combined
+  SSLCertificateKeyFile /etc/ssl/your_cert/ssl.key
+
+  # Modern TLS only
+  SSLProtocol -all +TLSv1.2 +TLSv1.3
+  SSLCipherSuite HIGH:!aNULL:!MD5:!3DES
+  SSLHonorCipherOrder On
+
+  ProxyPreserveHost On
+  RequestHeader set X-Forwarded-Proto "https"
+  RequestHeader set X-Forwarded-Host "%{Host}i"
+
+  # IOPaint UI + assets + API + socket.io
+  ProxyPass        /iopaint/ http://127.0.0.1:8080/
+  ProxyPassReverse /iopaint/ http://127.0.0.1:8080/
+  ProxyPass        /assets/ http://127.0.0.1:8080/assets/
+  ProxyPassReverse /assets/ http://127.0.0.1:8080/assets/
+  ProxyPass        /api/ http://127.0.0.1:8080/api/
+  ProxyPassReverse /api/ http://127.0.0.1:8080/api/
+  ProxyPass        /socket.io/ http://127.0.0.1:8080/socket.io/
+  ProxyPassReverse /socket.io/ http://127.0.0.1:8080/socket.io/
+
+  # Allow large uploads + disable ModSecurity for IOPaint API if needed
+  <LocationMatch "^/api/">
+    LimitRequestBody 0
+    <IfModule mod_security2.c>
+      SecRuleEngine Off
+    </IfModule>
+  </LocationMatch>
+
+  # Social-Hunt API (moved to /sh-api)
+  ProxyPass        /sh-api/ http://127.0.0.1:8000/sh-api/
+  ProxyPassReverse /sh-api/ http://127.0.0.1:8000/sh-api/
+
+  # Social-Hunt app
+  ProxyPass        / http://127.0.0.1:8000/
+  ProxyPassReverse / http://127.0.0.1:8000/
+
+  # Allow PUT/POST/etc for /sh-api if ModSecurity blocks methods
+  <LocationMatch "^/sh-api/">
+    <IfModule mod_security2.c>
+      SecRuleRemoveById 911100
+    </IfModule>
+  </LocationMatch>
+</VirtualHost>
+```
+
 ## 7) (Recommended) Put auth in front of it (so it can’t be abused)
 
 ### Option A: Basic Auth in Apache (fast)

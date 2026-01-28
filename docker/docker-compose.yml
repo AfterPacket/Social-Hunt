@@ -31,3 +31,15 @@ services:
       - ../web/temp_uploads:/app/web/temp_uploads
 
     restart: unless-stopped
+
+  # Optional: run IOPaint in a separate container (CPU-only)
+  # Enable with: docker compose --profile iopaint up -d
+  iopaint:
+    image: python:3.11-slim
+    profiles: ["iopaint"]
+    command: >
+      sh -c "pip install --no-cache-dir iopaint &&
+             iopaint start --host 0.0.0.0 --port 8080"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
