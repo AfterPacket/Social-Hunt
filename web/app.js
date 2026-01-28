@@ -2423,9 +2423,8 @@ async function initIOPaintView() {
       : portInput
         ? portInput.value
         : "8080";
-    const host = window.location.hostname;
-    const protocol = window.location.protocol;
-    window.open(`${protocol}//${host}:${port}`, "_blank");
+    void port;
+    window.open("/iopaint/", "_blank");
   }
 
   // Add toast function if not exists

@@ -92,6 +92,15 @@ Create `/etc/apache2/sites-available/social-hunt.conf`:
   ProxyPass / http://127.0.0.1:8000/
   ProxyPassReverse / http://127.0.0.1:8000/
 
+  # Optional: expose IOPaint WebUI at /iopaint (no TLS assumed)
+  <Location /iopaint>
+    LimitRequestBody 104857600
+    ProxyPass http://127.0.0.1:8080
+    ProxyPassReverse http://127.0.0.1:8080
+    RequestHeader set X-Forwarded-Proto "http"
+    RequestHeader set X-Forwarded-Host "%{Host}i"
+  </Location>
+
   # (Optional) access log
   ErrorLog ${APACHE_LOG_DIR}/social-hunt_error.log
   CustomLog ${APACHE_LOG_DIR}/social-hunt_access.log combined
