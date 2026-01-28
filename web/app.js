@@ -1633,6 +1633,7 @@ function initSettingsView() {
     const rows = [...tableBody.querySelectorAll("tr")];
     const out = {};
     const presentKeys = new Set();
+    const secretKeys = new Set();
 
     for (const tr of rows) {
       const k = tr.querySelector(".s-key").value.trim();
@@ -1640,6 +1641,7 @@ function initSettingsView() {
       const secret = tr.querySelector(".s-secret").checked;
       if (!k) continue;
       presentKeys.add(k);
+      if (secret) secretKeys.add(k);
 
       // If secret and user left placeholder, don't overwrite
       if (secret && (v === "•••••• (set)" || v.trim() === "")) continue;
@@ -1659,6 +1661,8 @@ function initSettingsView() {
         out[key] = null;
       }
     }
+
+    out.__secret_keys = Array.from(secretKeys);
 
     const r = await fetch("/sh-api/settings", {
       method: "PUT",

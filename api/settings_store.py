@@ -5,6 +5,7 @@ import os
 from typing import Any, Dict
 
 SECRET_HINTS = ("key", "token", "secret", "password")
+SECRET_KEYS_FIELD = "__secret_keys"
 
 
 def is_secret_key(k: str) -> bool:
@@ -38,11 +39,23 @@ class SettingsStore:
         os.replace(tmp, self.path)
 
 
+def _extract_secret_keys(data: Dict[str, Any]) -> set[str]:
+    raw = data.get(SECRET_KEYS_FIELD)
+    if isinstance(raw, list):
+        return {str(x) for x in raw if str(x).strip()}
+    return set()
+
+
 def mask_for_client(data: Dict[str, Any]) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
+    secret_keys = _extract_secret_keys(data)
     for k, v in data.items():
-        if is_secret_key(str(k)):
-            out[str(k)] = {"is_set": bool(v), "value": None, "secret": True}
+        key = str(k)
+        if key == SECRET_KEYS_FIELD:
+            continue
+        is_secret = key in secret_keys or is_secret_key(key)
+        if is_secret:
+            out[key] = {"is_set": bool(v), "value": None, "secret": True}
         else:
-            out[str(k)] = {"is_set": bool(v), "value": v, "secret": False}
+            out[key] = {"is_set": bool(v), "value": v, "secret": False}
     return out
