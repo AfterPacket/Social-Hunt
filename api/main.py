@@ -1332,7 +1332,6 @@ class DeepMosaicService:
         possible_dirs = [
             APP_ROOT / "DeepMosaics",
             APP_ROOT / "../DeepMosaics",
-            Path("/home/nicholas/Desktop/SSD/AI/Social-Hunt/DeepMosaics"),
             Path("DeepMosaics"),
             Path("../DeepMosaics"),
         ]
