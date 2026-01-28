@@ -1819,8 +1819,8 @@ function initSettingsView() {
     }
   }
 
-  if (saveDemoModeBtn && demoModeToggle) {
-    saveDemoModeBtn.onclick = updateDemoMode;
+  if (demoModeToggle) {
+    if (saveDemoModeBtn) saveDemoModeBtn.onclick = updateDemoMode;
     demoModeToggle.addEventListener("change", updateDemoMode);
   }
 
