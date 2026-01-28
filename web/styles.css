@@ -22,6 +22,7 @@
     --radius: 14px;
     --radius2: 18px;
     --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    --bg-texture: none;
 }
 
 [data-theme="tokyo"] {
@@ -77,6 +78,77 @@
     --shadow: 0 0 20px rgba(252, 238, 10, 0.1);
 }
 
+[data-theme="fsociety"] {
+    --bg: #060708;
+    --panel: #0b0d0f;
+    --panel2: #0a0c0e;
+    --panel3: #080a0c;
+    --text: #f5f7ff;
+    --muted: #94a08f;
+    --muted2: #7c8677;
+    --border: rgba(157, 255, 58, 0.14);
+    --border2: rgba(157, 255, 58, 0.28);
+    --danger: #ff3b3b;
+    --good: #9dff3a;
+    --warn: #ffb347;
+    --accent: #9dff3a;
+    --accent-rgb: 157, 255, 58;
+    --shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    --bg-texture: repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.025),
+        rgba(255, 255, 255, 0.025) 1px,
+        rgba(0, 0, 0, 0) 1px,
+        rgba(0, 0, 0, 0) 3px
+    );
+}
+
+[data-theme="anomaly"] {
+    --bg: #141619;
+    --panel: #1b1f23;
+    --panel2: #161a1e;
+    --panel3: #111418;
+    --text: #e6eaee;
+    --muted: #9aa3ad;
+    --muted2: #7f8892;
+    --border: rgba(181, 255, 42, 0.14);
+    --border2: rgba(104, 233, 255, 0.28);
+    --danger: #b00024;
+    --good: #68e9ff;
+    --warn: #ffb347;
+    --accent: #b5ff2a;
+    --accent-rgb: 181, 255, 42;
+    --shadow: 0 12px 26px rgba(0, 0, 0, 0.45);
+    --bg-texture: linear-gradient(
+        120deg,
+        rgba(104, 233, 255, 0.03),
+        rgba(181, 255, 42, 0.02)
+    );
+}
+
+[data-theme="bodega-glow"] {
+    --bg: #111016;
+    --panel: #181622;
+    --panel2: #14121c;
+    --panel3: #0f0e16;
+    --text: #f7f2e8;
+    --muted: #c1a98f;
+    --muted2: #a38972;
+    --border: rgba(255, 193, 97, 0.2);
+    --border2: rgba(255, 139, 61, 0.28);
+    --danger: #ff4a4a;
+    --good: #ffd27a;
+    --warn: #ffb347;
+    --accent: #ff8b3d;
+    --accent-rgb: 255, 139, 61;
+    --shadow: 0 16px 30px rgba(0, 0, 0, 0.55);
+    --bg-texture: linear-gradient(
+        120deg,
+        rgba(255, 193, 97, 0.08),
+        rgba(120, 180, 255, 0.05)
+    );
+}
+
 [data-theme="light"] {
     --bg: #f5f7f9;
     --panel: #ffffff;
@@ -105,6 +177,8 @@ body {
 body {
     margin: 0;
     background: var(--bg);
+    background-image: var(--bg-texture, none);
+    background-size: 3px 3px;
     color: var(--text);
     font:
         14px/1.45 system-ui,
