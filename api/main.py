@@ -745,8 +745,13 @@ async def api_put_settings(
 
     current = settings_store.load()
     for k, v in req.settings.items():
+        key = str(k)
+        # allow deleting by setting null
+        if v is None:
+            current.pop(key, None)
+            continue
         # allow clearing by empty string
-        current[str(k)] = v
+        current[key] = v
 
     settings_store.save(current)
     return {"ok": True}
@@ -1945,4 +1950,3 @@ async def api_public_theme():
 @app.get("/login")
 async def login_page():
     return FileResponse(str(WEB_DIR / "login.html"))
-

@@ -1543,6 +1543,7 @@ function initSettingsView() {
   const demoModeToggle = document.getElementById("demoModeToggle");
   const saveDemoModeBtn = document.getElementById("saveDemoMode");
   let demoModeSaving = false;
+  let originalSettingKeys = new Set();
 
   function showMsg(txt) {
     msgEl.style.display = "block";
@@ -1583,6 +1584,7 @@ function initSettingsView() {
     }
 
     const settings = j.settings || {};
+    originalSettingKeys = new Set(Object.keys(settings));
 
     if (settings.public_url && publicUrlInput) {
       publicUrlInput.value = settings.public_url.value || "";
@@ -1630,16 +1632,32 @@ function initSettingsView() {
 
     const rows = [...tableBody.querySelectorAll("tr")];
     const out = {};
+    const presentKeys = new Set();
 
     for (const tr of rows) {
       const k = tr.querySelector(".s-key").value.trim();
       const v = tr.querySelector(".s-val").value;
       const secret = tr.querySelector(".s-secret").checked;
       if (!k) continue;
+      presentKeys.add(k);
 
       // If secret and user left placeholder, don't overwrite
       if (secret && (v === "•••••• (set)" || v.trim() === "")) continue;
       out[k] = v;
+    }
+
+    const skipDelete = new Set([
+      "public_url",
+      "theme",
+      "replicate_api_token",
+      "demo_mode",
+    ]);
+
+    for (const key of originalSettingKeys) {
+      if (skipDelete.has(key)) continue;
+      if (!presentKeys.has(key)) {
+        out[key] = null;
+      }
     }
 
     const r = await fetch("/sh-api/settings", {
@@ -2861,4 +2879,3 @@ fetchWhoami().then((data) => {
     if (badge) badge.style.display = "inline-flex";
   }
 });
-

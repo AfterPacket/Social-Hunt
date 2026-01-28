@@ -56,6 +56,13 @@
                     >
                         Start Server
                     </button>
+                    <button
+                        id="stopServerBtn"
+                        class="btn danger"
+                        style="flex: 1"
+                    >
+                        Stop Server
+                    </button>
                 </div>
                 <div class="muted" style="margin-top: 8px; font-size: 0.85rem">
                     Server auto-stops when you leave this page.
@@ -182,6 +189,7 @@
         const serverInfo = document.getElementById("serverInfo");
         const serverPort = document.getElementById("serverPort");
         const startServerBtn = document.getElementById("startServerBtn");
+        const stopServerBtn = document.getElementById("stopServerBtn");
         const openIOPaintBtn = document.getElementById("openIOPaintBtn");
         const modelSelect = document.getElementById("modelSelect");
         const deviceSelect = document.getElementById("deviceSelect");
@@ -224,16 +232,22 @@
                 if (data.running) {
                     isRunning = true;
                     statusText.innerHTML = `<span style="color: var(--good);">Running on port ${data.port}</span>`;
-                    serverControls.style.display = "none";
+                    serverControls.style.display = "block";
                     serverInfo.style.display = "block";
                     serverPort.textContent = data.port;
                     portInput.value = data.port;
+                    startServerBtn.disabled = true;
+                    startServerBtn.textContent = "Running";
+                    stopServerBtn.disabled = false;
                 } else {
                     isRunning = false;
                     statusText.innerHTML =
                         '<span style="color: var(--muted);">Stopped</span>';
                     serverControls.style.display = "block";
                     serverInfo.style.display = "none";
+                    startServerBtn.disabled = false;
+                    startServerBtn.textContent = "Start Server";
+                    stopServerBtn.disabled = true;
 
                     // Check available devices
                     await checkAvailableDevices();
@@ -338,6 +352,9 @@
         // Stop server (auto on page exit)
         async function stopServer() {
             if (!isRunning) return;
+            stopServerBtn.disabled = true;
+            stopServerBtn.innerHTML =
+                '<span class="spinner"></span> Stopping...';
 
             try {
                 const response = await fetch("/sh-api/iopaint/stop", {
@@ -355,7 +372,10 @@
                 }
             } catch (error) {
                 showToast(`Error stopping server: ${error.message}`, "danger");
+            } finally {
+                stopServerBtn.innerHTML = "Stop Server";
             }
+        }
         }
 
         // Open IOPaint WebUI
@@ -367,6 +387,7 @@
 
         // Event listeners
         startServerBtn.addEventListener("click", startServer);
+        stopServerBtn.addEventListener("click", stopServer);
         openIOPaintBtn.addEventListener("click", openIOPaint);
         window.addEventListener("beforeunload", stopServer);
         document.addEventListener("visibilitychange", () => {
