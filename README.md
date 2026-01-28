@@ -12,6 +12,7 @@ Social-Hunt is an OSINT framework for cross-platform username discovery, breach 
 - Optional AI face restoration/demasking via Replicate or a self-hosted worker.
 - Plugin system with hot-reload and optional web uploader.
 - Demo mode that censors sensitive data for safe demonstrations.
+- Dashboard theme applies immediately on selection.
 
 ## Architecture
 
@@ -96,6 +97,7 @@ Settings resolution order is:
 ## Tor / Darkweb Support
 
 Social-Hunt supports scanning `.onion` sites by routing traffic through a Tor proxy. It uses split-tunneling, so regular sites (like Twitter) use your direct connection while `.onion` sites go through the proxy.
+For safety, avatar face matching skips `.onion` hosts.
 
 ### Prerequisites
 1. Install Tor (e.g., `sudo apt install tor` or use Tor Browser).
@@ -143,6 +145,35 @@ See `PLUGINS.md` for full details and plugin contracts.
 Reverse-image links require a public base URL for your instance:
 
 - Set `public_url` in settings or `SOCIAL_HUNT_PUBLIC_URL` in the environment.
+
+## AI Demasking (Replicate or Self-Hosted)
+
+Social-Hunt can run the demasking pipeline with Replicate or a self-hosted worker.
+
+### Replicate API
+Set a Replicate API token in either:
+- Settings: `replicate_api_token`
+- Environment: `REPLICATE_API_TOKEN`
+
+When configured, the server uses Replicate models to remove masks and restore facial detail.
+
+### Self-hosted (DeepMosaics or custom)
+Set `SOCIAL_HUNT_FACE_AI_URL` to an HTTP endpoint that accepts JSON:
+```json
+{
+  "image": "<base64 image bytes>",
+  "fidelity": 0.7,
+  "task": "face_restoration"
+}
+```
+and returns:
+```json
+{ "image": "<base64 restored image bytes>" }
+```
+
+The repo includes a `DeepMosaics/` submodule you can use to build a local restoration service,
+but it does not match the `/restore` JSON contract out of the box. Add a small adapter or
+proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_URL` at it.
 
 ## Troubleshooting
 

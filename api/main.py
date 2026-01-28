@@ -984,7 +984,7 @@ async def api_demask(
                     "prompt": "remove face mask, balaclava, ski mask, sunglasses, face covering, reveal the underlying human face, preserve identity, realistic features",
                     "negative_prompt": "jungle, trees, nature, psychedelic, abstract, colorful, distorted, blurry, cartoon, mask remains, makeup, change gender, extra fingers, mutated hands, poorly drawn face, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
                     "num_inference_steps": 25,
-                    "image_guidance_scale": 1.5,  # Increased to preserve structure and reduce hallucinations
+                    "image_guidance_scale": 1.8,  # Maximized to strongly preserve structure and reduce hallucinations
                     "guidance_scale": 7.0,  # Prevent aggressive hallucinations
                 },
             )
@@ -1018,7 +1018,7 @@ async def api_demask(
                                 "prompt": "remove face mask, balaclava, ski mask, sunglasses, face covering, reveal the underlying human face, preserve identity, realistic features",
                                 "negative_prompt": "jungle, trees, nature, psychedelic, abstract, colorful, distorted, blurry, cartoon, mask remains, makeup, change gender, extra fingers, mutated hands, poorly drawn face, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
                                 "num_inference_steps": 25,
-                                "image_guidance_scale": 1.5,
+                                "image_guidance_scale": 1.8,
                                 "guidance_scale": 7.0,
                             },
                         )
@@ -1050,7 +1050,7 @@ async def api_demask(
                     "image": inpainted_url,
                     "upscale": 1,
                     "face_upsample": True,
-                    "codeformer_fidelity": 0.65,  # Balanced fidelity for smoother blending
+                    "codeformer_fidelity": 1.0,  # Maximized fidelity to further reduce hallucinations
                 },
             )
             # Ensure output is converted from FileOutput object to string URL

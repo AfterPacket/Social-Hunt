@@ -100,6 +100,16 @@ class FaceMatcherAddon(BaseAddon):
                 continue
 
             try:
+                host = (httpx.URL(avatar_url).host or "").lower()
+            except Exception:
+                host = ""
+
+            if host.endswith(".onion"):
+                prof["face_match"] = {"match": False, "reason": "skipped_onion"}
+                r.profile = prof
+                continue
+
+            try:
                 if limiter:
                     await limiter.wait(avatar_url)
 

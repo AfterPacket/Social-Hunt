@@ -76,6 +76,7 @@ If you don't want to use environment variables, enable bootstrap mode once:
 | `hibp_api_key` | Required for Have I Been Pwned searches. |
 | `public_url` | Your instance's URL (e.g., `https://osint.example.com`). Required for reverse image search to work with external engines. |
 | `admin_token` | The fallback token if no environment variable is set. |
+| `replicate_api_token` | Replicate API token for AI demasking. |
 
 ---
 
@@ -156,6 +157,35 @@ services:
 - **403 Forbidden on BreachVIP:** This is usually a Cloudflare block. Ensure your server IP is not on a known data center blacklist, or use the "Manual Search" button added to the UI.
 - **HIBP Not Found:** Ensure your API key is active and has credits.
 - **Missing Plugins:** Ensure `SOCIAL_HUNT_ALLOW_PY_PLUGINS=1` is set in your environment if using Python-based providers.
+- **Demask unavailable:** Set `REPLICATE_API_TOKEN` or point `SOCIAL_HUNT_FACE_AI_URL` to a compatible self-hosted worker.
+
+---
+
+## 🤖 AI Demasking (Replicate or Self-Hosted)
+
+### Replicate API
+Set a Replicate API token in either:
+- `replicate_api_token` in `data/settings.json`
+- `REPLICATE_API_TOKEN` in your environment
+
+### Self-hosted (DeepMosaics or custom)
+Set `SOCIAL_HUNT_FACE_AI_URL` to a service that accepts JSON:
+```json
+{
+  "image": "<base64 image bytes>",
+  "fidelity": 0.7,
+  "task": "face_restoration"
+}
+```
+and returns:
+```json
+{ "image": "<base64 restored image bytes>" }
+```
+
+The `DeepMosaics/` submodule can be used as a base, but it does not expose the
+`/restore` JSON API by default. Add a lightweight adapter/proxy that wraps the
+DeepMosaics server and translates requests/responses, then set
+`SOCIAL_HUNT_FACE_AI_URL` to your adapter URL.
 
 ---
 

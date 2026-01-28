@@ -4,6 +4,26 @@ const tokenStatus = document.getElementById("tokenStatus");
 const menuToggle = document.getElementById("menuToggle");
 const sidebarBackdrop = document.getElementById("sidebarBackdrop");
 
+// ---- toasts ----
+let toastEl = null;
+let toastTimer = null;
+function showToast(message, duration = 2000) {
+  if (!toastEl) {
+    toastEl = document.createElement("div");
+    toastEl.className = "toast";
+    toastEl.setAttribute("role", "status");
+    toastEl.setAttribute("aria-live", "polite");
+    document.body.appendChild(toastEl);
+  }
+  toastEl.textContent = message;
+  toastEl.style.display = "block";
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    if (toastEl) toastEl.remove();
+    toastEl = null;
+  }, duration);
+}
+
 // ---- token helpers ----
 function getToken() {
   return localStorage.getItem("socialhunt_token");
@@ -658,6 +678,7 @@ async function startScan() {
     }
     res = await fetch("/api/face-search", {
       method: "POST",
+      headers: authHeaders(),
       body: formData,
     });
   } else {
@@ -1625,40 +1646,36 @@ function initSettingsView() {
     };
   }
 
-  if (saveThemeBtn) {
-    saveThemeBtn.onclick = async () => {
-      const theme = themeSelect.value;
-      const r = await fetch("/api/settings", {
-        method: "PUT",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ settings: { theme } }),
-      });
+  async function saveThemeSelection(theme) {
+    const r = await fetch("/api/settings", {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ settings: { theme } }),
+    });
 
-      if (r.ok) {
+    if (r.ok) {
+      if (theme && theme !== "default") {
         document.body.setAttribute("data-theme", theme);
-        alert("Theme updated.");
       } else {
-        alert("Failed to update theme.");
+        document.body.removeAttribute("data-theme");
       }
-    };
+      showToast("Theme saved.");
+    } else {
+      showToast("Failed to update theme.");
+    }
   }
 
-  // UPDATE SYSTEM (Re-added)
-  if (saveThemeBtn) {
-    saveThemeBtn.onclick = async () => {
+  if (themeSelect) {
+    themeSelect.addEventListener("change", () => {
       const theme = themeSelect.value;
-      const r = await fetch("/api/settings", {
-        method: "PUT",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ settings: { theme } }),
-      });
+      saveThemeSelection(theme);
+    });
+  }
 
-      if (r.ok) {
-        document.body.setAttribute("data-theme", theme);
-        alert("Theme updated.");
-      } else {
-        alert("Failed to update theme.");
-      }
+  if (saveThemeBtn) {
+    saveThemeBtn.onclick = () => {
+      const theme = themeSelect ? themeSelect.value : "default";
+      saveThemeSelection(theme);
     };
   }
 
