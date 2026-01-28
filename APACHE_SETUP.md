@@ -146,6 +146,14 @@ Social-Hunt API to `/sh-api` (so IOPaint can use `/api` and `/socket.io`).
   ProxyPass        /socket.io/ http://127.0.0.1:8080/socket.io/
   ProxyPassReverse /socket.io/ http://127.0.0.1:8080/socket.io/
 
+  # Allow large uploads + disable ModSecurity for IOPaint API if needed
+  <LocationMatch "^/api/">
+    LimitRequestBody 0
+    <IfModule mod_security2.c>
+      SecRuleEngine Off
+    </IfModule>
+  </LocationMatch>
+
   # Social-Hunt API (moved to /sh-api)
   ProxyPass        /sh-api/ http://127.0.0.1:8000/sh-api/
   ProxyPassReverse /sh-api/ http://127.0.0.1:8000/sh-api/

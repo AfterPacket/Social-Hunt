@@ -198,6 +198,13 @@ proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_
 - `APACHE_SETUP.md` Apache reverse proxy notes
 - `LICENSE` GPL-3.0
 
+## Reverse Proxy Notes (IOPaint on same domain)
+
+If you want IOPaint under the same domain (e.g., `/iopaint`), Social-Hunt’s API
+is moved to `/sh-api` to avoid conflicts with IOPaint’s `/api` and `/socket.io`
+routes. Make sure your reverse proxy routes `/sh-api` to the app and `/api` to
+IOPaint as shown in `APACHE_SETUP.md`.
+
 ## Screenshots / UI Tour
 
 ### Login
