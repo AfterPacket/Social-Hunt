@@ -195,7 +195,7 @@
         // Check IOPaint installation
         async function checkIOPaintInstallation() {
             try {
-                const response = await fetch("/api/iopaint/check");
+                const response = await fetch("/sh-api/iopaint/check");
                 const data = await response.json();
 
                 if (!data.installed) {
@@ -220,7 +220,7 @@
         // Check server status
         async function checkServerStatus() {
             try {
-                const response = await fetch("/api/iopaint/status");
+                const response = await fetch("/sh-api/iopaint/status");
                 const data = await response.json();
 
                 if (data.running) {
@@ -248,7 +248,7 @@
         // Check available devices
         async function checkAvailableDevices() {
             try {
-                const response = await fetch("/api/iopaint/devices");
+                const response = await fetch("/sh-api/iopaint/devices");
                 const data = await response.json();
 
                 // Update device select options
@@ -293,7 +293,7 @@
                 '<span class="spinner"></span> Starting...';
 
             try {
-                const response = await fetch("/api/iopaint/start", {
+                const response = await fetch("/sh-api/iopaint/start", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -333,7 +333,7 @@
                 '<span class="spinner"></span> Stopping...';
 
             try {
-                const response = await fetch("/api/iopaint/stop", {
+                const response = await fetch("/sh-api/iopaint/stop", {
                     method: "POST",
                 });
 
@@ -379,3 +379,4 @@
         init();
     });
 </script>
+

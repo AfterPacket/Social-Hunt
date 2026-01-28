@@ -61,7 +61,7 @@
 
         <script>
             // Apply theme
-            fetch("/api/public/theme")
+            fetch("/sh-api/public/theme")
                 .then((res) => res.json())
                 .then((j) => {
                     if (j.theme && j.theme !== "default") {
@@ -90,7 +90,7 @@
                 btn.textContent = "Verifying...";
 
                 try {
-                    const res = await fetch("/api/auth/verify", {
+                    const res = await fetch("/sh-api/auth/verify", {
                         method: "POST",
                         headers: { "X-Plugin-Token": token },
                     });
@@ -114,3 +114,4 @@
         </script>
     </body>
 </html>
+

@@ -203,7 +203,7 @@ function badge(status) {
 }
 
 async function fetchProviders() {
-  const res = await fetch("/api/providers");
+  const res = await fetch("/sh-api/providers");
   const data = await res.json();
   return data.providers || [];
 }
@@ -222,7 +222,7 @@ async function fetchJob(jobId, opts = {}) {
 
 async function fetchWhoami() {
   try {
-    const res = await fetch("/api/whoami");
+    const res = await fetch("/sh-api/whoami");
     if (!res.ok) return null; // Defensive check
     const data = await res.json();
     return data;
@@ -482,7 +482,7 @@ async function initBreachSearchView() {
     statusEl.textContent = "Starting scan...";
     document.getElementById("breachResults").innerHTML = "";
 
-    const res = await fetch("/api/search", {
+    const res = await fetch("/sh-api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -704,7 +704,7 @@ async function startScan() {
     for (const file of faceImages) {
       formData.append("files", file);
     }
-    res = await fetch("/api/face-search", {
+    res = await fetch("/sh-api/face-search", {
       method: "POST",
       headers: authHeaders(),
       body: formData,
@@ -712,7 +712,7 @@ async function startScan() {
   } else {
     const providers = selectedProviders();
     statusEl.textContent = "Starting scan...";
-    res = await fetch("/api/search", {
+    res = await fetch("/sh-api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, providers }),
@@ -1150,7 +1150,7 @@ function initReverseView() {
 
       out.innerHTML = '<div class="muted">Searching...</div>';
 
-      const r = await fetch("/api/reverse_image_links", {
+      const r = await fetch("/sh-api/reverse_image_links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image_url }),
@@ -1176,7 +1176,7 @@ function initReverseView() {
       const fd = new FormData();
       fd.append("file", file);
 
-      const r = await fetch("/api/reverse_image_upload", {
+      const r = await fetch("/sh-api/reverse_image_upload", {
         method: "POST",
         body: fd,
       });
@@ -1354,7 +1354,7 @@ function initTokensView() {
 
   async function loadStatus() {
     try {
-      const r = await fetch("/api/admin/status", { cache: "no-store" });
+      const r = await fetch("/sh-api/admin/status", { cache: "no-store" });
       const j = await r.json().catch(() => ({}));
       if (statusEl) statusEl.textContent = JSON.stringify(j, null, 2);
 
@@ -1376,7 +1376,7 @@ function initTokensView() {
       const boot = (bootstrapSecretInput?.value || "").trim();
       if (boot) headers["X-Bootstrap-Secret"] = boot;
 
-      const r = await fetch("/api/admin/token", {
+      const r = await fetch("/sh-api/admin/token", {
         method: "PUT",
         headers,
         body: JSON.stringify({ token: newTok }),
@@ -1418,7 +1418,7 @@ function initPluginsView() {
     }
     listContainer.innerHTML = '<p class="muted">Loading...</p>';
     try {
-      const r = await fetch("/api/plugin/list", { headers: authHeaders() });
+      const r = await fetch("/sh-api/plugin/list", { headers: authHeaders() });
       const j = await r.json();
       if (!r.ok) {
         listContainer.innerHTML = `<p class="error">${
@@ -1473,7 +1473,7 @@ function initPluginsView() {
         const name = btn.getAttribute("data-name");
         if (!confirm(`Delete plugin "${name}"? This cannot be undone.`)) return;
 
-        const r = await fetch("/api/plugin/delete", {
+        const r = await fetch("/sh-api/plugin/delete", {
           method: "POST",
           headers: authHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ name }),
@@ -1498,7 +1498,7 @@ function initPluginsView() {
     const fd = new FormData();
     fd.append("file", fileEl.files[0]);
 
-    const r = await fetch("/api/plugin/upload", {
+    const r = await fetch("/sh-api/plugin/upload", {
       method: "POST",
       headers: authHeaders(),
       body: fd,
@@ -1513,7 +1513,7 @@ function initPluginsView() {
 
   reloadBtn.onclick = async () => {
     if (!getToken()) return alert("Set token first (Token page).");
-    const r = await fetch("/api/providers/reload", {
+    const r = await fetch("/sh-api/providers/reload", {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
     });
@@ -1575,7 +1575,7 @@ function initSettingsView() {
     }
 
     tableBody.innerHTML = "";
-    const r = await fetch("/api/settings", { headers: authHeaders() });
+    const r = await fetch("/sh-api/settings", { headers: authHeaders() });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) {
       showMsg(j.detail || `Failed (${r.status})`);
@@ -1642,7 +1642,7 @@ function initSettingsView() {
       out[k] = v;
     }
 
-    const r = await fetch("/api/settings", {
+    const r = await fetch("/sh-api/settings", {
       method: "PUT",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ settings: out }),
@@ -1660,7 +1660,7 @@ function initSettingsView() {
   if (savePublicUrlBtn) {
     savePublicUrlBtn.onclick = async () => {
       const val = publicUrlInput.value.trim();
-      const r = await fetch("/api/settings", {
+      const r = await fetch("/sh-api/settings", {
         method: "PUT",
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ settings: { public_url: val } }),
@@ -1676,7 +1676,7 @@ function initSettingsView() {
   }
 
   async function saveThemeSelection(theme) {
-    const r = await fetch("/api/settings", {
+    const r = await fetch("/sh-api/settings", {
       method: "PUT",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ settings: { theme } }),
@@ -1719,7 +1719,7 @@ function initSettingsView() {
       updateLog.textContent = "Updating...";
 
       try {
-        const r = await fetch("/api/admin/update", {
+        const r = await fetch("/sh-api/admin/update", {
           method: "POST",
           headers: authHeaders(),
         });
@@ -1758,7 +1758,7 @@ function initSettingsView() {
       }
 
       try {
-        const r = await fetch("/api/admin/restart", {
+        const r = await fetch("/sh-api/admin/restart", {
           method: "POST",
           headers: authHeaders(),
         });
@@ -1795,7 +1795,7 @@ function initSettingsView() {
       saveDemoModeBtn.textContent = "Saving...";
     }
     try {
-      const r = await fetch("/api/settings", {
+      const r = await fetch("/sh-api/settings", {
         method: "PUT",
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ settings: { demo_mode } }),
@@ -2182,7 +2182,7 @@ async function initDemaskView() {
     fd.append("file", file);
 
     try {
-      const res = await fetch("/api/demask", {
+      const res = await fetch("/sh-api/demask", {
         method: "POST",
         headers: authHeaders(),
         body: fd,
@@ -2263,7 +2263,7 @@ async function initIOPaintView() {
   // Check IOPaint installation
   async function checkIOPaintInstallation() {
     try {
-      const response = await fetch("/api/iopaint/check");
+      const response = await fetch("/sh-api/iopaint/check");
       const data = await response.json();
 
       if (!data.installed) {
@@ -2288,7 +2288,7 @@ async function initIOPaintView() {
   // Check server status
   async function checkServerStatus() {
     try {
-      const response = await fetch("/api/iopaint/status");
+      const response = await fetch("/sh-api/iopaint/status");
       const data = await response.json();
 
       if (data.running) {
@@ -2316,7 +2316,7 @@ async function initIOPaintView() {
   // Check available devices
   async function checkAvailableDevices() {
     try {
-      const response = await fetch("/api/iopaint/devices");
+      const response = await fetch("/sh-api/iopaint/devices");
       const data = await response.json();
 
       // Update device select options
@@ -2359,7 +2359,7 @@ async function initIOPaintView() {
     startServerBtn.innerHTML = '<span class="spinner"></span> Starting...';
 
     try {
-      const response = await fetch("/api/iopaint/start", {
+      const response = await fetch("/sh-api/iopaint/start", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2396,7 +2396,7 @@ async function initIOPaintView() {
     stopServerBtn.innerHTML = '<span class="spinner"></span> Stopping...';
 
     try {
-      const response = await fetch("/api/iopaint/stop", {
+      const response = await fetch("/sh-api/iopaint/stop", {
         method: "POST",
       });
 
@@ -2485,7 +2485,7 @@ async function initDeepMosaicView() {
     try {
       statusInfoDiv.innerHTML =
         '<div class="spinner"></div> Checking DeepMosaic status...';
-      const response = await fetch("/api/deepmosaic/status");
+      const response = await fetch("/sh-api/deepmosaic/status");
       const data = await response.json();
 
       if (data.available) {
@@ -2587,7 +2587,7 @@ async function initDeepMosaicView() {
       formData.append("quality", quality);
 
       try {
-        const response = await fetch("/api/deepmosaic/process", {
+        const response = await fetch("/sh-api/deepmosaic/process", {
           method: "POST",
           headers: authHeaders(),
           body: formData,
@@ -2828,7 +2828,7 @@ if (sidebarBackdrop) {
 renderTokenStatus();
 
 // Load theme on init
-fetch("/api/public/theme")
+fetch("/sh-api/public/theme")
   .then((res) => res.json())
   .then((j) => {
     if (j.theme && j.theme !== "default") {
@@ -2842,7 +2842,7 @@ fetch("/api/public/theme")
 if (!getToken()) {
   window.location.replace("/login");
 } else {
-  fetch("/api/auth/verify", { method: "POST", headers: authHeaders() })
+  fetch("/sh-api/auth/verify", { method: "POST", headers: authHeaders() })
     .then((res) => {
       if (res.ok) {
         loadView("dashboard");
@@ -2861,3 +2861,4 @@ fetchWhoami().then((data) => {
     if (badge) badge.style.display = "inline-flex";
   }
 });
+

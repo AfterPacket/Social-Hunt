@@ -134,7 +134,7 @@ class AdminTokenPutReq(BaseModel):
     token: str
 
 
-@app.get("/api/admin/status")
+@app.get("/sh-api/admin/status")
 async def api_admin_status():
     env_token = (os.getenv("SOCIAL_HUNT_PLUGIN_TOKEN") or "").strip()
     settings_token = str(settings_store.load().get("admin_token") or "").strip()
@@ -156,7 +156,7 @@ async def api_admin_status():
     }
 
 
-@app.put("/api/admin/token")
+@app.put("/sh-api/admin/token")
 async def api_admin_set_token(
     req: AdminTokenPutReq,
     request: Request,
@@ -190,7 +190,7 @@ async def api_admin_set_token(
     return {"ok": True}
 
 
-@app.post("/api/admin/update")
+@app.post("/sh-api/admin/update")
 async def api_admin_update(
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
@@ -259,7 +259,7 @@ async def api_admin_update(
         return {"ok": False, "error": str(e)}
 
 
-@app.post("/api/admin/restart")
+@app.post("/sh-api/admin/restart")
 async def api_admin_restart(
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
@@ -335,12 +335,12 @@ class SearchRequest(BaseModel):
     providers: Optional[List[str]] = None
 
 
-@app.get("/api/providers")
+@app.get("/sh-api/providers")
 async def api_providers():
     return {"providers": list_provider_names(registry)}
 
 
-@app.post("/api/providers/reload")
+@app.post("/sh-api/providers/reload")
 async def api_providers_reload(
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
@@ -349,7 +349,7 @@ async def api_providers_reload(
     return {"ok": True, "providers": list_provider_names(registry)}
 
 
-@app.get("/api/whoami")
+@app.get("/sh-api/whoami")
 async def api_whoami(request: Request):
     """Return best-effort client IP as seen by the API (helps verify proxy headers)."""
     xff = (request.headers.get("x-forwarded-for") or "").strip()
@@ -375,7 +375,7 @@ async def api_whoami(request: Request):
     }
 
 
-@app.post("/api/search")
+@app.post("/sh-api/search")
 async def api_search(req: SearchRequest):
     username = (req.username or "").strip()
     if not username:
@@ -434,7 +434,7 @@ async def api_search(req: SearchRequest):
     return {"job_id": job_id}
 
 
-@app.post("/api/face/unmask")
+@app.post("/sh-api/face/unmask")
 async def api_face_unmask(file: UploadFile = File(...), strength: float = Form(0.5)):
     """
     Experimental: Unmask/Restore a face using an external AI service.
@@ -456,7 +456,7 @@ async def api_face_unmask(file: UploadFile = File(...), strength: float = Form(0
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/jobs/{job_id}")
+@app.get("/sh-api/jobs/{job_id}")
 async def api_job(job_id: str, limit: Optional[int] = None):
     job = JOBS.get(job_id)
     if not job:
@@ -491,7 +491,7 @@ async def api_job(job_id: str, limit: Optional[int] = None):
     return job_out
 
 
-@app.post("/api/face-search")
+@app.post("/sh-api/face-search")
 async def api_face_search(
     username: str = Form(...),
     files: List[UploadFile] = File(...),
@@ -619,7 +619,7 @@ class ReverseImageReq(BaseModel):
     image_url: str
 
 
-@app.post("/api/reverse_image_links")
+@app.post("/sh-api/reverse_image_links")
 async def api_reverse_image_links(req: ReverseImageReq):
     image_url = (req.image_url or "").strip()
     if not image_url:
@@ -629,7 +629,7 @@ async def api_reverse_image_links(req: ReverseImageReq):
     return {"links": _build_reverse_links(image_url)}
 
 
-@app.post("/api/reverse_image_upload")
+@app.post("/sh-api/reverse_image_upload")
 async def api_reverse_image_upload(request: Request, file: UploadFile = File(...)):
     if not file:
         raise HTTPException(status_code=400, detail="No file uploaded")
@@ -720,7 +720,7 @@ async def api_reverse_image_upload(request: Request, file: UploadFile = File(...
 # ---------------------------
 
 
-@app.get("/api/settings")
+@app.get("/sh-api/settings")
 async def api_get_settings(
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
@@ -733,7 +733,7 @@ class SettingsPutReq(BaseModel):
     settings: Dict[str, Any]
 
 
-@app.put("/api/settings")
+@app.put("/sh-api/settings")
 async def api_put_settings(
     req: SettingsPutReq,
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
@@ -828,7 +828,7 @@ def _extract_plugins_from_zip(zbytes: bytes) -> List[str]:
     return installed
 
 
-@app.get("/api/plugin/list")
+@app.get("/sh-api/plugin/list")
 async def api_plugin_list(
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
@@ -841,7 +841,7 @@ async def api_plugin_list(
     return list_installed_plugins()
 
 
-@app.post("/api/plugin/upload")
+@app.post("/sh-api/plugin/upload")
 async def api_plugin_upload(
     file: UploadFile = File(...),
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
@@ -890,7 +890,7 @@ class PluginDeleteReq(BaseModel):
     name: str
 
 
-@app.post("/api/plugin/delete")
+@app.post("/sh-api/plugin/delete")
 async def api_plugin_delete(
     req: PluginDeleteReq,
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
@@ -938,7 +938,7 @@ async def api_plugin_delete(
     return {"ok": True, "deleted": name}
 
 
-@app.post("/api/demask")
+@app.post("/sh-api/demask")
 async def api_demask(
     file: UploadFile = File(...),
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
@@ -1137,7 +1137,7 @@ from fastapi.responses import JSONResponse
 iopaint_process: Optional[subprocess.Popen] = None
 
 
-@app.get("/api/iopaint/status")
+@app.get("/sh-api/iopaint/status")
 async def iopaint_status():
     """Check if IOPaint server is running"""
     global iopaint_process
@@ -1188,7 +1188,7 @@ async def iopaint_status():
     return JSONResponse({"running": False})
 
 
-@app.post("/api/iopaint/start")
+@app.post("/sh-api/iopaint/start")
 async def iopaint_start(request: Request):
     """Start IOPaint server"""
     global iopaint_process
@@ -1291,7 +1291,7 @@ async def iopaint_start(request: Request):
         return JSONResponse({"success": False, "error": str(e)})
 
 
-@app.post("/api/iopaint/stop")
+@app.post("/sh-api/iopaint/stop")
 async def iopaint_stop():
     """Stop IOPaint server"""
     global iopaint_process
@@ -1353,7 +1353,7 @@ async def iopaint_stop():
     )
 
 
-@app.get("/api/iopaint/devices")
+@app.get("/sh-api/iopaint/devices")
 async def iopaint_devices():
     """Detect available devices for IOPaint"""
     try:
@@ -1372,7 +1372,7 @@ async def iopaint_devices():
         return JSONResponse({"cuda": False, "mps": False, "error": str(e)})
 
 
-@app.get("/api/iopaint/check")
+@app.get("/sh-api/iopaint/check")
 async def iopaint_check():
     """Check if IOPaint is installed"""
     try:
@@ -1656,7 +1656,7 @@ except Exception as e:
 
 
 # DeepMosaic API endpoints
-@app.get("/api/deepmosaic/status")
+@app.get("/sh-api/deepmosaic/status")
 async def api_deepmosaic_status():
     """Check DeepMosaic availability"""
     return {
@@ -1673,7 +1673,7 @@ async def api_deepmosaic_status():
     }
 
 
-@app.post("/api/deepmosaic/process")
+@app.post("/sh-api/deepmosaic/process")
 async def api_deepmosaic_process(
     file: UploadFile = File(...),
     mode: str = Form("clean"),
@@ -1785,7 +1785,7 @@ async def api_deepmosaic_process(
             print(f"[DeepMosaic] Failed to cleanup temp file: {e}")
 
 
-@app.get("/api/deepmosaic/jobs/{job_id}/download")
+@app.get("/sh-api/deepmosaic/jobs/{job_id}/download")
 async def api_deepmosaic_download(
     job_id: str,
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
@@ -1867,7 +1867,7 @@ async def api_deepmosaic_download(
     raise HTTPException(status_code=404, detail="Job result not found")
 
 
-@app.get("/api/deepmosaic/jobs/{job_id}/info")
+@app.get("/sh-api/deepmosaic/jobs/{job_id}/info")
 async def api_deepmosaic_job_info(
     job_id: str,
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
@@ -1924,7 +1924,7 @@ async def root():
     return FileResponse(str(WEB_DIR / "index.html"))
 
 
-@app.post("/api/auth/verify")
+@app.post("/sh-api/auth/verify")
 async def api_auth_verify(
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
@@ -1932,7 +1932,7 @@ async def api_auth_verify(
     return {"ok": True}
 
 
-@app.get("/api/public/theme")
+@app.get("/sh-api/public/theme")
 async def api_public_theme():
     """Returns the current theme name without requiring authentication."""
     data = settings_store.load()
@@ -1945,3 +1945,4 @@ async def api_public_theme():
 @app.get("/login")
 async def login_page():
     return FileResponse(str(WEB_DIR / "login.html"))
+
