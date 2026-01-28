@@ -1,0 +1,293 @@
+<h2>AI Inpainting with IOPaint</h2>
+<div class="card">
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
+        <!-- Server Control Panel -->
+        <div style="flex: 1; min-width: 300px;">
+            <h3 style="margin-top: 0;">Server Control</h3>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>IOPaint Status</label>
+                <div id="iopaintStatus" class="pill">
+                    <span id="statusText">Checking...</span>
+                </div>
+            </div>
+            
+            <div id="serverControls" style="display: none;">
+                <div class="row" style="margin-bottom: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Model</label>
+                        <select id="modelSelect">
+                            <option value="lama">LaMa</option>
+                            <option value="ldm">LDM</option>
+                            <option value="zits">ZITS</option>
+                            <option value="mat">MAT</option>
+                            <option value="fcf">FCF</option>
+                            <option value="manga">Manga</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="flex: 1;">
+                        <label>Device</label>
+                        <select id="deviceSelect">
+                            <option value="cpu">CPU</option>
+                            <option value="cuda">CUDA (GPU)</option>
+                            <option value="mps">MPS (Apple Silicon)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Port</label>
+                    <input type="number" id="portInput" value="8080" min="1024" max="65535" style="width: 100%;">
+                </div>
+                
+                <div class="row" style="gap: 10px;">
+                    <button id="startServerBtn" class="btn good" style="flex: 1;">Start Server</button>
+                    <button id="stopServerBtn" class="btn danger" style="flex: 1;">Stop Server</button>
+                </div>
+            </div>
+            
+            <div id="serverInfo" style="display: none; margin-top: 15px;">
+                <div class="muted" style="font-size: 0.9rem;">
+                    IOPaint server running on port <span id="serverPort"></span>
+                </div>
+                <button id="openIOPaintBtn" class="btn" style="width: 100%; margin-top: 10px;">
+                    Open IOPaint WebUI
+                </button>
+            </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div style="flex: 1; min-width: 300px;">
+            <h3 style="margin-top: 0;">How to Use</h3>
+            <div class="muted" style="font-size: 0.9rem; line-height: 1.5;">
+                <ol style="margin: 0; padding-left: 20px;">
+                    <li>Start the IOPaint server using the controls on the left</li>
+                    <li>Click "Open IOPaint WebUI" to launch the inpainting interface</li>
+                    <li>Upload or drag-drop an image to edit</li>
+                    <li>Use brush tools to mask areas you want to remove/replace</li>
+                    <li>IOPaint will intelligently fill the masked areas</li>
+                    <li>Save/download the processed image</li>
+                </ol>
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <strong>Tip:</strong> Use IOPaint to remove watermarks, objects, or reconstruct facial features
+                    by carefully masking around the areas you want to modify.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 20px;">
+    <h3>Quick Start Examples</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+        <div style="border: 1px solid var(--border); border-radius: 8px; padding: 15px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">Remove Watermarks</div>
+            <div class="muted" style="font-size: 0.85rem;">
+                Upload an image with watermarks, use the brush tool to carefully mask over the watermark text/logo,
+                and let IOPaint fill in the background.
+            </div>
+        </div>
+        
+        <div style="border: 1px solid var(--border); border-radius: 8px; padding: 15px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">Face Reconstruction</div>
+            <div class="muted" style="font-size: 0.85rem;">
+                Mask over sunglasses, face coverings, or obscured facial features.
+                Use the "Face" model option for better facial feature reconstruction.
+            </div>
+        </div>
+        
+        <div style="border: 1px solid var(--border); border-radius: 8px; padding: 15px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">Object Removal</div>
+            <div class="muted" style="font-size: 0.85rem;">
+                Remove unwanted objects, people, or text from images by masking
+                the target area and letting AI fill the space contextually.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const statusText = document.getElementById('statusText');
+    const serverControls = document.getElementById('serverControls');
+    const serverInfo = document.getElementById('serverInfo');
+    const serverPort = document.getElementById('serverPort');
+    const startServerBtn = document.getElementById('startServerBtn');
+    const stopServerBtn = document.getElementById('stopServerBtn');
+    const openIOPaintBtn = document.getElementById('openIOPaintBtn');
+    const modelSelect = document.getElementById('modelSelect');
+    const deviceSelect = document.getElementById('deviceSelect');
+    const portInput = document.getElementById('portInput');
+    
+    // Check IOPaint installation
+    async function checkIOPaintInstallation() {
+        try {
+            const response = await fetch('/api/iopaint/check');
+            const data = await response.json();
+            
+            if (!data.installed) {
+                statusText.innerHTML = '<span style="color: var(--danger);">IOPaint not installed</span>';
+                showToast('IOPaint is not installed. Install it with: pip install iopaint', 'danger');
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            statusText.innerHTML = '<span style="color: var(--danger);">Error checking installation</span>';
+            console.error('Error checking IOPaint:', error);
+            return false;
+        }
+    }
+    
+    // Check server status
+    async function checkServerStatus() {
+        try {
+            const response = await fetch('/api/iopaint/status');
+            const data = await response.json();
+            
+            if (data.running) {
+                statusText.innerHTML = `<span style="color: var(--good);">Running on port ${data.port}</span>`;
+                serverControls.style.display = 'none';
+                serverInfo.style.display = 'block';
+                serverPort.textContent = data.port;
+                portInput.value = data.port;
+            } else {
+                statusText.innerHTML = '<span style="color: var(--muted);">Stopped</span>';
+                serverControls.style.display = 'block';
+                serverInfo.style.display = 'none';
+                
+                // Check available devices
+                await checkAvailableDevices();
+            }
+        } catch (error) {
+            statusText.innerHTML = '<span style="color: var(--danger);">Error checking status</span>';
+            console.error('Error checking server status:', error);
+        }
+    }
+    
+    // Check available devices
+    async function checkAvailableDevices() {
+        try {
+            const response = await fetch('/api/iopaint/devices');
+            const data = await response.json();
+            
+            // Update device select options
+            const cudaOption = deviceSelect.querySelector('option[value="cuda"]');
+            const mpsOption = deviceSelect.querySelector('option[value="mps"]');
+            
+            if (cudaOption) {
+                cudaOption.disabled = !data.cuda;
+                if (!data.cuda) {
+                    cudaOption.textContent = 'CUDA (Not Available)';
+                }
+            }
+            
+            if (mpsOption) {
+                mpsOption.disabled = !data.mps;
+                if (!data.mps) {
+                    mpsOption.textContent = 'MPS (Not Available)';
+                }
+            }
+            
+            // Select best available device
+            if (data.cuda) {
+                deviceSelect.value = 'cuda';
+            } else if (data.mps) {
+                deviceSelect.value = 'mps';
+            } else {
+                deviceSelect.value = 'cpu';
+            }
+        } catch (error) {
+            console.error('Error checking devices:', error);
+        }
+    }
+    
+    // Start server
+    async function startServer() {
+        startServerBtn.disabled = true;
+        startServerBtn.innerHTML = '<span class="spinner"></span> Starting...';
+        
+        try {
+            const response = await fetch('/api/iopaint/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model: modelSelect.value,
+                    device: deviceSelect.value,
+                    port: parseInt(portInput.value)
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('IOPaint server started successfully', 'good');
+                // Wait a moment for server to initialize
+                setTimeout(checkServerStatus, 1000);
+            } else {
+                showToast(`Failed to start server: ${data.error}`, 'danger');
+                startServerBtn.disabled = false;
+                startServerBtn.innerHTML = 'Start Server';
+            }
+        } catch (error) {
+            showToast(`Error starting server: ${error.message}`, 'danger');
+            startServerBtn.disabled = false;
+            startServerBtn.innerHTML = 'Start Server';
+        }
+    }
+    
+    // Stop server
+    async function stopServer() {
+        stopServerBtn.disabled = true;
+        stopServerBtn.innerHTML = '<span class="spinner"></span> Stopping...';
+        
+        try {
+            const response = await fetch('/api/iopaint/stop', {
+                method: 'POST'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('IOPaint server stopped', 'good');
+                setTimeout(checkServerStatus, 500);
+            } else {
+                showToast(`Failed to stop server: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            showToast(`Error stopping server: ${error.message}`, 'danger');
+        } finally {
+            stopServerBtn.disabled = false;
+            stopServerBtn.innerHTML = 'Stop Server';
+        }
+    }
+    
+    // Open IOPaint WebUI
+    function openIOPaint() {
+        const port = serverPort.textContent || portInput.value;
+        window.open(`http://localhost:${port}`, '_blank');
+    }
+    
+    // Event listeners
+    startServerBtn.addEventListener('click', startServer);
+    stopServerBtn.addEventListener('click', stopServer);
+    openIOPaintBtn.addEventListener('click', openIOPaint);
+    
+    // Initialize
+    async function init() {
+        const installed = await checkIOPaintInstallation();
+        if (installed) {
+            await checkServerStatus();
+            
+            // Check status every 10 seconds
+            setInterval(checkServerStatus, 10000);
+        }
+    }
+    
+    init();
+});
+</script>

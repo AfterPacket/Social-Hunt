@@ -44,16 +44,19 @@ function renderTokenStatus() {
 const viewTitles = {
   dashboard: "Dashboard",
   search: "Search",
-  "breach-search": "Breach Search", // Added breach search
+  "breach-search": "Breach Search",
   reverse: "Reverse Image",
   history: "History",
   "secure-notes": "Secure Notes",
   demask: "Demasking",
+  iopaint: "IOPaint Inpainting",
+  deepmosaic: "DeepMosaic", // Add this line
   plugins: "Plugins",
   tokens: "Token",
   settings: "Settings",
 };
 
+// Update the loadView function (around line 39)
 async function loadView(name) {
   document.querySelectorAll(".menu-btn[data-view]").forEach((b) => {
     b.classList.toggle("active", b.dataset.view === name);
@@ -68,7 +71,7 @@ async function loadView(name) {
 
   if (name === "dashboard") initDashboardView();
   if (name === "search") initSearchView();
-  if (name === "breach-search") initBreachSearchView(); // Initialize breach search
+  if (name === "breach-search") initBreachSearchView();
   if (name === "reverse") initReverseView();
   if (name === "history") initHistoryView();
   if (name === "plugins") initPluginsView();
@@ -76,6 +79,8 @@ async function loadView(name) {
   if (name === "settings") initSettingsView();
   if (name === "secure-notes") initSecureNotesView();
   if (name === "demask") initDemaskView();
+  if (name === "iopaint") initIOPaintView(); // Add this line
+  if (name === "deepmosaic") initDeepMosaicView(); // Add this line
 }
 
 // ----------------------
@@ -2181,6 +2186,442 @@ async function initDemaskView() {
     }
   };
 }
+
+// ----------------------
+// IOPaint Inpainting
+// ----------------------
+async function initIOPaintView() {
+  // Elements
+  const statusText = document.getElementById('statusText');
+  const serverControls = document.getElementById('serverControls');
+  const serverInfo = document.getElementById('serverInfo');
+  const serverPort = document.getElementById('serverPort');
+  const startServerBtn = document.getElementById('startServerBtn');
+  const stopServerBtn = document.getElementById('stopServerBtn');
+  const openIOPaintBtn = document.getElementById('openIOPaintBtn');
+  const modelSelect = document.getElementById('modelSelect');
+  const deviceSelect = document.getElementById('deviceSelect');
+  const portInput = document.getElementById('portInput');
+  
+  if (!statusText) return; // Safety check
+  
+  // Check IOPaint installation
+  async function checkIOPaintInstallation() {
+      try {
+          const response = await fetch('/api/iopaint/check');
+          const data = await response.json();
+          
+          if (!data.installed) {
+              statusText.innerHTML = '<span style="color: var(--danger);">IOPaint not installed</span>';
+              showToast('IOPaint is not installed. Install it with: pip install iopaint', 'danger');
+              return false;
+          }
+          
+          return true;
+      } catch (error) {
+          statusText.innerHTML = '<span style="color: var(--danger);">Error checking installation</span>';
+          console.error('Error checking IOPaint:', error);
+          return false;
+      }
+  }
+  
+  // Check server status
+  async function checkServerStatus() {
+      try {
+          const response = await fetch('/api/iopaint/status');
+          const data = await response.json();
+          
+          if (data.running) {
+              statusText.innerHTML = `<span style="color: var(--good);">Running on port ${data.port}</span>`;
+              if (serverControls) serverControls.style.display = 'none';
+              if (serverInfo) serverInfo.style.display = 'block';
+              if (serverPort) serverPort.textContent = data.port;
+              if (portInput) portInput.value = data.port;
+          } else {
+              statusText.innerHTML = '<span style="color: var(--muted);">Stopped</span>';
+              if (serverControls) serverControls.style.display = 'block';
+              if (serverInfo) serverInfo.style.display = 'none';
+              
+              // Check available devices
+              await checkAvailableDevices();
+          }
+      } catch (error) {
+          statusText.innerHTML = '<span style="color: var(--danger);">Error checking status</span>';
+          console.error('Error checking server status:', error);
+      }
+  }
+  
+  // Check available devices
+  async function checkAvailableDevices() {
+      try {
+          const response = await fetch('/api/iopaint/devices');
+          const data = await response.json();
+          
+          // Update device select options
+          if (deviceSelect) {
+              const cudaOption = deviceSelect.querySelector('option[value="cuda"]');
+              const mpsOption = deviceSelect.querySelector('option[value="mps"]');
+              
+              if (cudaOption) {
+                  cudaOption.disabled = !data.cuda;
+                  if (!data.cuda) {
+                      cudaOption.textContent = 'CUDA (Not Available)';
+                  }
+              }
+              
+              if (mpsOption) {
+                  mpsOption.disabled = !data.mps;
+                  if (!data.mps) {
+                      mpsOption.textContent = 'MPS (Not Available)';
+                  }
+              }
+              
+              // Select best available device
+              if (data.cuda) {
+                  deviceSelect.value = 'cuda';
+              } else if (data.mps) {
+                  deviceSelect.value = 'mps';
+              } else {
+                  deviceSelect.value = 'cpu';
+              }
+          }
+      } catch (error) {
+          console.error('Error checking devices:', error);
+      }
+  }
+  
+  // Start server
+  async function startServer() {
+      if (!startServerBtn) return;
+      startServerBtn.disabled = true;
+      startServerBtn.innerHTML = '<span class="spinner"></span> Starting...';
+      
+      try {
+          const response = await fetch('/api/iopaint/start', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                  model: modelSelect ? modelSelect.value : 'lama',
+                  device: deviceSelect ? deviceSelect.value : 'cpu',
+                  port: portInput ? parseInt(portInput.value) : 8080
+              })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+              showToast('IOPaint server started successfully', 'good');
+              // Wait a moment for server to initialize
+              setTimeout(checkServerStatus, 1000);
+          } else {
+              showToast(`Failed to start server: ${data.error}`, 'danger');
+              startServerBtn.disabled = false;
+              startServerBtn.innerHTML = 'Start Server';
+          }
+      } catch (error) {
+          showToast(`Error starting server: ${error.message}`, 'danger');
+          startServerBtn.disabled = false;
+          startServerBtn.innerHTML = 'Start Server';
+      }
+  }
+  
+  // Stop server
+  async function stopServer() {
+      if (!stopServerBtn) return;
+      stopServerBtn.disabled = true;
+      stopServerBtn.innerHTML = '<span class="spinner"></span> Stopping...';
+      
+      try {
+          const response = await fetch('/api/iopaint/stop', {
+              method: 'POST'
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+              showToast('IOPaint server stopped', 'good');
+              setTimeout(checkServerStatus, 500);
+          } else {
+              showToast(`Failed to stop server: ${data.error}`, 'danger');
+          }
+      } catch (error) {
+          showToast(`Error stopping server: ${error.message}`, 'danger');
+      } finally {
+          stopServerBtn.disabled = false;
+          stopServerBtn.innerHTML = 'Stop Server';
+      }
+  }
+  
+  // Open IOPaint WebUI
+  function openIOPaint() {
+      const port = serverPort ? serverPort.textContent : (portInput ? portInput.value : '8080');
+      window.open(`http://localhost:${port}`, '_blank');
+  }
+  
+  // Add toast function if not exists
+  window.showToast = window.showToast || function(message, type = '') {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      if (type) toast.classList.add(type);
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+          toast.remove();
+      }, 3000);
+  };
+  
+  // Event listeners
+  if (startServerBtn) startServerBtn.addEventListener('click', startServer);
+  if (stopServerBtn) stopServerBtn.addEventListener('click', stopServer);
+  if (openIOPaintBtn) openIOPaintBtn.addEventListener('click', openIOPaint);
+  
+  // Initialize
+  async function init() {
+      const installed = await checkIOPaintInstallation();
+      if (installed) {
+          await checkServerStatus();
+          
+          // Check status every 10 seconds
+          setInterval(checkServerStatus, 10000);
+      }
+  }
+  
+  init();
+}
+
+
+// DeepMosaic View
+async function initDeepMosaicView() {
+    const uploadInput = document.getElementById("dmUpload");
+    const previewDiv = document.getElementById("dmPreview");
+    const processBtn = document.getElementById("dmProcessBtn");
+    const statusDiv = document.getElementById("dmStatus");
+    const statusText = document.getElementById("dmStatusText");
+    const progressDiv = document.getElementById("dmProgress");
+    const resultsDiv = document.getElementById("dmResults");
+    const resultPreview = document.getElementById("dmResultPreview");
+    const downloadBtn = document.getElementById("dmDownloadBtn");
+    const saveNotesBtn = document.getElementById("dmSaveNotesBtn");
+    const clearBtn = document.getElementById("dmClearBtn");
+    const statusInfoDiv = document.getElementById("dmStatusContent");
+    const refreshStatusBtn = document.getElementById("dmRefreshStatus");
+    
+    let currentJobId = null;
+    let currentFileType = null;
+    
+    // Check DeepMosaic status
+    async function checkDeepMosaicStatus() {
+        try {
+            statusInfoDiv.innerHTML = '<div class="spinner"></div> Checking DeepMosaic status...';
+            const response = await fetch('/api/deepmosaic/status');
+            const data = await response.json();
+            
+            if (data.available) {
+                statusInfoDiv.innerHTML = `
+                    <div style="color: var(--good); font-weight: bold;">
+                        ✓ DeepMosaic Available
+                    </div>
+                    <div class="muted" style="font-size: 12px; margin-top: 5px;">
+                        AI mosaic processing ready
+                    </div>
+                `;
+                processBtn.disabled = false;
+            } else {
+                statusInfoDiv.innerHTML = `
+                    <div style="color: var(--danger); font-weight: bold;">
+                        ✗ DeepMosaic Not Available
+                    </div>
+                    <div class="muted" style="font-size: 12px; margin-top: 5px;">
+                        ${data.message || 'DeepMosaic module not found'}
+                    </div>
+                `;
+                processBtn.disabled = true;
+            }
+        } catch (error) {
+            statusInfoDiv.innerHTML = `
+                <div style="color: var(--danger); font-weight: bold;">
+                    ✗ Connection Error
+                </div>
+                <div class="muted" style="font-size: 12px; margin-top: 5px;">
+                    Failed to check DeepMosaic status
+                </div>
+            `;
+            processBtn.disabled = true;
+        }
+    }
+    
+    // File upload preview
+    if (uploadInput) {
+        uploadInput.onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            previewDiv.innerHTML = '';
+            
+            const isVideo = file.type.startsWith('video/');
+            currentFileType = isVideo ? 'video' : 'image';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (isVideo) {
+                    previewDiv.innerHTML = `
+                        <video controls style="max-width: 300px; max-height: 200px; border-radius: 8px;">
+                            <source src="${e.target.result}" type="${file.type}">
+                            Your browser does not support video tag.
+                        </video>
+                        <div class="muted" style="margin-top: 5px;">
+                            ${file.name} (${Math.round(file.size / 1024)} KB)
+                        </div>
+                    `;
+                } else {
+                    previewDiv.innerHTML = `
+                        <img src="${e.target.result}" style="max-width: 300px; max-height: 200px; border-radius: 8px;">
+                        <div class="muted" style="margin-top: 5px;">
+                            ${file.name} (${Math.round(file.size / 1024)} KB)
+                        </div>
+                    `;
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+    }
+    
+    // Process button
+    if (processBtn) {
+        processBtn.onclick = async function() {
+            const file = uploadInput.files[0];
+            if (!file) {
+                alert('Please select a file first');
+                return;
+            }
+            
+            const mode = document.querySelector('input[name="dmMode"]:checked').value;
+            const mosaicType = document.getElementById('dmMosaicType').value;
+            const quality = document.getElementById('dmQuality').value;
+            
+            // Disable button and show status
+            processBtn.disabled = true;
+            processBtn.textContent = 'Processing...';
+            statusDiv.style.display = 'block';
+            statusText.textContent = 'Uploading and processing...';
+            progressDiv.innerHTML = '<div class="spinner"></div> Starting DeepMosaic...';
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('mode', mode);
+            formData.append('mosaic_type', mosaicType);
+            formData.append('quality', quality);
+            
+            try {
+                const response = await fetch('/api/deepmosaic/process', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                // Get the blob (image or video)
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                // Extract job ID from filename
+                const filename = response.headers.get('content-disposition');
+                const jobMatch = filename && filename.match(/deepmosaic_(\w+)_/);
+                currentJobId = jobMatch ? jobMatch[1] : Date.now().toString();
+                
+                // Show results
+                resultsDiv.style.display = 'block';
+                if (blob.type.startsWith('video/')) {
+                    resultPreview.innerHTML = `
+                        <h4>Processed Video</h4>
+                        <video controls style="max-width: 400px; max-height: 300px; border-radius: 8px;">
+                            <source src="${url}" type="${blob.type}">
+                            Your browser does not support video tag.
+                        </video>
+                    `;
+                } else {
+                    resultPreview.innerHTML = `
+                        <h4>Processed Image</h4>
+                        <img src="${url}" style="max-width: 400px; max-height: 300px; border-radius: 8px;">
+                    `;
+                }
+                
+                // Update status
+                statusText.textContent = 'Processing complete!';
+                progressDiv.innerHTML = `
+                    <div style="color: var(--good); font-weight: bold;">
+                        ✓ DeepMosaic processing completed successfully
+                    </div>
+                `;
+                
+                // Setup download button
+                downloadBtn.onclick = function() {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `deepmosaic_${mode}_${file.name}`;
+                    a.click();
+                };
+                
+                // Setup save to notes button
+                saveNotesBtn.onclick = function() {
+                    if (window.addNoteDirectly) {
+                        const noteContent = `
+DeepMosaic Processing:
+- File: ${file.name}
+- Mode: ${mode}
+- Mosaic Type: ${mosaicType}
+- Quality: ${quality}
+- Timestamp: ${new Date().toLocaleString()}
+
+Results saved with job ID: ${currentJobId}
+                        `;
+                        window.addNoteDirectly(`DeepMosaic: ${file.name}`, noteContent);
+                    } else {
+                        alert('Please unlock Secure Notes first');
+                    }
+                };
+                
+            } catch (error) {
+                statusText.textContent = 'Error during processing';
+                progressDiv.innerHTML = `
+                    <div style="color: var(--danger); font-weight: bold;">
+                        ✗ Error: ${error.message}
+                    </div>
+                `;
+            } finally {
+                processBtn.disabled = false;
+                processBtn.textContent = 'Start Processing';
+            }
+        };
+    }
+    
+    // Clear button
+    if (clearBtn) {
+        clearBtn.onclick = function() {
+            uploadInput.value = '';
+            previewDiv.innerHTML = '';
+            statusDiv.style.display = 'none';
+            resultsDiv.style.display = 'none';
+            currentJobId = null;
+        };
+    }
+    
+    // Refresh status button
+    if (refreshStatusBtn) {
+        refreshStatusBtn.onclick = checkDeepMosaicStatus;
+    }
+    
+    // Initial status check
+    checkDeepMosaicStatus();
+}
+
 
 // ----------------------
 // Init
