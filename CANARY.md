@@ -18,6 +18,10 @@ updated quarterly.
 - As of 2026-01-28 (UTC), we have received 0 preservation requests.
 - As of 2026-01-28 (UTC), we have received 0 takedown requests.
 
+### Signers (maintainers)
+- AfterPacketTru <AfterPacketTru@protonmail.com> (PGP fingerprint: c46c734a833dcfdcc944e08ce708d2471a0673cb)
+- Add additional signers here (name, email, fingerprint).
+
 ### If this canary changes or disappears
 If this file is removed or not updated for more than 90 days, treat the canary
 as stale and do not assume any particular status.

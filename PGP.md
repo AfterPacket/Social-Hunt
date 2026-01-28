@@ -3,6 +3,8 @@
 Status: ACTIVE
 Last updated (UTC): 2026-01-28
 
+Contact: AfterPacketTru@protonmail.com
+
 ## Fingerprint
 `c46c734a833dcfdcc944e08ce708d2471a0673cb`
 
