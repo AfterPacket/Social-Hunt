@@ -20,6 +20,7 @@ updated quarterly.
 
 ### Signers (maintainers)
 - AfterPacketTru <AfterPacketTru@protonmail.com> (PGP fingerprint: c46c734a833dcfdcc944e08ce708d2471a0673cb)
+- airborne-commando (PGP fingerprint: AA31A1EF7719DC5FA789BBFBAE8C320ADAD34A5F)
 - Add additional signers here (name, email, fingerprint).
 
 ### If this canary changes or disappears
