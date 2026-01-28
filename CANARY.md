@@ -1,23 +1,22 @@
-## Canary Warrant (Template)
+## Canary Warrant
 
-Status: TEMPLATE (not a legal statement)
-Last updated (UTC): YYYY-MM-DD
+Status: ACTIVE
+Last updated (UTC): 2026-01-28
 
 ### What this is
-This document is a transparency canary template for Social-Hunt maintainers.
-It is not valid until you replace the placeholders with accurate, verified
-statements.
+This document is a transparency canary for Social-Hunt maintainers. It is
+updated quarterly.
 
 ### How to publish
-1) Replace all placeholder text.
+1) Update the counts below.
 2) Use a PGP-signed commit or attach a detached signature.
-3) Update the "Last updated" date.
+3) Update the "Last updated" date (UTC).
 
-### Statements (fill in with truthful, verified information)
-- As of YYYY-MM-DD (UTC), we have received [X] legal demands for user data.
-- As of YYYY-MM-DD (UTC), we have received [X] gag orders or equivalent restrictions.
-- As of YYYY-MM-DD (UTC), we have received [X] preservation requests.
-- As of YYYY-MM-DD (UTC), we have received [X] takedown requests.
+### Statements
+- As of 2026-01-28 (UTC), we have received 0 legal demands for user data.
+- As of 2026-01-28 (UTC), we have received 0 gag orders or equivalent restrictions.
+- As of 2026-01-28 (UTC), we have received 0 preservation requests.
+- As of 2026-01-28 (UTC), we have received 0 takedown requests.
 
 ### If this canary changes or disappears
 If this file is removed or not updated for more than 90 days, treat the canary
