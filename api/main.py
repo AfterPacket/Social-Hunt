@@ -981,11 +981,11 @@ async def api_demask(
                 f"timothybrooks/instruct-pix2pix:{v_pix2pix}",
                 input={
                     "image": b64_img,
-                    "prompt": "remove face mask, balaclava, ski mask, sunglasses, face covering, reveal the underlying human face, preserve identity, realistic features",
-                    "negative_prompt": "jungle, trees, nature, psychedelic, abstract, colorful, distorted, blurry, cartoon, mask remains, makeup, change gender, extra fingers, mutated hands, poorly drawn face, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
+                    "prompt": "remove only the face covering (mask, balaclava, ski mask, sunglasses); keep the same people, clothing, pose, background, and number of people unchanged; preserve identity; realistic face",
+                    "negative_prompt": "new person, different identity, change gender, change ethnicity, extra faces, extra people, cloned face, multiple heads, distorted, blurry, cartoon, mask remains, makeup, jungle, trees, nature, psychedelic, abstract, colorful, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, fused fingers, too many fingers, long neck",
                     "num_inference_steps": 25,
-                    "image_guidance_scale": 1.8,  # Maximized to strongly preserve structure and reduce hallucinations
-                    "guidance_scale": 7.0,  # Prevent aggressive hallucinations
+                    "image_guidance_scale": 2.4,  # Preserve structure to reduce hallucinations
+                    "guidance_scale": 3.0,  # Reduce aggressive edits
                 },
             )
             # Ensure output is converted from FileOutput object to string URL
@@ -1015,11 +1015,11 @@ async def api_demask(
                             f"timothybrooks/instruct-pix2pix:{v_pix2pix}",
                             input={
                                 "image": file_url,
-                                "prompt": "remove face mask, balaclava, ski mask, sunglasses, face covering, reveal the underlying human face, preserve identity, realistic features",
-                                "negative_prompt": "jungle, trees, nature, psychedelic, abstract, colorful, distorted, blurry, cartoon, mask remains, makeup, change gender, extra fingers, mutated hands, poorly drawn face, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
+                                "prompt": "remove only the face covering (mask, balaclava, ski mask, sunglasses); keep the same people, clothing, pose, background, and number of people unchanged; preserve identity; realistic face",
+                                "negative_prompt": "new person, different identity, change gender, change ethnicity, extra faces, extra people, cloned face, multiple heads, distorted, blurry, cartoon, mask remains, makeup, jungle, trees, nature, psychedelic, abstract, colorful, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, fused fingers, too many fingers, long neck",
                                 "num_inference_steps": 25,
-                                "image_guidance_scale": 1.8,
-                                "guidance_scale": 7.0,
+                                "image_guidance_scale": 2.4,
+                                "guidance_scale": 3.0,
                             },
                         )
                         # Ensure output is converted from FileOutput object to string URL
