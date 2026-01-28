@@ -9,7 +9,7 @@ Social-Hunt is an OSINT framework for cross-platform username discovery, breach 
 - Face matching against profile avatars using face recognition and image hashing.
 - Reverse image OSINT links (Google Lens, Bing, Yandex, etc.).
 - Tor/Onion site support via SOCKS proxy (split-tunneling).
-- Optional AI face restoration/demasking via Replicate or a self-hosted worker.
+- Optional AI face restoration/demasking via Replicate, IOPaint, or DeepMosaic.
 - Plugin system with hot-reload and optional web uploader.
 - Demo mode that censors sensitive data for safe demonstrations.
 - Dashboard theme applies immediately on selection.
@@ -146,9 +146,12 @@ Reverse-image links require a public base URL for your instance:
 
 - Set `public_url` in settings or `SOCIAL_HUNT_PUBLIC_URL` in the environment.
 
-## AI Demasking (Replicate or Self-Hosted)
+## AI Demasking (Replicate, IOPaint, or Self-Hosted)
 
-Social-Hunt can run the demasking pipeline with Replicate or a self-hosted worker.
+Social-Hunt supports multiple demasking modes:
+- Replicate API models (managed SaaS).
+- IOPaint WebUI for interactive inpainting.
+- DeepMosaic for automated mosaic removal (image/video).
 
 ### Replicate API
 Set a Replicate API token in either:
@@ -157,7 +160,22 @@ Set a Replicate API token in either:
 
 When configured, the server uses Replicate models to remove masks and restore facial detail.
 
-### Self-hosted (DeepMosaics or custom)
+### IOPaint (interactive)
+Use the IOPaint page in the Demasking menu to:
+- Start/stop the local IOPaint server
+- Open the IOPaint WebUI
+- Select model/device/port
+
+You can also host IOPaint under `/iopaint` behind the same domain (see
+`APACHE_SETUP.md` and `NGINX_SETUP.md`).
+
+### DeepMosaic (automated)
+DeepMosaic can remove mosaics from images or video. Use the DeepMosaic page to:
+- Upload image/video
+- Choose clean/add/style modes
+- Download results or save to notes
+
+### Self-hosted (custom)
 Set `SOCIAL_HUNT_FACE_AI_URL` to an HTTP endpoint that accepts JSON:
 ```json
 {
