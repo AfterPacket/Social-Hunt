@@ -1439,6 +1439,8 @@ class DeepMosaicService:
         print(f"[INFO] DeepMosaic directory: {self.deepmosaic_dir}")
         print(f"[INFO] DeepMosaic script: {self.deepmosaic_path}")
 
+        self.apply_compat_patches()
+
         # Check for models
         self.check_models()
 
@@ -1477,6 +1479,68 @@ class DeepMosaicService:
         for model in essential_models:
             if not model.exists():
                 print(f"[WARN] Missing model: {model}")
+
+    def apply_compat_patches(self) -> None:
+        """Patch DeepMosaics for newer PyTorch/InstanceNorm behavior."""
+        updated = False
+        model_util_path = self.deepmosaic_dir / "models" / "model_util.py"
+        loadmodel_path = self.deepmosaic_dir / "models" / "loadmodel.py"
+
+        if model_util_path.exists():
+            try:
+                text = model_util_path.read_text(encoding="utf-8", errors="ignore")
+                patch_block = """# patch InstanceNorm checkpoints prior to 0.4
+def patch_instance_norm_state_dict(state_dict, module, keys, i=0):
+    \"\"\"Fix InstanceNorm checkpoints incompatibility (prior to 0.4)\"\"\"
+    key = keys[i]
+    if i + 1 == len(keys):  # at the end, pointing to a parameter/buffer
+        if module.__class__.__name__.startswith('InstanceNorm') and \\
+                (key == 'running_mean' or key == 'running_var'):
+            if getattr(module, key) is None:
+                state_dict.pop('.'.join(keys))
+        if module.__class__.__name__.startswith('InstanceNorm') and \\
+           (key == 'num_batches_tracked'):
+            state_dict.pop('.'.join(keys))
+    else:
+        if hasattr(module, key):
+            patch_instance_norm_state_dict(state_dict, getattr(module, key), keys, i + 1)
+        else:
+            state_dict.pop('.'.join(keys), None)
+"""
+                pattern = (
+                    r"# patch InstanceNorm checkpoints prior to 0.4\\n"
+                    r"def patch_instance_norm_state_dict[\\s\\S]*?\\n"
+                    r"################################## initialization"
+                )
+                new_text = re.sub(
+                    pattern,
+                    patch_block + "\n################################## initialization",
+                    text,
+                    count=1,
+                )
+                if new_text != text:
+                    model_util_path.write_text(new_text, encoding="utf-8")
+                    updated = True
+            except Exception as e:
+                print(f"[WARN] Failed to patch DeepMosaics model_util.py: {e}")
+
+        if loadmodel_path.exists():
+            try:
+                text = loadmodel_path.read_text(encoding="utf-8", errors="ignore")
+                if "netG.load_state_dict(state_dict, strict=False)" not in text:
+                    if "netG.load_state_dict(state_dict)" in text:
+                        text = text.replace(
+                            "netG.load_state_dict(state_dict)",
+                            "netG.load_state_dict(state_dict, strict=False)",
+                            1,
+                        )
+                        loadmodel_path.write_text(text, encoding="utf-8")
+                        updated = True
+            except Exception as e:
+                print(f"[WARN] Failed to patch DeepMosaics loadmodel.py: {e}")
+
+        if updated:
+            print("[INFO] Applied DeepMosaics compatibility patches")
 
     async def process_image(
         self,
