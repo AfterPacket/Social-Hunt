@@ -1,28 +1,44 @@
-fastapi>=0.128.0
-starlette>=0.49.1
+fastapi
+starlette
 uvicorn[standard]>=0.34.0
 httpx>=0.28.1
 httpx-socks
 PyYAML>=6.0.2
 beautifulsoup4>=4.12.3
+numpy>=1.21.6,<2.0
 face_recognition
-dlib
-Pillow>=10.4.0
-numpy==2.2.6
-imagehash
+dlib>=19.24.0  # Or latest binary
+pillow==9.5.0
+ImageHash>=4.3.1
 python-multipart
 replicate
 opencv_python
-torchvision
-torch
-matplotlib
+matplotlib>=3.9
 tensorboardX
 protobuf==7.34.0rc1
-scikit-image
+scikit-image<0.22
 fonttools>=4.60.2
 urllib3>=2.6.3
 werkzeug>=3.1.5
 wheel>=0.46.2
 esptool>=5.1.0
-psutil>=5.9.8
-iopaint
+psutil>=5.9
+iopaint==1.6.0
+torchvision==0.16.2
+
+# You'll need to comment out these for specific gpu.
+
+# CPU
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.1.2
+torchvision==0.16.2
+
+# Nvidia
+# --extra-index-url https://download.pytorch.org/whl/cu118
+# torch==2.1.2
+# torchvision==0.16.2
+
+# AMD
+# --extra-index-url https://download.pytorch.org/whl/rocm5.6
+# torch==2.1.2
+# torchvision==0.16.2
