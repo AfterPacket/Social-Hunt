@@ -390,8 +390,18 @@ a:hover {
     outline-offset: 2px;
 }
 
-.sidebar-footer {
+.sidebar-tip {
     margin-top: auto;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--muted);
+    font-size: 12px;
+    width: fit-content;
+}
+
+.sidebar-footer {
     padding: 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius2);
@@ -400,19 +410,6 @@ a:hover {
     display: flex;
     flex-direction: column;
     gap: 8px;
-}
-
-.footer-tip {
-    color: var(--muted);
-}
-
-.tip-bubble {
-    display: inline-block;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.02);
-    color: var(--muted);
 }
 
 .footer-links {
