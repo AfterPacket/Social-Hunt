@@ -30,6 +30,33 @@ docker-compose up -d --build
 ```
 Open `http://localhost:8000`.
 
+### Docker + bundled reverse proxy (nginx or apache)
+Use a proxy profile to expose the app on port 80:
+```bash
+cd Social-Hunt/docker
+# Nginx
+docker compose --profile nginx up -d --build
+
+# Apache
+docker compose --profile apache up -d --build
+```
+Open `http://localhost/`.
+
+To include IOPaint behind the same proxy:
+```bash
+docker compose --profile nginx --profile iopaint up -d --build
+```
+
+### Docker + SSL (nginx + IOPaint)
+This enables HTTPS termination and routes `/` to Social-Hunt and `/iopaint` to IOPaint.
+```bash
+cd Social-Hunt/docker
+python setup_ssl.py
+docker compose --profile certbot run --rm --service-ports certbot
+docker compose --profile ssl up -d
+```
+Open `https://your-domain`.
+
 ### Manual install
 ```bash
 git clone https://github.com/AfterPacket/Social-Hunt.git
@@ -226,6 +253,7 @@ If you want IOPaint under the same domain (e.g., `/iopaint`), Social-Hunt's API
 is moved to `/sh-api` to avoid conflicts with IOPaint's `/api` and `/socket.io`
 routes. Make sure your reverse proxy routes `/sh-api` to the app and `/api` to
 IOPaint as shown in `APACHE_SETUP.md`.
+**SUPER IMPORTANT NOTE:** You must follow `APACHE_SETUP.md` or `NGINX_SETUP.md` for reverse proxy setup.
 
 ## Screenshots / UI Tour
 

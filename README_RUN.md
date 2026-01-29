@@ -150,6 +150,31 @@ services:
       - ../plugins:/app/plugins
 ```
 
+### Docker SSL (Nginx + IOPaint)
+Use the SSL-aware Nginx proxy in `docker/docker-compose.yml`. This setup
+terminates TLS and routes `/` to Social-Hunt and `/iopaint` to IOPaint.
+
+1) Generate the SSL config and env file:
+```bash
+cd docker
+python setup_ssl.py
+```
+
+2) Issue a Let's Encrypt cert (uses port 80 temporarily):
+```bash
+docker compose --profile certbot run --rm --service-ports certbot
+```
+
+3) Start the stack with SSL:
+```bash
+docker compose --profile ssl up -d
+```
+
+Renewal (while nginx is running):
+```bash
+docker compose --profile certbot run --rm certbot renew --webroot -w /var/www/certbot
+```
+
 ---
 
 ## 🔍 Troubleshooting
