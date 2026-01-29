@@ -32,11 +32,68 @@ services:
 
     restart: unless-stopped
 
+  # Optional: Nginx reverse proxy (pick one proxy profile: nginx or apache)
+  nginx-proxy:
+    image: nginx:1.25-alpine
+    profiles: ["proxy", "nginx"]
+    depends_on:
+      - social-hunt
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+
+  # Optional: Apache reverse proxy (pick one proxy profile: nginx or apache)
+  apache-proxy:
+    image: httpd:2.4
+    profiles: ["proxy", "apache"]
+    depends_on:
+      - social-hunt
+    ports:
+      - "80:80"
+    volumes:
+      - ./apache/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+    restart: unless-stopped
+
+  # Optional: Nginx reverse proxy with SSL (Let's Encrypt or custom certs)
+  # Enable with: docker compose --profile ssl up -d
+  nginx-ssl:
+    image: nginx:1.25-alpine
+    profiles: ["ssl", "nginx-ssl"]
+    depends_on:
+      - social-hunt
+      - iopaint
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ssl/nginx-ssl.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl/certbot/www:/var/www/certbot
+      - ./ssl/certbot/conf:/etc/letsencrypt
+      - ./ssl/certs:/etc/ssl/custom:ro
+    restart: unless-stopped
+
+  # Optional: Let's Encrypt helper (run on demand)
+  # Example: docker compose --profile certbot run --rm --service-ports certbot
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ["certbot"]
+    ports:
+      - "80:80"
+    volumes:
+      - ./ssl/certbot/conf:/etc/letsencrypt
+      - ./ssl/certbot/www:/var/www/certbot
+    env_file:
+      - ./ssl/ssl.env
+    command: >
+      certonly --standalone --preferred-challenges http --http-01-port 80
+      --email ${CERTBOT_EMAIL} --agree-tos --no-eff-email -d ${SSL_DOMAIN}
   # Optional: run IOPaint in a separate container (CPU-only)
   # Enable with: docker compose --profile iopaint up -d
   iopaint:
     image: python:3.11-slim
-    profiles: ["iopaint"]
+    profiles: ["iopaint", "ssl"]
     command: >
       sh -c "pip install --no-cache-dir iopaint &&
              iopaint start --host 0.0.0.0 --port 8080"

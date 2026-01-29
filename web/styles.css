@@ -390,13 +390,46 @@ a:hover {
     outline-offset: 2px;
 }
 
-.sidebar-footer {
+.sidebar-tip {
     margin-top: auto;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--muted);
+    font-size: 12px;
+    width: fit-content;
+}
+
+.sidebar-footer {
     padding: 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius2);
     color: var(--muted2);
     font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.footer-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.footer-links a {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.footer-sep {
+    color: var(--muted2);
+}
+
+.footer-credit {
+    color: var(--muted2);
 }
 
 .main {

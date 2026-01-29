@@ -23,3 +23,11 @@ web/views/demask.html.real
 # Local backups
 _backup_*/
 data/settings.json
+
+# Docker SSL artifacts
+docker/ssl/ssl.env
+docker/ssl/nginx-ssl.conf
+docker/ssl/certbot/*
+!docker/ssl/certbot/.gitkeep
+docker/ssl/certs/*
+!docker/ssl/certs/.gitkeep
