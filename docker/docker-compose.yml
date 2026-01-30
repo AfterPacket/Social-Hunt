@@ -8,7 +8,7 @@ services:
     #   dockerfile: docker/Dockerfile
     container_name: social-hunt
     ports:
-      - "8000:8000"
+      - "8080:8000"
     environment:
       # The admin token used to log into the dashboard and protect settings.
       # Change this to a secure random string.
