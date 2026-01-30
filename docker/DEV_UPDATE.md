@@ -15,9 +15,10 @@ This update includes comprehensive Docker integration for Social-Hunt, including
 ## 🎯 Major Accomplishments
 
 ### 1. Docker Hub Integration ✅
-- **Docker Image Published**: `afterpacket/social-hunt:latest`
+- **Docker Image Published**: `afterpacket/social-hunt:latest` and `afterpacket/social-hunt:v1.0.0`
 - **Docker Hub URL**: https://hub.docker.com/r/afterpacket/social-hunt
-- Successfully built and pushed the Social-Hunt Docker image
+- **Latest Push**: January 30, 2026 (includes all startup scripts and documentation)
+- Successfully built and pushed the Social-Hunt Docker image with version tagging
 - Updated `docker-compose.yml` to use the published image instead of building locally
 - Users can now pull and run the application directly from Docker Hub
 
@@ -129,10 +130,12 @@ Created comprehensive documentation for all aspects of the Docker deployment:
 ### Docker Configuration
 
 #### Image Information
-- **Image Name**: `afterpacket/social-hunt:latest`
+- **Image Name**: `afterpacket/social-hunt:latest` (or `afterpacket/social-hunt:v1.0.0`)
 - **Base Image**: `python:3.11-slim`
 - **Size**: ~1.5GB (includes all dependencies)
 - **Registry**: Docker Hub (public)
+- **Latest Digest**: sha256:32c69d44f243bd77da0157ce5784abaec545e524daad71c96b7d460d6a46f241
+- **Includes**: All startup scripts, documentation, and latest code changes
 
 #### Port Mapping
 - **Host Port**: 8000
@@ -495,12 +498,13 @@ For questions or issues related to this update:
 
 ### What Works Now
 ✅ One-command deployment on all platforms  
-✅ Docker Hub integration for easy distribution  
+✅ Docker Hub integration for easy distribution (v1.0.0 published)  
 ✅ Automatic startup scripts for all OS  
 ✅ Comprehensive documentation  
 ✅ Clear troubleshooting guides  
 ✅ Proper volume persistence  
 ✅ Admin token configuration  
+✅ Version-tagged Docker images  
 
 ### What's Different
 - Now using Docker Hub image instead of local builds
@@ -518,6 +522,7 @@ For questions or issues related to this update:
 
 **End of Development Update**
 
-*Last Updated: January 30, 2026*  
-*Version: 1.0*  
+*Last Updated: January 30, 2026 05:38 EST*  
+*Docker Image Version: v1.0.0*  
+*Git Commit: 6e67f32*  
 *Status: Production Ready (after admin token change)*
