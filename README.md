@@ -236,6 +236,7 @@ proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_
 - HIBP skipped: missing or invalid `hibp_api_key`.
 - Missing Python providers: ensure `SOCIAL_HUNT_ALLOW_PY_PLUGINS=1`.
 - Demask not working: set `REPLICATE_API_TOKEN` or `SOCIAL_HUNT_FACE_AI_URL`.
+- If the downloader fails for any reason, you may have to manually download the models from [Google Drive](https://drive.google.com/open?id=1LTERcN33McoiztYEwBxMuRjjgxh4DEPs) for DeepMosaics.
 
 ## Project Structure
 
