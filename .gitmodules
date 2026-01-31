@@ -4,3 +4,6 @@
 [submodule "iopaint"]
 	path = iopaint
 	url = git@github.com:Sanster/IOPaint.git
+[submodule "SwarmUI"]
+	path = SwarmUI
+	url = https://github.com/mcmonkeyprojects/SwarmUI.git
