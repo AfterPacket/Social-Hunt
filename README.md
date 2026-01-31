@@ -253,9 +253,12 @@ proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_
 - `PLUGINS.md` plugin formats and uploader
 - `APACHE_SETUP.md` Apache reverse proxy notes
 - `NGINX_SETUP.md` Nginx reverse proxy notes
-- `CANARY.md` canary warrant template
-- `PGP.md` PGP public key template
-- `NEWS_OSINT.md` OSINT news digest template
+- `docs/CANARY.md` canary warrant template
+- `docs/PGP.md` PGP public key template
+- `docs/NEWS_OSINT.md` OSINT news digest template
+- `docs/CHANGELOG.md` version history and changes
+- `docs/CONTRIBUTORS.md` project contributors
+- `docs/peekyou.md` PeekYou provider usage notes
 - `LICENSE` GPL-3.0
 
 ## Reverse Proxy Notes (IOPaint on same domain)
