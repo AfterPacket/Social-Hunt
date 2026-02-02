@@ -1,3 +1,8 @@
 {
-  "admin_token": "ChangeME"
+  "__secret_keys": [
+    "admin_token"
+  ],
+  "admin_token": "ChangeME",
+  "demo_mode": false,
+  "klj": ""
 }
