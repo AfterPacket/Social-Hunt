@@ -99,8 +99,15 @@ services:
     image: python:3.11-slim
     profiles: ["iopaint", "ssl"]
     command: >
-      sh -c "pip install --no-cache-dir iopaint &&
-             iopaint start --host 0.0.0.0 --port 8080"
+      sh -c "apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 && 
+             pip install iopaint --no-cache-dir &&
+             iopaint start --host 0.0.0.0 --port 8080 --device cpu --model mat"
     ports:
       - "8080:8080"
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
