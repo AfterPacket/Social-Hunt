@@ -99,9 +99,11 @@ services:
     image: python:3.11-slim
     profiles: ["iopaint", "ssl"]
     command: >
-      sh -c "apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 && 
-             pip install iopaint --no-cache-dir &&
-             iopaint start --host 0.0.0.0 --port 8080 --device cpu --model mat"
+      sh -c "apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 &&
+             pip install --upgrade pip &&
+             pip install torch==2.1.2 torchvision==0.16.2 --extra-index-url https://download.pytorch.org/whl/cpu &&
+             pip install iopaint==1.6.0 --no-cache-dir &&
+             iopaint start --host 0.0.0.0 --port 8080 --device cpu"
     ports:
       - "8080:8080"
     restart: unless-stopped
