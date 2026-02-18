@@ -214,7 +214,7 @@ async function fetchJob(jobId, opts = {}) {
     params.set("limit", String(opts.limit));
   }
   const qs = params.toString();
-  const url = qs ? `/api/jobs/${jobId}?${qs}` : `/api/jobs/${jobId}`;
+  const url = qs ? `/sh-api/jobs/${jobId}?${qs}` : `/sh-api/jobs/${jobId}`;
   const res = await fetch(url, opts.headers ? { headers: opts.headers } : {});
   if (!res.ok) throw new Error("Job not found");
   return await res.json();
