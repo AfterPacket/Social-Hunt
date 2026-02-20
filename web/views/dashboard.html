@@ -1,16 +1,828 @@
-<div class="grid">
-  <div class="card half">
-    <h2>Welcome</h2>
-    <p class="muted">Social Hunt aggregates public-profile signals across multiple platforms and returns a normalized result set.</p>
-    <div class="row">
-      <button class="btn good" id="goSearch" type="button">Start a Search</button>
+<div class="dashboard-container">
+  <!-- Welcome Hero Section -->
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        <span class="hero-emoji">🕵️</span>
+        Welcome to Social Hunt
+      </h1>
+      <p class="hero-subtitle">
+        Your comprehensive OSINT toolkit for digital investigations and social media intelligence gathering
+      </p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="goSearch" type="button">
+          <span class="btn-icon">🔍</span>
+          Start New Search
+        </button>
+        <button class="btn btn-secondary" onclick="loadView('history')" type="button">
+          <span class="btn-icon">📊</span>
+          View History
+        </button>
+      </div>
     </div>
   </div>
 
-  <div class="card half">
-    <h2>Last Job</h2>
-    <p class="muted">Your most recent scan job id:</p>
-    <pre id="lastJob"></pre>
-    <p class="hint">Tip: results are not stored permanently (in-memory jobs). Export them after you run a scan.</p>
+  <!-- Quick Stats Row -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">🎯</div>
+      <div class="stat-content">
+        <div class="stat-value" id="totalSearches">-</div>
+        <div class="stat-label">Total Searches</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🌐</div>
+      <div class="stat-content">
+        <div class="stat-value" id="activeProviders">-</div>
+        <div class="stat-label">Active Providers</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🖼️</div>
+      <div class="stat-content">
+        <div class="stat-value" id="reverseSearches">-</div>
+        <div class="stat-label">Image Searches</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🔒</div>
+      <div class="stat-content">
+        <div class="stat-value" id="breachSearches">-</div>
+        <div class="stat-label">Breach Searches</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="grid">
+    <!-- Quick Actions Card -->
+    <div class="card half quick-actions-card">
+      <div class="card-header">
+        <h2></h2>
+          <span class="card-icon">⚡</span>
+          Quick Actions
+        </h2>
+        <p class="card-subtitle">Start your investigation with these common actions</p>
+      </div>
+      <div class="action-grid">
+        <button class="action-btn" onclick="loadView('search')" type="button">
+          <div class="action-icon">👤</div>
+          <div class="action-content">
+            <div class="action-title">Username Search</div>
+            <div class="action-desc">Find social media profiles</div>
+          </div>
+        </button>
+        <button class="action-btn" onclick="loadView('reverse')" type="button">
+          <div class="action-icon">🖼️</div>
+          <div class="action-content">
+            <div class="action-title">Reverse Image</div>
+            <div class="action-desc">Search by image</div>
+          </div>
+        </button>
+        <button class="action-btn" onclick="loadView('breach-search')" type="button">
+          <div class="action-icon">🔍</div>
+          <div class="action-content">
+            <div class="action-title">Breach Search</div>
+            <div class="action-desc">Check data breaches</div>
+          </div>
+        </button>
+        <button class="action-btn" onclick="loadView('demask')" type="button">
+          <div class="action-icon">🎭</div>
+          <div class="action-content">
+            <div class="action-title">Demasking</div>
+            <div class="action-desc">Remove image censoring</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Recent Activity Card -->
+    <div class="card half activity-card">
+      <div class="card-header">
+        <h2>
+          <span class="card-icon">📈</span>
+          Recent Activity
+        </h2>
+        <p class="card-subtitle">Your latest investigations and searches</p>
+      </div>
+      <div class="activity-content">
+        <div class="activity-item" id="lastJobContainer">
+          <div class="activity-icon">🎯</div>
+          <div class="activity-details">
+            <div class="activity-title">Last Search Job</div>
+            <div class="activity-value" id="lastJob">(none yet)</div>
+          </div>
+          <button class="activity-action btn btn-small" id="viewLastJob" style="display: none;" type="button">
+            View
+          </button>
+        </div>
+        <div class="activity-divider"></div>
+        <div class="activity-summary" id="activitySummary">
+          <div class="summary-text">No recent activity</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Status Card -->
+    <div class="card quarter status-card">
+      <div class="card-header">
+        <h3></h3>
+          <span class="card-icon">⚙️</span>
+          System Status
+        </h3>
+      </div>
+      <div class="status-content">
+        <div class="status-item">
+          <div class="status-indicator status-good" id="serverStatus"></div>
+          <span class="status-label">Server</span>
+        </div>
+        <div class="status-item">
+          <div class="status-indicator" id="tokenStatus"></div>
+          <span class="status-label">Authentication</span>
+        </div>
+        <div class="status-item">
+          <div class="status-indicator" id="providersStatus"></div>
+          <span class="status-label">Providers</span>
+        </div>
+      </div>
+      <div class="status-actions">
+        <button class="btn btn-small btn-outline" onclick="loadView('settings')" type="button">
+          Settings
+        </button>
+      </div>
+    </div>
+
+    <!-- Tips & Tricks Card -->
+    <div class="card quarter tips-card">
+      <div class="card-header">
+        <h3>
+          <span class="card-icon">💡</span>
+          Pro Tips
+        </h3>
+      </div>
+      <div class="tips-content">
+        <div class="tip-item active" id="tip-1">
+          <div class="tip-text">Set up your API token in Settings for full functionality</div>
+        </div>
+        <div class="tip-item" id="tip-2">
+          <div class="tip-text">Use face search in Username Search for better results</div>
+        </div>
+        <div class="tip-item" id="tip-3">
+          <div class="tip-text">Export results immediately as they're stored in memory only</div>
+        </div>
+        <div class="tip-item" id="tip-4">
+          <div class="tip-text">Try different image formats for better reverse search results</div>
+        </div>
+      </div>
+      <div class="tip-controls">
+        <button class="tip-btn" id="prevTip" type="button">‹</button>
+        <div class="tip-dots">
+          <span class="tip-dot active" data-tip="1"></span>
+          <span class="tip-dot" data-tip="2"></span>
+          <span class="tip-dot" data-tip="3"></span>
+          <span class="tip-dot" data-tip="4"></span>
+        </div>
+        <button class="tip-btn" id="nextTip" type="button">›</button>
+      </div>
+    </div>
+
+    <!-- Documentation & Help Card -->
+    <div class="card half help-card">
+      <div class="card-header">
+        <h2>
+          <span class="card-icon">📚</span>
+          Getting Started
+        </h2>
+        <p class="card-subtitle">Resources to help you make the most of Social Hunt</p>
+      </div>
+      <div class="help-grid">
+        <a href="https://github.com/AfterPacket/Social-Hunt/blob/main/README.md" target="_blank" class="help-link">
+          <div class="help-icon">📖</div>
+          <div class="help-content">
+            <div class="help-title">Documentation</div>
+            <div class="help-desc">Complete setup and usage guide</div>
+          </div>
+        </a>
+        <a href="https://github.com/AfterPacket/Social-Hunt/wiki" target="_blank" class="help-link">
+          <div class="help-icon">🎓</div>
+          <div class="help-content">
+            <div class="help-title">Tutorial</div>
+            <div class="help-desc">Step-by-step tutorials</div>
+          </div>
+        </a>
+        <a href="https://github.com/AfterPacket/Social-Hunt/issues" target="_blank" class="help-link">
+          <div class="help-icon">🐛</div>
+          <div class="help-content">
+            <div class="help-title">Report Issue</div>
+            <div class="help-desc">Found a bug? Let us know</div>
+          </div>
+        </a>
+        <button class="help-link" onclick="loadView('plugins')" type="button">
+          <div class="help-icon">🧩</div>
+          <div class="help-content">
+            <div class="help-title">Plugins</div>
+            <div class="help-desc">Extend functionality</div>
+          </div>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
+
+<style>
+/* Enhanced Dashboard Styles */
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.hero-section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 40px;
+  margin-bottom: 24px;
+  text-align: center;
+  position: relative;
+}
+
+.hero-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.hero-emoji {
+  font-size: 3rem;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin-bottom: 24px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  background: var(--panel2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-primary:hover {
+  background: var(--panel3);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--panel3);
+  border-color: var(--border);
+}
+
+.btn-icon {
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--border2);
+}
+
+.stat-icon {
+  font-size: 2rem;
+  opacity: 0.8;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.card-header {
+  margin-bottom: 20px;
+}
+
+.card-header h2,
+.card-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.card-icon {
+  font-size: 1.2em;
+  opacity: 0.8;
+}
+
+.card-subtitle {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.action-btn:hover {
+  background: var(--panel2);
+  border-color: var(--border2);
+}
+
+.action-icon {
+  font-size: 1.5rem;
+  opacity: 0.8;
+}
+
+.action-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.action-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.activity-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--panel3);
+  border-radius: var(--radius);
+}
+
+.activity-icon {
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
+.activity-details {
+  flex: 1;
+}
+
+.activity-title {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.activity-value {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.activity-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+.status-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted2);
+}
+
+.status-indicator.status-good {
+  background: var(--good);
+  box-shadow: 0 0 8px rgba(166, 243, 196, 0.4);
+}
+
+.status-indicator.status-warning {
+  background: var(--warn);
+  box-shadow: 0 0 8px rgba(255, 215, 138, 0.4);
+}
+
+.status-indicator.status-error {
+  background: var(--danger);
+  box-shadow: 0 0 8px rgba(255, 180, 180, 0.4);
+}
+
+.status-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tips-content {
+  position: relative;
+  min-height: 80px;
+  margin-bottom: 16px;
+}
+
+.tip-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  opacity: 0;
+  transform: translateX(30px) scale(0.95);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--panel3);
+  padding: 12px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.tip-item.active {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+.tip-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.tip-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--muted);
+}
+
+.tip-btn:hover {
+  background: var(--panel2);
+  border-color: var(--border2);
+  transform: scale(1.1);
+  color: var(--text);
+}
+
+.tip-btn:active {
+  transform: scale(0.95);
+}
+
+.tip-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.tip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+
+.tip-dot:hover {
+  transform: scale(1.3);
+  opacity: 0.8;
+}
+
+.tip-dot.active {
+  background: var(--accent);
+  transform: scale(1.2);
+  opacity: 1;
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.help-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.help-link:hover {
+  background: rgba(var(--accent-rgb), 0.05);
+  border-color: rgba(var(--accent-rgb), 0.2);
+  transform: translateY(-1px);
+}
+
+.help-icon {
+  font-size: 1.5rem;
+  opacity: 0.8;
+}
+
+.help-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.help-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+@media (max-width: 700px) {
+  .hero-title {
+    font-size: 2rem;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .action-grid,
+  .help-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+}
+</style>
+
+<script>
+// Enhanced dashboard initialization
+function initDashboardView() {
+  // Use setTimeout to ensure DOM is fully ready
+  setTimeout(() => {
+    initializeStats();
+    initializeTips();
+    initializeActivity();
+    initializeSystemStatus();
+  }, 50);
+}
+
+function initializeStats() {
+  // Load statistics from localStorage
+  const searchHistory = loadJsonArray(KEY_SEARCH_HISTORY);
+  const reverseHistory = loadJsonArray(KEY_REVERSE_HISTORY);
+  const demaskHistory = loadJsonArray(KEY_DEMASK_HISTORY);
+
+  document.getElementById('totalSearches').textContent = searchHistory.length;
+  document.getElementById('reverseSearches').textContent = reverseHistory.length;
+  document.getElementById('breachSearches').textContent =
+    searchHistory.filter(item => item.type === 'breach-search').length;
+
+  // Load provider count
+  fetchProviders().then(providers => {
+    document.getElementById('activeProviders').textContent = providers.length;
+  }).catch(() => {
+    document.getElementById('activeProviders').textContent = '?';
+  });
+}
+
+function initializeTips() {
+  let currentTip = 1;
+  const totalTips = 4;
+  let autoRotateInterval;
+
+  function showTip(tipNumber) {
+    try {
+      const tipItems = document.querySelectorAll('.tip-item');
+      const tipDots = document.querySelectorAll('.tip-dot');
+
+      if (tipItems.length === 0 || tipDots.length === 0) {
+        console.warn('Tip elements not found');
+        return;
+      }
+
+      // Remove active class from all tips and dots
+      tipItems.forEach(item => item.classList.remove('active'));
+      tipDots.forEach(dot => dot.classList.remove('active'));
+
+      // Add active class to current tip and dot
+      const currentTipEl = document.getElementById(`tip-${tipNumber}`);
+      const currentDotEl = document.querySelector(`[data-tip="${tipNumber}"]`);
+
+      if (currentTipEl && currentDotEl) {
+        currentTipEl.classList.add('active');
+        currentDotEl.classList.add('active');
+        currentTip = tipNumber;
+      }
+    } catch (error) {
+      console.error('Error showing tip:', error);
+    }
+  }
+
+  // Setup navigation buttons with error handling
+  const nextBtn = document.getElementById('nextTip');
+  const prevBtn = document.getElementById('prevTip');
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      const nextTip = currentTip >= totalTips ? 1 : currentTip + 1;
+      showTip(nextTip);
+      // Reset auto-rotation when user interacts
+      clearInterval(autoRotateInterval);
+      startAutoRotation();
+    });
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      const prevTip = currentTip <= 1 ? totalTips : currentTip - 1;
+      showTip(prevTip);
+      // Reset auto-rotation when user interacts
+      clearInterval(autoRotateInterval);
+      startAutoRotation();
+    });
+  }
+
+  // Setup dot navigation
+  document.querySelectorAll('.tip-dot').forEach(dot => {
+    dot.addEventListener('click', () => {
+      const tipNumber = parseInt(dot.dataset.tip);
+      if (tipNumber >= 1 && tipNumber <= totalTips) {
+        showTip(tipNumber);
+        // Reset auto-rotation when user interacts
+        clearInterval(autoRotateInterval);
+        startAutoRotation();
+      }
+    });
+  });
+
+  // Start auto-rotation
+  function startAutoRotation() {
+    autoRotateInterval = setInterval(() => {
+      const nextTip = currentTip >= totalTips ? 1 : currentTip + 1;
+      showTip(nextTip);
+    }, 5000);
+  }
+
+  // Initialize first tip and start rotation
+  setTimeout(() => {
+    showTip(1);
+    startAutoRotation();
+  }, 100);
+}
+
+function initializeActivity() {
+  const lastJob = localStorage.getItem("socialhunt_last_job") || "";
+  const lastJobEl = document.getElementById("lastJob");
+  const viewLastJobBtn = document.getElementById("viewLastJob");
+
+  if (lastJob) {
+    lastJobEl.textContent = lastJob;
+    viewLastJobBtn.style.display = "block";
+    viewLastJobBtn.onclick = () => loadJob(lastJob);
+  } else {
+    lastJobEl.textContent = "(none yet)";
+  }
+
+  // Update activity summary
+  const searchHistory = loadJsonArray(KEY_SEARCH_HISTORY);
+  const activitySummary = document.getElementById("activitySummary");
+
+  if (searchHistory.length > 0) {
+    const recent = searchHistory.slice(0, 3);
+    const summaryText = recent.map(item =>
+      `${item.type || 'search'}: ${item.username || 'unknown'}`
+    ).join(' • ');
+    activitySummary.innerHTML = `<div class="summary-text">${summaryText}</div>`;
+  }
+
+  // Setup go to search button
+  const goSearchBtn = document.getElementById("goSearch");
+  if (goSearchBtn) {
+    goSearchBtn.onclick = () => {
+      goSearchBtn.style.transform = "scale(0.95)";
+      setTimeout(() => {
+        goSearchBtn.style.transform = "";
+        loadView("search");
+      }, 150);
+    };
+  }
+}
+
+function initializeSystemStatus() {
+  // Server status (always good if we're here)
+  document.getElementById("serverStatus").className = "status-indicator status-good";
+
+  // Token status
+  const tokenIndicator = document.getElementById("tokenStatus");
+  if (getToken()) {
+    tokenIndicator.className = "status-indicator status-good";
+  } else {
+    tokenIndicator.className = "status-indicator status-warning";
+  }
+
+  // Provider status
+  const providersIndicator = document.getElementById("providersStatus");
+  fetchProviders().then(providers => {
+    if (providers && providers.length > 0) {
+      providersIndicator.className = "status-indicator status-good";
+    } else {
+      providersIndicator.className = "status-indicator status-warning";
+    }
+  }).catch(() => {
+    providersIndicator.className = "status-indicator status-error";
+  });
+}
+</script>

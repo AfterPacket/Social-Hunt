@@ -4,10 +4,15 @@ const tokenStatus = document.getElementById("tokenStatus");
 const menuToggle = document.getElementById("menuToggle");
 const sidebarBackdrop = document.getElementById("sidebarBackdrop");
 
-// ---- toasts ----
+// Enhanced loading state management
+let isLoading = false;
+let currentView = null;
+
+// ---- Enhanced toasts ----
 let toastEl = null;
 let toastTimer = null;
-function showToast(message, duration = 2000) {
+
+function showToast(message, duration = 3000, type = "info") {
   if (!toastEl) {
     toastEl = document.createElement("div");
     toastEl.className = "toast";
@@ -15,13 +20,75 @@ function showToast(message, duration = 2000) {
     toastEl.setAttribute("aria-live", "polite");
     document.body.appendChild(toastEl);
   }
+
+  // Simple toast without complex animations
+  toastEl.className = `toast toast-${type}`;
   toastEl.textContent = message;
   toastEl.style.display = "block";
+
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
-    if (toastEl) toastEl.remove();
-    toastEl = null;
+    if (toastEl) {
+      toastEl.remove();
+      toastEl = null;
+    }
   }, duration);
+}
+
+// Enhanced loading spinner
+function showLoadingSpinner(container, message = "Loading...") {
+  const spinner = document.createElement("div");
+  spinner.className = "loading-container";
+  spinner.innerHTML = `
+    <div class="spinner"></div>
+    <div class="loading-text">${message}</div>
+  `;
+  container.appendChild(spinner);
+  return spinner;
+}
+
+function hideLoadingSpinner(spinner) {
+  if (spinner && spinner.parentNode) {
+    spinner.style.animation = "fadeOut 0.2s ease-out";
+    setTimeout(() => {
+      if (spinner.parentNode) {
+        spinner.parentNode.removeChild(spinner);
+      }
+    }, 200);
+  }
+}
+
+// Skeleton screen generator
+function createSkeleton(type = "card", count = 1) {
+  const skeletons = [];
+  for (let i = 0; i < count; i++) {
+    const skeleton = document.createElement("div");
+    skeleton.className = `skeleton skeleton-${type}`;
+
+    switch (type) {
+      case "card":
+        skeleton.innerHTML = `
+          <div class="skeleton-header" style="height: 24px; width: 60%; margin-bottom: 16px;"></div>
+          <div class="skeleton-line" style="height: 16px; width: 100%; margin-bottom: 8px;"></div>
+          <div class="skeleton-line" style="height: 16px; width: 80%; margin-bottom: 16px;"></div>
+          <div class="skeleton-button" style="height: 36px; width: 120px;"></div>
+        `;
+        break;
+      case "list":
+        skeleton.innerHTML = `
+          <div class="skeleton-line" style="height: 20px; width: 100%; margin-bottom: 8px;"></div>
+        `;
+        break;
+      case "table":
+        skeleton.innerHTML = `
+          <div class="skeleton-line" style="height: 40px; width: 100%; margin-bottom: 4px;"></div>
+        `;
+        break;
+    }
+
+    skeletons.push(skeleton);
+  }
+  return skeletons;
 }
 
 // ---- token helpers ----
@@ -60,53 +127,136 @@ const viewTitles = {
   settings: "Settings",
 };
 
-// Update the loadView function (around line 39)
+// Optimized loadView function for better performance
 async function loadView(name) {
-  document.querySelectorAll(".menu-btn[data-view]").forEach((b) => {
-    b.classList.toggle("active", b.dataset.view === name);
-  });
+  // Prevent multiple simultaneous loads
+  if (isLoading) return;
+  isLoading = true;
+  currentView = name;
 
-  const demaskSubmenu = document.getElementById("demaskSubmenu");
-  const demaskToggle = document.querySelector(
-    '.menu-toggle-btn[data-menu-toggle="demask"]',
-  );
-  const demaskBtn = document.querySelector('.menu-btn[data-view="demask"]');
-  const isDemaskGroup =
-    name === "demask" || name === "iopaint" || name === "deepmosaic";
-  if (demaskSubmenu && demaskToggle) {
-    demaskSubmenu.classList.toggle("is-open", isDemaskGroup);
-    demaskToggle.setAttribute(
-      "aria-expanded",
-      isDemaskGroup ? "true" : "false",
+  try {
+    // Update menu states efficiently
+    document.querySelectorAll(".menu-btn[data-view]").forEach((b) => {
+      b.classList.toggle("active", b.dataset.view === name);
+    });
+
+    // Handle demask submenu
+    const demaskSubmenu = document.getElementById("demaskSubmenu");
+    const demaskToggle = document.querySelector(
+      '.menu-toggle-btn[data-menu-toggle="demask"]',
     );
+    const demaskBtn = document.querySelector('.menu-btn[data-view="demask"]');
+    const isDemaskGroup =
+      name === "demask" || name === "iopaint" || name === "deepmosaic";
+
+    if (demaskSubmenu && demaskToggle) {
+      demaskSubmenu.classList.toggle("is-open", isDemaskGroup);
+      demaskToggle.setAttribute(
+        "aria-expanded",
+        isDemaskGroup ? "true" : "false",
+      );
+    }
+
+    if (demaskBtn) {
+      demaskBtn.classList.toggle("active", name === "demask");
+      demaskBtn.classList.toggle(
+        "active-parent",
+        name === "iopaint" || name === "deepmosaic",
+      );
+    }
+
+    // Update title immediately
+    viewTitle.textContent = viewTitles[name] || name;
+
+    // Fetch content with shorter timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+    const res = await fetch(`/static/views/${name}.html?v=${getCacheBust()}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const content = await res.text();
+
+    // Update content immediately
+    viewContainer.innerHTML = content;
+
+    // Initialize view-specific functionality
+    initializeView(name);
+
+    // Auto-hide mobile menu
+    if (window.innerWidth <= 900) {
+      document.body.classList.remove("sidebar-open");
+    }
+  } catch (error) {
+    console.error("Error loading view:", error);
+
+    // Show simple error state
+    viewContainer.innerHTML = `
+      <div class="card">
+        <h3>⚠️ Failed to Load View</h3>
+        <p class="muted">
+          ${error.name === "AbortError" ? "Request timed out." : `Error: ${error.message}`}
+        </p>
+        <div class="row">
+          <button class="btn" onclick="loadView('${name}')">🔄 Retry</button>
+          <button class="btn" onclick="loadView('dashboard')">🏠 Home</button>
+        </div>
+      </div>
+    `;
+
+    showToast(`Failed to load ${viewTitles[name] || name}`, 3000, "error");
+  } finally {
+    isLoading = false;
   }
-  if (demaskBtn) {
-    demaskBtn.classList.toggle("active", name === "demask");
-    demaskBtn.classList.toggle(
-      "active-parent",
-      name === "iopaint" || name === "deepmosaic",
-    );
+}
+
+// Separate function to initialize views for better organization
+function initializeView(name) {
+  console.log(`Initializing view: ${name}`);
+
+  const viewInitializers = {
+    dashboard: initDashboardView,
+    search: initSearchView,
+    "breach-search": initBreachSearchView,
+    reverse: initReverseView,
+    history: initHistoryView,
+    plugins: initPluginsView,
+    tokens: initTokensView,
+    settings: initSettingsView,
+    "secure-notes": initSecureNotesView,
+    demask: initDemaskView,
+    iopaint: initIOPaintView,
+    deepmosaic: initDeepMosaicView,
+  };
+
+  const initializer = viewInitializers[name];
+  if (initializer && typeof initializer === "function") {
+    try {
+      console.log(`Calling initializer for ${name}`);
+      // Add delay to ensure DOM is ready
+      setTimeout(() => {
+        initializer();
+        console.log(`${name} view initialized successfully`);
+      }, 100);
+    } catch (error) {
+      console.error(`Error initializing ${name} view:`, error);
+      showToast(
+        `⚠️ Error initializing ${viewTitles[name] || name}`,
+        3000,
+        "warning",
+      );
+    }
+  } else {
+    console.warn(`No initializer found for view: ${name}`);
   }
-
-  viewTitle.textContent = viewTitles[name] || name;
-
-  const res = await fetch(`/static/views/${name}.html?v=${getCacheBust()}`, {
-    cache: "no-store",
-  });
-  viewContainer.innerHTML = await res.text();
-
-  if (name === "dashboard") initDashboardView();
-  if (name === "search") initSearchView();
-  if (name === "breach-search") initBreachSearchView();
-  if (name === "reverse") initReverseView();
-  if (name === "history") initHistoryView();
-  if (name === "plugins") initPluginsView();
-  if (name === "tokens") initTokensView();
-  if (name === "settings") initSettingsView();
-  if (name === "secure-notes") initSecureNotesView();
-  if (name === "demask") initDemaskView();
-  if (name === "iopaint") initIOPaintView(); // Add this line
-  if (name === "deepmosaic") initDeepMosaicView(); // Add this line
 }
 
 // ----------------------
@@ -187,12 +337,109 @@ function addDemaskHistoryEntry(original_src, result_data_url) {
 // Dashboard
 // ----------------------
 function initDashboardView() {
+  console.log("Dashboard initialization started");
+
+  // Basic dashboard setup
   const last = localStorage.getItem("socialhunt_last_job") || "";
   const el = document.getElementById("lastJob");
   if (el) el.textContent = last ? last : "(none yet)";
 
   const go = document.getElementById("goSearch");
   if (go) go.onclick = () => loadView("search");
+
+  // Initialize dashboard-specific features if elements exist
+  if (document.querySelector(".tip-item")) {
+    console.log("Found tip elements, initializing tips");
+    initializeDashboardTips();
+  } else {
+    console.log("No tip elements found in DOM");
+  }
+}
+
+// Dashboard-specific tip initialization
+function initializeDashboardTips() {
+  let currentTip = 1;
+  const totalTips = 4;
+  let autoRotateInterval;
+
+  function showTip(tipNumber) {
+    console.log(`Showing tip ${tipNumber}`);
+    try {
+      const tipItems = document.querySelectorAll(".tip-item");
+      const tipDots = document.querySelectorAll(".tip-dot");
+
+      if (tipItems.length === 0 || tipDots.length === 0) {
+        console.warn("Tip elements not found");
+        return;
+      }
+
+      // Remove active class from all tips and dots
+      tipItems.forEach((item) => item.classList.remove("active"));
+      tipDots.forEach((dot) => dot.classList.remove("active"));
+
+      // Add active class to current tip and dot
+      const currentTipEl = document.getElementById(`tip-${tipNumber}`);
+      const currentDotEl = document.querySelector(`[data-tip="${tipNumber}"]`);
+
+      if (currentTipEl && currentDotEl) {
+        currentTipEl.classList.add("active");
+        currentDotEl.classList.add("active");
+        currentTip = tipNumber;
+        console.log(`Tip ${tipNumber} activated successfully`);
+      } else {
+        console.warn(`Tip elements not found for tip ${tipNumber}`);
+      }
+    } catch (error) {
+      console.error("Error showing tip:", error);
+    }
+  }
+
+  // Setup navigation buttons
+  const nextBtn = document.getElementById("nextTip");
+  const prevBtn = document.getElementById("prevTip");
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      const nextTip = currentTip >= totalTips ? 1 : currentTip + 1;
+      showTip(nextTip);
+      clearInterval(autoRotateInterval);
+      startAutoRotation();
+    });
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      const prevTip = currentTip <= 1 ? totalTips : currentTip - 1;
+      showTip(prevTip);
+      clearInterval(autoRotateInterval);
+      startAutoRotation();
+    });
+  }
+
+  // Setup dot navigation
+  document.querySelectorAll(".tip-dot").forEach((dot) => {
+    dot.addEventListener("click", () => {
+      const tipNumber = parseInt(dot.dataset.tip);
+      if (tipNumber >= 1 && tipNumber <= totalTips) {
+        showTip(tipNumber);
+        clearInterval(autoRotateInterval);
+        startAutoRotation();
+      }
+    });
+  });
+
+  // Auto-rotation function
+  function startAutoRotation() {
+    console.log("Starting tip auto-rotation");
+    autoRotateInterval = setInterval(() => {
+      const nextTip = currentTip >= totalTips ? 1 : currentTip + 1;
+      showTip(nextTip);
+    }, 4000);
+  }
+
+  // Initialize first tip and start rotation
+  showTip(1);
+  startAutoRotation();
 }
 
 // ----------------------
@@ -2824,62 +3071,345 @@ document.querySelectorAll(".menu-btn[data-view]").forEach((btn) => {
   };
 });
 
+// Enhanced menu toggle functionality with smooth animations
 document
   .querySelectorAll(".menu-toggle-btn[data-menu-toggle]")
   .forEach((btn) => {
-    btn.onclick = () => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
       const target = btn.getAttribute("data-menu-toggle");
       if (target !== "demask") return;
+
       const submenu = document.getElementById("demaskSubmenu");
       if (!submenu) return;
-      const isOpen = submenu.classList.toggle("is-open");
-      btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    };
+
+      const isOpen = submenu.classList.contains("is-open");
+
+      if (isOpen) {
+        // Closing animation
+        submenu.style.animation = "slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+        btn.style.transform = "rotate(0deg)";
+        setTimeout(() => {
+          submenu.classList.remove("is-open");
+          submenu.style.animation = "";
+        }, 300);
+      } else {
+        // Opening animation
+        submenu.classList.add("is-open");
+        submenu.style.animation = "slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+        btn.style.transform = "rotate(180deg)";
+      }
+
+      btn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+
+      // Haptic feedback on mobile
+      if (navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    });
+
+    // Keyboard support
+    btn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        btn.click();
+      }
+    });
   });
 
+// Enhanced mobile menu toggle with smooth animations
 if (menuToggle) {
-  menuToggle.onclick = () => {
-    document.body.classList.toggle("sidebar-open");
-  };
+  menuToggle.addEventListener("click", (e) => {
+    e.preventDefault();
+    const isOpen = document.body.classList.contains("sidebar-open");
+
+    if (isOpen) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+
+  // Keyboard support for menu toggle
+  menuToggle.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      menuToggle.click();
+    }
+  });
 }
 
+// Enhanced sidebar functions
+function openSidebar() {
+  document.body.classList.add("sidebar-open");
+  menuToggle.setAttribute("aria-expanded", "true");
+
+  // Focus management for accessibility
+  const firstMenuItem = document.querySelector(".menu-btn");
+  if (firstMenuItem) {
+    setTimeout(() => firstMenuItem.focus(), 300);
+  }
+
+  // Haptic feedback
+  if (navigator.vibrate) {
+    navigator.vibrate(15);
+  }
+}
+
+function closeSidebar() {
+  document.body.classList.remove("sidebar-open");
+  menuToggle.setAttribute("aria-expanded", "false");
+
+  // Return focus to menu toggle
+  setTimeout(() => menuToggle.focus(), 100);
+}
+
+// Enhanced sidebar backdrop with smooth interactions
 if (sidebarBackdrop) {
-  sidebarBackdrop.onclick = closeSidebar;
+  sidebarBackdrop.addEventListener("click", closeSidebar);
+
+  // Close sidebar on escape key
+  document.addEventListener("keydown", (e) => {
+    if (
+      e.key === "Escape" &&
+      document.body.classList.contains("sidebar-open")
+    ) {
+      closeSidebar();
+    }
+  });
 }
 
-renderTokenStatus();
+// Optimized app initialization
+function initializeApp() {
+  try {
+    renderTokenStatus();
+    loadTheme();
+    initializeAuth();
+    setupKeyboardNavigation();
+    initializeAccessibility();
+  } catch (error) {
+    console.error("App initialization error:", error);
+    showToast(
+      "⚠️ Initialization error. Please refresh the page.",
+      5000,
+      "error",
+    );
+  }
+}
 
-// Load theme on init
-fetch("/sh-api/public/theme")
-  .then((res) => res.json())
-  .then((j) => {
-    if (j.theme && j.theme !== "default") {
-      document.body.setAttribute("data-theme", j.theme);
+async function loadTheme() {
+  try {
+    const response = await fetch("/sh-api/public/theme");
+    const data = await response.json();
+
+    // Apply theme without transition to avoid flicker
+    if (data.theme && data.theme !== "default") {
+      document.body.setAttribute("data-theme", data.theme);
     } else {
       document.body.removeAttribute("data-theme");
     }
-  })
-  .catch(() => {});
 
-if (!getToken()) {
-  window.location.replace("/login");
-} else {
-  fetch("/sh-api/auth/verify", { method: "POST", headers: authHeaders() })
-    .then((res) => {
-      if (res.ok) {
-        loadView("dashboard");
-      } else {
-        setToken("");
-        window.location.replace("/login");
-      }
-    })
-    .catch(() => loadView("dashboard"));
+    // Force theme refresh
+    refreshThemeStyles();
+  } catch (error) {
+    console.warn("Theme loading failed:", error);
+    // Silently fall back to default theme
+    refreshThemeStyles();
+  }
 }
 
-// Check for demo mode
-fetchWhoami().then((data) => {
-  if (data && data.demo_mode) {
-    const badge = document.getElementById("demoBadge");
-    if (badge) badge.style.display = "inline-flex";
+// Force refresh of theme styles
+function refreshThemeStyles() {
+  // Force a reflow to ensure CSS variables are applied
+  document.body.offsetHeight;
+
+  // Refresh any cached styles
+  const allElements = document.querySelectorAll("*");
+  allElements.forEach((element) => {
+    if (element.style) {
+      // Trigger style recalculation
+      const computedStyle = window.getComputedStyle(element);
+      computedStyle.getPropertyValue("color");
+    }
+  });
+
+  // Update any hardcoded theme-dependent elements
+  updateThemeElements();
+}
+
+// Update specific elements that need theme updates
+function updateThemeElements() {
+  // Update cards with proper theme colors
+  const cards = document.querySelectorAll(".card");
+  cards.forEach((card) => {
+    card.style.background = "";
+    card.style.borderColor = "";
+  });
+
+  // Update buttons
+  const buttons = document.querySelectorAll(".btn");
+  buttons.forEach((button) => {
+    button.style.background = "";
+    button.style.borderColor = "";
+    button.style.color = "";
+  });
+
+  // Update sidebar elements
+  const sidebar = document.querySelector(".sidebar");
+  if (sidebar) {
+    sidebar.style.background = "";
+    sidebar.style.borderColor = "";
   }
+
+  // Update brand
+  const brand = document.querySelector(".brand");
+  if (brand) {
+    brand.style.background = "";
+    brand.style.borderColor = "";
+  }
+}
+
+async function initializeAuth() {
+  const token = getToken();
+
+  if (!token) {
+    window.location.replace("/login");
+    return;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+    const response = await fetch("/sh-api/auth/verify", {
+      method: "POST",
+      headers: authHeaders(),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      await loadView("dashboard");
+    } else {
+      throw new Error(`Authentication failed: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Auth verification error:", error);
+    setToken("");
+    window.location.replace("/login");
+  }
+}
+
+// Optimized demo mode detection
+async function checkDemoMode() {
+  try {
+    const data = await fetchWhoami();
+    if (data && data.demo_mode) {
+      const badge = document.getElementById("demoBadge");
+      if (badge) {
+        badge.style.display = "inline-flex";
+      }
+    }
+  } catch (error) {
+    console.warn("Demo mode check failed:", error);
+  }
+}
+
+// Enhanced keyboard navigation setup
+function setupKeyboardNavigation() {
+  document.addEventListener("keydown", (e) => {
+    // Alt + M to toggle mobile menu
+    if (e.altKey && e.key === "m") {
+      e.preventDefault();
+      if (menuToggle) menuToggle.click();
+    }
+
+    // Alt + D to go to dashboard
+    if (e.altKey && e.key === "d") {
+      e.preventDefault();
+      loadView("dashboard");
+    }
+
+    // Alt + S to go to search
+    if (e.altKey && e.key === "s") {
+      e.preventDefault();
+      loadView("search");
+    }
+
+    // Alt + H to go to history
+    if (e.altKey && e.key === "h") {
+      e.preventDefault();
+      loadView("history");
+    }
+  });
+}
+
+// Enhanced accessibility features
+function initializeAccessibility() {
+  // Add skip link for keyboard users
+  const skipLink = document.createElement("a");
+  skipLink.href = "#viewContainer";
+  skipLink.textContent = "Skip to main content";
+  skipLink.className = "skip-link";
+  skipLink.style.cssText = `
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--accent);
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 1000;
+    transition: top 0.3s;
+  `;
+
+  skipLink.addEventListener("focus", () => {
+    skipLink.style.top = "6px";
+  });
+
+  skipLink.addEventListener("blur", () => {
+    skipLink.style.top = "-40px";
+  });
+
+  document.body.insertBefore(skipLink, document.body.firstChild);
+
+  // Enhanced focus management
+  document.addEventListener("focusin", (e) => {
+    e.target.classList.add("focus-visible");
+  });
+
+  document.addEventListener("focusout", (e) => {
+    e.target.classList.remove("focus-visible");
+  });
+}
+
+// Start the enhanced initialization process
+document.addEventListener("DOMContentLoaded", () => {
+  initializeApp();
+  checkDemoMode();
+});
+
+// Handle page visibility changes for better UX
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    // App is hidden, pause any ongoing operations
+    console.log("App hidden, pausing operations");
+  } else {
+    // App is visible again, resume operations
+    console.log("App visible, resuming operations");
+    renderTokenStatus(); // Refresh token status
+  }
+});
+
+// Enhanced error boundary for the entire app
+window.addEventListener("error", (event) => {
+  console.error("Global error:", event.error);
+  showToast("⚠️ An unexpected error occurred", 4000, "error");
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("Unhandled promise rejection:", event.reason);
+  showToast("⚠️ Network error occurred", 3000, "warning");
 });

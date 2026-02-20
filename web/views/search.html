@@ -1,60 +1,575 @@
-<h2>Search</h2>
-<p class="muted">
-    Username presence checks across mainstream + alternative platforms (public
-    pages only).
-</p>
-
-<div class="card">
-    <label>Username</label>
-    <input id="username" placeholder="e.g. john_doe" />
-
-    <label class="provider" style="margin-top: 12px">
-        <input type="checkbox" id="enableFaceSearch" />
-        <span>Enable Face Search (Optional)</span>
-    </label>
-
-    <div
-        id="faceSearchContainer"
-        style="
-            display: none;
-            margin-top: 10px;
-            padding: 12px;
-            background: rgba(127, 127, 127, 0.1);
-            border-radius: 6px;
-        "
-    >
-        <p class="muted" style="margin-bottom: 6px">
-            Select one or more images of the person you are looking for.
+<div class="search-container">
+    <div class="search-header">
+        <h2>
+            <span class="search-icon">🔍</span>
+            Username Search
+        </h2>
+        <p class="search-subtitle">
+            Discover social media profiles and online presence across multiple
+            platforms
         </p>
-        <input
-            id="faceImages"
-            type="file"
-            multiple
-            accept=".jpg,.jpeg,.png,.gif,.webp,.bmp"
-        />
-        <div class="muted" style="font-size: 0.8em; margin-top: 4px">
-            Supported: JPG, PNG, GIF, WEBP, BMP
+    </div>
+
+    <!-- Search Form Card -->
+    <div class="card search-form-card">
+        <div class="form-section">
+            <div class="form-group">
+                <label class="form-label" for="username">
+                    <span class="label-icon">👤</span>
+                    Target Username
+                    <span class="label-required">*</span>
+                </label>
+                <div class="input-wrapper">
+                    <input
+                        id="username"
+                        class="form-input"
+                        type="text"
+                        placeholder="Enter username (e.g. john_doe, jane.smith)"
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                    <div class="input-feedback" id="usernameFeedback"></div>
+                </div>
+                <div class="form-hint">
+                    💡 <strong>Tip:</strong> Use the exact username without @
+                    symbols or platform prefixes
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-wrapper">
+                    <input
+                        type="checkbox"
+                        id="enableFaceSearch"
+                        class="enhanced-checkbox"
+                    />
+                    <label for="enableFaceSearch" class="checkbox-label">
+                        <span class="checkbox-icon">📷</span>
+                        <div class="checkbox-content">
+                            <div class="checkbox-title">
+                                Enhanced Face Search
+                            </div>
+                            <div class="checkbox-desc">
+                                Upload reference images for better matching
+                                accuracy
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="face-search-panel" id="faceSearchContainer">
+                <div class="panel-header">
+                    <span class="panel-icon">🖼️</span>
+                    <span class="panel-title">Reference Images</span>
+                </div>
+                <div class="panel-content">
+                    <p class="panel-desc">
+                        Upload clear photos showing the person's face for
+                        enhanced matching across platforms
+                    </p>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input
+                            id="faceImages"
+                            type="file"
+                            multiple
+                            accept=".jpg,.jpeg,.png,.gif,.webp,.bmp"
+                            class="file-input"
+                        />
+                        <div class="upload-content">
+                            <div class="upload-icon">📁</div>
+                            <div class="upload-text">
+                                <div class="upload-primary">
+                                    Drop images here or click to browse
+                                </div>
+                                <div class="upload-secondary">
+                                    Supports JPG, PNG, GIF, WEBP, BMP (max 10
+                                    files)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="uploaded-files" id="uploadedFiles"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="system-info" id="whoami"></div>
+            </div>
+        </div>
+
+        <!-- Provider Selection Section -->
+        <div class="provider-section">
+            <div class="section-header">
+                <h3>
+                    <span class="section-icon">🌐</span>
+                    Search Providers
+                </h3>
+                <div class="provider-controls">
+                    <button
+                        class="btn btn-small btn-outline"
+                        id="loadProviders"
+                        type="button"
+                    >
+                        <span class="btn-icon">🔄</span>
+                        Reload
+                    </button>
+                    <button class="btn btn-small" id="selectAll" type="button">
+                        <span class="btn-icon">✅</span>
+                        All
+                    </button>
+                    <button class="btn btn-small" id="selectNone" type="button">
+                        <span class="btn-icon">❌</span>
+                        None
+                    </button>
+                </div>
+            </div>
+
+            <div class="provider-grid" id="providers"></div>
+
+            <div class="provider-summary" id="providerSummary">
+                <span class="summary-text"
+                    >Select providers to search across platforms</span
+                >
+            </div>
+        </div>
+
+        <!-- Action Section -->
+        <div class="action-section">
+            <div class="action-controls">
+                <button
+                    class="btn btn-primary btn-large"
+                    id="start"
+                    type="button"
+                >
+                    <span class="btn-icon">🚀</span>
+                    <span class="btn-text">Start Investigation</span>
+                    <span class="btn-loading" style="display: none">
+                        <span class="spinner"></span>
+                        Searching...
+                    </span>
+                </button>
+            </div>
+            <div class="status-display" id="status"></div>
         </div>
     </div>
 
-    <div class="row" style="margin-top: 8px">
-        <span id="whoami" class="muted"></span>
-    </div>
-
-    <div class="row" style="margin-top: 10px">
-        <button class="btn" id="loadProviders" type="button">
-            Reload Providers
-        </button>
-        <button class="btn" id="selectAll" type="button">Select All</button>
-        <button class="btn" id="selectNone" type="button">Select None</button>
-    </div>
-
-    <div id="providers" class="providers" style="margin-top: 12px"></div>
-
-    <div class="row" style="margin-top: 12px">
-        <button class="btn good" id="start" type="button">Start Scan</button>
-        <span id="status" class="muted"></span>
-    </div>
+    <!-- Results Section -->
+    <div class="results-container" id="results"></div>
 </div>
 
-<div id="results" style="margin-top: 14px"></div>
+<style>
+    /* Enhanced Search View Styles */
+    .search-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .search-header {
+        text-align: center;
+        margin-bottom: 24px;
+        padding: 20px;
+        background: var(--panel);
+        border-radius: var(--radius2);
+        border: 1px solid var(--border);
+    }
+
+    .search-header h2 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 8px;
+        font-size: 1.8rem;
+    }
+
+    .search-icon {
+        font-size: 2rem;
+    }
+
+    .search-subtitle {
+        color: var(--muted);
+        font-size: 1rem;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .search-form-card {
+        margin-bottom: 24px;
+    }
+
+    .form-section {
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .label-icon {
+        font-size: 1rem;
+        opacity: 0.8;
+    }
+
+    .label-required {
+        color: var(--danger);
+        font-weight: 700;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--panel3);
+        color: var(--text);
+        font-size: 14px;
+        transition: var(--transition);
+    }
+
+    .form-input:focus {
+        border-color: rgba(var(--accent-rgb), 0.5);
+        box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+        background: rgba(var(--accent-rgb), 0.02);
+    }
+
+    .form-input.error {
+        border-color: var(--danger);
+        box-shadow: 0 0 0 3px rgba(255, 180, 180, 0.1);
+    }
+
+    .form-input.success {
+        border-color: var(--good);
+        box-shadow: 0 0 0 3px rgba(166, 243, 196, 0.1);
+    }
+
+    .input-feedback {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        opacity: 0;
+        transform: translateY(-5px);
+        transition: var(--transition);
+    }
+
+    .input-feedback.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .input-feedback.error {
+        color: var(--danger);
+    }
+
+    .input-feedback.success {
+        color: var(--good);
+    }
+
+    .form-hint {
+        margin-top: 6px;
+        padding: 8px 12px;
+        background: var(--panel3);
+        border-left: 3px solid var(--border2);
+        border-radius: 0 var(--radius) var(--radius) 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+        line-height: 1.4;
+    }
+
+    .checkbox-wrapper {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+        background: var(--panel3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .checkbox-wrapper:hover {
+        background: var(--panel2);
+        border-color: var(--border2);
+    }
+
+    .enhanced-checkbox {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg);
+        cursor: pointer;
+        transition: var(--transition);
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .enhanced-checkbox:checked {
+        background: var(--accent);
+        border-color: var(--accent);
+    }
+
+    .enhanced-checkbox:checked::before {
+        content: "✓";
+        display: block;
+        text-align: center;
+        color: var(--bg);
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 16px;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        flex: 1;
+    }
+
+    .checkbox-icon {
+        font-size: 1.2rem;
+        opacity: 0.8;
+    }
+
+    .checkbox-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .checkbox-desc {
+        font-size: 0.85rem;
+        color: var(--muted);
+        line-height: 1.3;
+    }
+
+    .face-search-panel {
+        display: none;
+        margin-top: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius2);
+        background: var(--panel2);
+        animation: slideDown 0.3s ease-out;
+    }
+
+    .face-search-panel.show {
+        display: block;
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+    }
+
+    .panel-icon {
+        font-size: 1.1rem;
+        opacity: 0.8;
+    }
+
+    .panel-content {
+        padding: 20px;
+    }
+
+    .panel-desc {
+        margin-bottom: 16px;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .file-upload-area {
+        position: relative;
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 32px;
+        text-align: center;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+
+    .file-upload-area:hover,
+    .file-upload-area.dragover {
+        border-color: var(--border2);
+        background: var(--panel2);
+    }
+
+    .file-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .upload-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        pointer-events: none;
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+        opacity: 0.6;
+    }
+
+    .upload-primary {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .upload-secondary {
+        font-size: 0.8rem;
+        color: var(--muted2);
+    }
+
+    .system-info {
+        padding: 12px 16px;
+        background: var(--panel3);
+        border-radius: var(--radius);
+        border-left: 3px solid var(--border2);
+        font-size: 0.85rem;
+        color: var(--muted);
+    }
+
+    .provider-section {
+        margin-bottom: 24px;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .section-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+    }
+
+    .section-icon {
+        font-size: 1.2rem;
+        opacity: 0.8;
+    }
+
+    .provider-controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .provider-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .provider-summary {
+        text-align: center;
+        padding: 12px;
+        background: var(--panel3);
+        border-radius: var(--radius);
+        font-size: 0.85rem;
+        color: var(--muted);
+    }
+
+    .action-section {
+        text-align: center;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+    }
+
+    .action-controls {
+        margin-bottom: 16px;
+    }
+
+    .btn-large {
+        padding: 16px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        min-width: 200px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-text,
+    .btn-loading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-loading {
+        position: absolute;
+        inset: 0;
+        justify-content: center;
+    }
+
+    .status-display {
+        min-height: 24px;
+        color: var(--muted);
+        font-weight: 500;
+    }
+
+    .results-container {
+        margin-top: 24px;
+    }
+
+    @media (max-width: 700px) {
+        .section-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .provider-controls {
+            justify-content: center;
+        }
+
+        .provider-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .checkbox-wrapper {
+            padding: 12px;
+        }
+
+        .file-upload-area {
+            padding: 24px 16px;
+        }
+
+        .btn-large {
+            min-width: auto;
+            width: 100%;
+        }
+    }
+</style>
