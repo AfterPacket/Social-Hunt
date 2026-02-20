@@ -1958,18 +1958,6 @@ function initSettingsView() {
   const breachvipProxySave = document.getElementById("breachvipProxySave");
   const breachvipProxyTest = document.getElementById("breachvipProxyTest");
 
-  // Debug: Check if elements are found
-  console.log("[DEBUG] BreachVIP elements found:", {
-    enabled: !!breachvipProxyEnabled,
-    settings: !!breachvipProxySettings,
-    url: !!breachvipProxyUrl,
-    auth: !!breachvipProxyAuth,
-    strategy: !!breachvipProxyStrategy,
-    residential: !!breachvipResidentialIp,
-    save: !!breachvipProxySave,
-    test: !!breachvipProxyTest,
-  });
-
   let demoModeSaving = false;
   let originalSettingKeys = new Set();
 
@@ -2023,35 +2011,15 @@ function initSettingsView() {
     }
 
     // Load BreachVIP proxy settings
-    console.log("[DEBUG] Loading BreachVIP settings:", {
-      settings: settings,
-      proxyEnabledSetting: settings["breachvip.proxy_enabled"],
-      hasEnabledElement: !!breachvipProxyEnabled,
-      hasSettingsElement: !!breachvipProxySettings,
-    });
 
     if (breachvipProxyEnabled) {
       const proxyEnabled = settings["breachvip.proxy_enabled"]?.value || false;
-      console.log(
-        "[DEBUG] Proxy enabled value:",
-        proxyEnabled,
-        "Type:",
-        typeof proxyEnabled,
-      );
       breachvipProxyEnabled.checked = !!proxyEnabled;
 
       // Show/hide proxy settings based on enabled state
       if (breachvipProxySettings) {
         breachvipProxySettings.style.display = proxyEnabled ? "block" : "none";
-        console.log(
-          "[DEBUG] Set proxy settings display to:",
-          proxyEnabled ? "block" : "none",
-        );
-      } else {
-        console.log("[DEBUG] breachvipProxySettings element not found!");
       }
-    } else {
-      console.log("[DEBUG] breachvipProxyEnabled element not found!");
     }
 
     if (breachvipProxyUrl) {
@@ -2327,24 +2295,12 @@ function initSettingsView() {
   // BreachVIP proxy settings event handlers
   if (breachvipProxyEnabled) {
     breachvipProxyEnabled.addEventListener("change", () => {
-      console.log(
-        "[DEBUG] Proxy checkbox changed:",
-        breachvipProxyEnabled.checked,
-      );
       if (breachvipProxySettings) {
-        const displayValue = breachvipProxyEnabled.checked ? "block" : "none";
-        breachvipProxySettings.style.display = displayValue;
-        console.log("[DEBUG] Changed proxy settings display to:", displayValue);
-      } else {
-        console.log(
-          "[DEBUG] breachvipProxySettings element not found in event handler!",
-        );
+        breachvipProxySettings.style.display = breachvipProxyEnabled.checked
+          ? "block"
+          : "none";
       }
     });
-  } else {
-    console.log(
-      "[DEBUG] breachvipProxyEnabled element not found for event handler!",
-    );
   }
 
   if (breachvipProxySave) {
@@ -2359,6 +2315,8 @@ function initSettingsView() {
           breachvipProxyStrategy?.value || "regular_first",
         "breachvip.use_residential_ip":
           breachvipResidentialIp?.checked || false,
+        // Clean up any old nested format
+        breachvip: null,
       };
 
       // Mark proxy_auth as secret if it has a value
@@ -2372,14 +2330,27 @@ function initSettingsView() {
         proxySettings["__secret_keys"] = secretKeys;
       }
 
+      console.log("[DEBUG] Saving BreachVIP proxy settings:", proxySettings);
+
       try {
+        const requestBody = { settings: proxySettings };
+        console.log(
+          "[DEBUG] Request body:",
+          JSON.stringify(requestBody, null, 2),
+        );
+
         const r = await fetch("/sh-api/settings", {
           method: "PUT",
           headers: authHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ settings: proxySettings }),
+          body: JSON.stringify(requestBody),
         });
 
+        console.log("[DEBUG] Response status:", r.status, r.statusText);
+
         if (r.ok) {
+          const responseData = await r.json().catch(() => null);
+          console.log("[DEBUG] Response data:", responseData);
+
           showToast(
             "BreachVIP proxy settings saved successfully",
             3000,
@@ -2390,11 +2361,18 @@ function initSettingsView() {
             breachvipProxyAuth.value = "";
             breachvipProxyAuth.placeholder = "••••••• (configured)";
           }
+
+          // Reload settings to ensure they persist and display correctly
+          setTimeout(() => {
+            load();
+          }, 500);
         } else {
           const error = await r.text();
+          console.log("[DEBUG] Error response:", error);
           showToast(`Failed to save proxy settings: ${error}`, 5000, "error");
         }
       } catch (e) {
+        console.log("[DEBUG] Exception:", e);
         showToast(`Error saving proxy settings: ${e.message}`, 5000, "error");
       }
     };

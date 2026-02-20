@@ -170,9 +170,14 @@ class BreachVIPProvider(BaseProvider):
                 print(f"[DEBUG] BreachVIP: Could not load settings: {e}")
                 # Fall back to environment variables or defaults
 
-        print(
-            f"[DEBUG] BreachVIP proxy config: enabled={self.proxy_enabled}, strategy={self.proxy_strategy}, url={self.proxy_url is not None}"
-        )
+        if self.proxy_enabled and self.proxy_url:
+            print(
+                f"[DEBUG] BreachVIP proxy config: ENABLED, strategy={self.proxy_strategy}, url={self.proxy_url}"
+            )
+        else:
+            print(
+                f"[DEBUG] BreachVIP proxy config: DISABLED - using direct VPS connection"
+            )
 
     def _get_connection_strategies(self):
         """Get ordered list of connection strategies to try."""
@@ -191,15 +196,15 @@ class BreachVIPProvider(BaseProvider):
                 strategies.append(("proxy", proxy_config))
             else:
                 print(
-                    "[WARNING] BreachVIP: proxy_only strategy but no proxy configured"
+                    "[WARNING] BreachVIP: proxy_only strategy but no proxy configured, falling back to direct VPS connection"
                 )
-                strategies.append(("regular", {}))
+                strategies.append(("direct_vps", {}))
         elif self.proxy_strategy == "proxy_first":
             if proxy_config:
                 strategies.append(("proxy", proxy_config))
-            strategies.append(("regular", {}))
+            strategies.append(("direct_vps", {}))
         else:  # "regular_first" or default
-            strategies.append(("regular", {}))
+            strategies.append(("direct_vps", {}))
             if proxy_config:
                 strategies.append(("proxy", proxy_config))
 
@@ -324,7 +329,7 @@ class BreachVIPProvider(BaseProvider):
                         )
                     else:
                         print(
-                            f"[DEBUG] BreachVIP attempt {attempt + 1}: using {strategy_name}"
+                            f"[DEBUG] BreachVIP attempt {attempt + 1}: using {strategy_name} (direct VPS IP)"
                         )
 
                     response = await client.post(
@@ -338,18 +343,37 @@ class BreachVIPProvider(BaseProvider):
                     elapsed = int((time.monotonic() - start) * 1000)
 
                     if response.status_code == 200:
-                        print(f"[SUCCESS] BreachVIP {strategy_name} succeeded")
+                        connection_type = (
+                            f"via {proxy_config.get('proxies')}"
+                            if proxy_config
+                            else "direct VPS"
+                        )
+                        print(
+                            f"[SUCCESS] BreachVIP {strategy_name} succeeded ({connection_type})"
+                        )
                         break  # Success, exit strategy loop
                     else:
+                        connection_type = (
+                            f"via {proxy_config.get('proxies')}"
+                            if proxy_config
+                            else "direct VPS"
+                        )
                         print(
-                            f"[ERROR] BreachVIP {strategy_name} returned {response.status_code}: {response.text[:200]}"
+                            f"[ERROR] BreachVIP {strategy_name} ({connection_type}) returned {response.status_code}: {response.text[:200]}"
                         )
                         last_error = f"HTTP {response.status_code}"
                         # Try next strategy
                         continue
 
                 except Exception as e:
-                    print(f"[ERROR] BreachVIP {strategy_name} connection failed: {e}")
+                    connection_type = (
+                        f"via {proxy_config.get('proxies')}"
+                        if proxy_config
+                        else "direct VPS"
+                    )
+                    print(
+                        f"[ERROR] BreachVIP {strategy_name} ({connection_type}) connection failed: {e}"
+                    )
                     last_error = str(e)
                     # Try next strategy
                     continue

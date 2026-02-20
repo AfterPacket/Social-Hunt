@@ -121,12 +121,14 @@
         <div class="row" style="margin-bottom: 10px">
             <select id="breachvipProxyStrategy" style="flex: 1">
                 <option value="regular_first">
-                    Try Regular First, Proxy as Failover
+                    Try Direct VPS First, Proxy as Failover
                 </option>
                 <option value="proxy_first">
-                    Try Proxy First, Regular as Failover
+                    Try Proxy First, Direct VPS as Failover
                 </option>
-                <option value="proxy_only">Use Proxy Only</option>
+                <option value="proxy_only">
+                    Use Proxy Only (No Direct VPS)
+                </option>
             </select>
             <label class="muted" style="min-width: 80px; margin-left: 10px"
                 >Strategy</label
