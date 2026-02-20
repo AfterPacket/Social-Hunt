@@ -44,16 +44,20 @@ class SnusbaseProvider(BaseProvider):
 
     def __init__(self, api_key: Optional[str] = None):
         super().__init__()
-        self.api_key = api_key
-        if not self.api_key:
-            try:
-                settings_path = resolve_path("data/settings.json")
-                if settings_path.exists():
-                    with settings_path.open("r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        self.api_key = data.get("snusbase_api_key")
-            except Exception:
-                pass
+        self._static_api_key = api_key  # only used if explicitly passed
+
+    def _get_api_key(self) -> Optional[str]:
+        """Read key fresh from disk each call so changes take effect without restart."""
+        if self._static_api_key:
+            return self._static_api_key
+        try:
+            settings_path = resolve_path("data/settings.json")
+            if settings_path.exists():
+                with settings_path.open("r", encoding="utf-8") as f:
+                    return json.load(f).get("snusbase_api_key")
+        except Exception:
+            pass
+        return None
 
     def build_url(self, username: str) -> str:
         return API_URL
@@ -79,8 +83,9 @@ class SnusbaseProvider(BaseProvider):
         start = time.monotonic()
         ts = datetime.now(timezone.utc).isoformat()
         url = API_URL
+        api_key = self._get_api_key()
 
-        if not self.api_key:
+        if not api_key:
             return ProviderResult(
                 provider=self.name,
                 username=username,
@@ -119,7 +124,7 @@ class SnusbaseProvider(BaseProvider):
                     url,
                     timeout=self.timeout,
                     headers={
-                        "Auth": self.api_key,
+                        "Auth": api_key,
                         "Content-Type": "application/json",
                     },
                     json={"terms": [search_term], "types": types},

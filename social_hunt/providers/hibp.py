@@ -25,16 +25,20 @@ class HIBPProvider(BaseProvider):
 
     def __init__(self, api_key: Optional[str] = None):
         super().__init__()
-        self.api_key = api_key
-        if not self.api_key:
-            try:
-                settings_path = resolve_path("data/settings.json")
-                if settings_path.exists():
-                    with settings_path.open("r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        self.api_key = data.get("hibp_api_key")
-            except Exception:
-                pass
+        self._static_api_key = api_key  # only used if explicitly passed
+
+    def _get_api_key(self) -> Optional[str]:
+        """Read key fresh from disk each call so changes take effect without restart."""
+        if self._static_api_key:
+            return self._static_api_key
+        try:
+            settings_path = resolve_path("data/settings.json")
+            if settings_path.exists():
+                with settings_path.open("r", encoding="utf-8") as f:
+                    return json.load(f).get("hibp_api_key")
+        except Exception:
+            pass
+        return None
 
     def build_url(self, username: str) -> str:
         # HIBP is email-based, so the "username" is the email address.
@@ -47,8 +51,10 @@ class HIBPProvider(BaseProvider):
         ts = datetime.now(timezone.utc).isoformat()
         url = self.build_url(username)
 
+        api_key = self._get_api_key()
+
         # 1. API Key Check
-        if not self.api_key:
+        if not api_key:
             return ProviderResult(
                 provider=self.name,
                 username=username,
@@ -80,7 +86,7 @@ class HIBPProvider(BaseProvider):
             )
 
         hibp_headers = dict(headers)
-        hibp_headers["hibp-api-key"] = self.api_key
+        hibp_headers["hibp-api-key"] = api_key
         hibp_headers["user-agent"] = "Social-Hunt"
 
         profile: Dict[str, Any] = {}
