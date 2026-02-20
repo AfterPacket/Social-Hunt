@@ -1140,10 +1140,8 @@ async function startScan() {
  */
 
 function renderBreachView(job, containerId) {
-  console.log("🎭 renderBreachView started for:", containerId, job);
   const container = document.getElementById(containerId);
   if (!container) {
-    console.error("🎭 Container not found:", containerId);
     return;
   }
 
@@ -1246,10 +1244,7 @@ function renderBreachView(job, containerId) {
     const raw = prof.raw_results || [];
 
     if (raw.length > 0) {
-      console.log("🎭 Raw results found:", raw.length, "records");
-      console.log("🎭 Profile demo_mode:", prof.demo_mode);
       if (prof.demo_mode) {
-        console.log("🎭 Adding demo warning to breach view");
         html += `
           <div class="card demo-warning">
             <div class="demo-warning-title">DEMO MODE ACTIVE</div>
@@ -1258,7 +1253,6 @@ function renderBreachView(job, containerId) {
             </div>
           </div>
         `;
-        console.log("🎭 Demo warning HTML added");
       }
       // Determine columns dynamically from data
       const exclude = [
@@ -1371,10 +1365,7 @@ function renderBreachView(job, containerId) {
     }
   }
 
-  console.log("🎭 Final HTML length:", html.length);
-  console.log("🎭 Setting innerHTML for container:", containerId);
   container.innerHTML = html;
-  console.log("🎭 renderBreachView completed for:", containerId);
 
   const btn = document.getElementById(`dl-breach-${job.job_id}`);
   if (btn) {
@@ -3379,10 +3370,8 @@ async function loadTheme() {
     // Apply theme without transition to avoid flicker
     if (data.theme && data.theme !== "default") {
       document.body.setAttribute("data-theme", data.theme);
-      console.log(`Theme applied: ${data.theme}`);
     } else {
       document.body.removeAttribute("data-theme");
-      console.log("Default theme applied");
     }
 
     // Force theme refresh
@@ -3496,23 +3485,15 @@ async function initializeAuth() {
 // Optimized demo mode detection
 async function checkDemoMode() {
   try {
-    console.log("🎭 Checking demo mode...");
     const data = await fetchWhoami();
-    console.log("🎭 Whoami response:", data);
     if (data && data.demo_mode) {
-      console.log("🎭 Demo mode is ACTIVE");
       const badge = document.getElementById("demoBadge");
       if (badge) {
         badge.style.display = "inline-flex";
-        console.log("🎭 Demo badge shown");
-      } else {
-        console.warn("🎭 Demo badge element not found");
       }
-    } else {
-      console.log("🎭 Demo mode is INACTIVE");
     }
   } catch (error) {
-    console.warn("🎭 Demo mode check failed:", error);
+    console.warn("Demo mode check failed:", error);
   }
 }
 

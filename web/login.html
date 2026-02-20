@@ -257,58 +257,6 @@
                 }
             }, 2000);
 
-            // Simple console debug for theme issues
-            function debugThemeToConsole() {
-                console.group("🎨 Theme Debug Information");
-
-                // Current theme state
-                const appliedTheme =
-                    document.body.getAttribute("data-theme") || "default";
-                console.log("Applied Theme:", appliedTheme);
-
-                // CSS variables
-                const computedStyle = window.getComputedStyle(document.body);
-                const themeVars = [
-                    "--bg",
-                    "--panel",
-                    "--text",
-                    "--accent",
-                    "--warn",
-                    "--warn-rgb",
-                ];
-                console.log("CSS Variables:");
-                themeVars.forEach((varName) => {
-                    const value = computedStyle
-                        .getPropertyValue(varName)
-                        .trim();
-                    console.log(`  ${varName}: ${value || "undefined"}`);
-                });
-
-                // Check API
-                fetch("/sh-api/public/theme?" + Date.now())
-                    .then((res) => res.json())
-                    .then((data) => {
-                        console.log("Server Theme:", data.theme || "default");
-                        console.log(
-                            "Theme Match:",
-                            (data.theme || "default") === appliedTheme,
-                        );
-                    })
-                    .catch((err) => console.error("Theme API Error:", err));
-
-                // CSS file info
-                const cssLink = document.querySelector(
-                    'link[href*="styles.css"]',
-                );
-                console.log("CSS File:", cssLink ? cssLink.href : "not found");
-
-                console.groupEnd();
-            }
-
-            // Run debug on load and expose globally
-            setTimeout(debugThemeToConsole, 1000);
-            window.debugTheme = debugThemeToConsole;
-
             const KEY = "socialhunt_token";
 
             // If we have a token, go to main app
