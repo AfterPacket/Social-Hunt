@@ -7,6 +7,7 @@ PyYAML>=6.0.2
 beautifulsoup4>=4.12.3
 numpy>=1.21.6,<2.0
 face_recognition
+face_recognition_models @ git+https://github.com/ageitgey/face_recognition_models
 dlib>=19.24.0  # Or latest binary
 cryptography>=42.0.0
 pillow>=9.5.0,<10.0.0
