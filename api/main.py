@@ -947,88 +947,133 @@ async def api_plugin_delete(
     return {"ok": True, "deleted": name}
 
 
-@app.post("/sh-api/demask")
 def _generate_face_coverage_mask(image_bytes: bytes) -> bytes:
     """
-    Use OpenCV face detection to locate the face(s) in the image and return
-    a PNG mask where the face-covering region (lower ~65 % of each face bbox,
-    widened slightly) is WHITE (inpaint here) and everything else is BLACK
-    (leave untouched).
+    Generate a PNG inpainting mask that covers the face-covering region
+    (gaiter, balaclava, surgical mask, ski mask, etc.) in WHITE.
+    Everything outside the mask stays BLACK and is left pixel-perfect by
+    the inpainting model.
 
-    If no face is detected we fall back to masking a generous central ellipse
-    so the inpainting model still has something useful to work with.
+    Detection priority:
+      1. face_recognition (dlib CNN) — handles partially occluded faces well
+      2. OpenCV Haar cascade (frontal + profile) — fast backup
+      3. Head-region heuristic — upper-centre of image when all detectors fail
+         (people wearing full gaiters/balaclavas have no detectable facial
+          features so classic detectors always miss them; the heuristic places
+          a generous mask where a head is statistically most likely to appear)
+
+    The mask covers from roughly eye-level down through the chin so that
+    forehead, hair and eyebrows remain untouched — those are the identity
+    cues that constrain the inpainting model and prevent gender swaps.
     """
     import cv2
     import numpy as np
     from PIL import Image as PILImage
     from PIL import ImageDraw, ImageFilter
 
-    nparr = np.frombuffer(image_bytes, np.uint8)
-    img_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    # ── decode image ──────────────────────────────────────────────────────────
+    pil_img = PILImage.open(BytesIO(image_bytes)).convert("RGB")
+    w_img, h_img = pil_img.size
 
-    if img_cv is None:
-        # Cannot decode — return a solid-centre ellipse mask as emergency fallback
-        pil_img = PILImage.open(BytesIO(image_bytes)).convert("RGB")
-        w, h = pil_img.size
-        mask = PILImage.new("L", (w, h), 0)
-        draw = ImageDraw.Draw(mask)
-        draw.ellipse([w // 4, h // 4, 3 * w // 4, 3 * h // 4], fill=255)
-        buf = BytesIO()
-        mask.save(buf, format="PNG")
-        return buf.getvalue()
+    # face_locations returns (top, right, bottom, left) in CSS order
+    face_boxes: list[tuple[int, int, int, int]] = []  # (top, right, bottom, left)
 
-    h_img, w_img = img_cv.shape[:2]
-    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-    gray = cv2.equalizeHist(gray)
+    # ── 1. face_recognition (dlib) ────────────────────────────────────────────
+    try:
+        import face_recognition
+        import numpy as np_fr
 
-    face_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-    )
-    # Also try profile cascade for side-on faces
-    profile_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + "haarcascade_profileface.xml"
-    )
+        img_array = np_fr.array(pil_img)
+        # "cnn" model is more robust on occluded/angled faces; fall back to
+        # "hog" if dlib was built without CUDA to keep latency acceptable.
+        try:
+            locations = face_recognition.face_locations(img_array, model="cnn")
+        except Exception:
+            locations = face_recognition.face_locations(img_array, model="hog")
 
-    faces = face_cascade.detectMultiScale(
-        gray, scaleFactor=1.05, minNeighbors=4, minSize=(60, 60)
-    )
-    if len(faces) == 0:
-        faces = profile_cascade.detectMultiScale(
-            gray, scaleFactor=1.05, minNeighbors=4, minSize=(60, 60)
+        if locations:
+            face_boxes = list(locations)
+            print(f"[Demask] face_recognition found {len(face_boxes)} face(s).")
+    except Exception as e:
+        print(f"[Demask] face_recognition unavailable ({e}); trying OpenCV.")
+
+    # ── 2. OpenCV Haar cascade fallback ───────────────────────────────────────
+    if not face_boxes:
+        try:
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img_cv is not None:
+                gray = cv2.equalizeHist(cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY))
+
+                for cascade_name in (
+                    "haarcascade_frontalface_default.xml",
+                    "haarcascade_frontalface_alt2.xml",
+                    "haarcascade_profileface.xml",
+                ):
+                    cascade = cv2.CascadeClassifier(
+                        cv2.data.haarcascades + cascade_name
+                    )
+                    detected = cascade.detectMultiScale(
+                        gray,
+                        scaleFactor=1.05,
+                        minNeighbors=3,
+                        minSize=(50, 50),
+                    )
+                    if len(detected) > 0:
+                        # Convert OpenCV (x,y,w,h) → (top,right,bottom,left)
+                        for fx, fy, fw, fh in detected:
+                            face_boxes.append((fy, fx + fw, fy + fh, fx))
+                        print(
+                            f"[Demask] OpenCV ({cascade_name}) found "
+                            f"{len(face_boxes)} face(s)."
+                        )
+                        break
+        except Exception as e:
+            print(f"[Demask] OpenCV cascade failed ({e}).")
+
+    # ── 3. Head-region heuristic (fully occluded face fallback) ───────────────
+    # When someone wears a full gaiter + cap, zero facial features are exposed
+    # so any detector will fail.  We place a generous mask in the upper-centre
+    # of the frame — statistically where a head appears in portrait/bust shots.
+    if not face_boxes:
+        print(
+            "[Demask] No face detected (subject likely fully covered). "
+            "Applying head-region heuristic mask."
         )
+        # Upper-centre band: horizontally centred, spanning ~15 %–70 % of height
+        pad_x = int(w_img * 0.20)
+        top_y = int(h_img * 0.10)
+        bot_y = int(h_img * 0.72)
+        face_boxes = [(top_y, w_img - pad_x, bot_y, pad_x)]
 
+    # ── Build mask ────────────────────────────────────────────────────────────
     mask = PILImage.new("L", (w_img, h_img), 0)
     draw = ImageDraw.Draw(mask)
 
-    if len(faces) > 0:
-        for fx, fy, fw, fh in faces:
-            # Mask from ~35 % down (just below the eyes) to just below the chin
-            # with a small horizontal padding so we catch the jaw edges
-            padding_x = int(fw * 0.08)
-            top = fy + int(fh * 0.35)
-            bottom = fy + fh + int(fh * 0.08)
-            left = max(0, fx - padding_x)
-            right = min(w_img, fx + fw + padding_x)
-            draw.rectangle([left, top, right, bottom], fill=255)
-    else:
-        # No face found — mask a generous centre region
-        print("[Demask] No face detected; using centre-region fallback mask.")
-        cx, cy = w_img // 2, h_img // 2
-        draw.ellipse(
-            [cx - w_img // 4, cy - h_img // 6, cx + w_img // 4, cy + h_img // 3],
-            fill=255,
-        )
+    for top, right, bottom, left in face_boxes:
+        fh = bottom - top
+        fw = right - left
 
-    # Feather edges slightly so the inpainted region blends naturally
-    mask = mask.filter(ImageFilter.GaussianBlur(radius=6))
-    # Re-threshold to keep it binary-ish after blur
-    mask = mask.point(lambda p: 255 if p > 30 else 0)
+        # Cover from ~30 % below the top of the face box (eye-line) down to
+        # just below the chin.  Widen by 10 % on each side to catch jaw edges.
+        pad_x = int(fw * 0.10)
+        mask_top = top + int(fh * 0.30)
+        mask_bottom = min(h_img, bottom + int(fh * 0.06))
+        mask_left = max(0, left - pad_x)
+        mask_right = min(w_img, right + pad_x)
+
+        draw.rectangle([mask_left, mask_top, mask_right, mask_bottom], fill=255)
+
+    # Feather edges so the inpainted region blends naturally at boundaries
+    mask = mask.filter(ImageFilter.GaussianBlur(radius=8))
+    mask = mask.point(lambda p: 255 if p > 25 else 0)
 
     buf = BytesIO()
     mask.save(buf, format="PNG")
     return buf.getvalue()
 
 
+@app.post("/sh-api/demask")
 async def api_demask(
     file: UploadFile = File(...),
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
