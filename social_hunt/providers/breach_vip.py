@@ -126,12 +126,11 @@ class BreachVIPProvider(BaseProvider):
                 settings_store = SettingsStore(settings_path)
                 settings = settings_store.load()
 
-                # Get BreachVIP specific settings
-                breachvip_settings = settings.get("breachvip", {})
-
+                # Get BreachVIP specific settings using dot notation
                 def get_setting_value(key, default=None):
                     """Extract value from settings, handling both direct values and dict format."""
-                    val = breachvip_settings.get(key, default)
+                    full_key = f"breachvip.{key}"
+                    val = settings.get(full_key, default)
                     if isinstance(val, dict) and "value" in val:
                         return val["value"]
                     return val

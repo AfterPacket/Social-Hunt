@@ -2011,10 +2011,8 @@ function initSettingsView() {
     }
 
     // Load BreachVIP proxy settings
-    const breachvipSettings = settings.breachvip || {};
-
     if (breachvipProxyEnabled) {
-      const proxyEnabled = breachvipSettings.proxy_enabled?.value || false;
+      const proxyEnabled = settings["breachvip.proxy_enabled"]?.value || false;
       breachvipProxyEnabled.checked = !!proxyEnabled;
 
       // Show/hide proxy settings based on enabled state
@@ -2024,21 +2022,21 @@ function initSettingsView() {
     }
 
     if (breachvipProxyUrl) {
-      breachvipProxyUrl.value = breachvipSettings.proxy_url?.value || "";
+      breachvipProxyUrl.value = settings["breachvip.proxy_url"]?.value || "";
     }
 
-    if (breachvipProxyAuth && breachvipSettings.proxy_auth?.is_set) {
+    if (breachvipProxyAuth && settings["breachvip.proxy_auth"]?.is_set) {
       breachvipProxyAuth.placeholder = "••••••• (configured)";
     }
 
     if (breachvipProxyStrategy) {
       breachvipProxyStrategy.value =
-        breachvipSettings.proxy_strategy?.value || "regular_first";
+        settings["breachvip.proxy_strategy"]?.value || "regular_first";
     }
 
     if (breachvipResidentialIp) {
       breachvipResidentialIp.checked =
-        !!breachvipSettings.use_residential_ip?.value;
+        !!settings["breachvip.use_residential_ip"]?.value;
     }
 
     if (demoModeToggle) {
@@ -2309,13 +2307,13 @@ function initSettingsView() {
       const proxyAuth = breachvipProxyAuth?.value?.trim() || "";
 
       const proxySettings = {
-        breachvip: {
-          proxy_enabled: breachvipProxyEnabled?.checked || false,
-          proxy_url: breachvipProxyUrl?.value?.trim() || "",
-          proxy_auth: proxyAuth,
-          proxy_strategy: breachvipProxyStrategy?.value || "regular_first",
-          use_residential_ip: breachvipResidentialIp?.checked || false,
-        },
+        "breachvip.proxy_enabled": breachvipProxyEnabled?.checked || false,
+        "breachvip.proxy_url": breachvipProxyUrl?.value?.trim() || "",
+        "breachvip.proxy_auth": proxyAuth,
+        "breachvip.proxy_strategy":
+          breachvipProxyStrategy?.value || "regular_first",
+        "breachvip.use_residential_ip":
+          breachvipResidentialIp?.checked || false,
       };
 
       // Mark proxy_auth as secret if it has a value
@@ -2380,12 +2378,10 @@ function initSettingsView() {
 
         // Temporarily save settings for the test
         const tempSettings = {
-          breachvip: {
-            proxy_enabled: true,
-            proxy_url: proxyUrl,
-            proxy_auth: proxyAuth,
-            proxy_strategy: strategy,
-          },
+          "breachvip.proxy_enabled": true,
+          "breachvip.proxy_url": proxyUrl,
+          "breachvip.proxy_auth": proxyAuth,
+          "breachvip.proxy_strategy": strategy,
         };
 
         const r = await fetch("/sh-api/settings", {
