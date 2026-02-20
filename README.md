@@ -5,7 +5,7 @@ Social-Hunt is an OSINT framework for cross-platform username discovery, breach 
 ## Features
 
 - Username presence scanning across many platforms using YAML providers.
-- Breach intelligence via Have I Been Pwned (HIBP) and BreachVIP.
+- Breach intelligence via Have I Been Pwned (HIBP) and BreachVIP with proxy support for Cloudflare bypass.
 - Face matching against profile avatars using face recognition and image hashing.
 - Reverse image OSINT links (Google Lens, Bing, Yandex, etc.).
 - Tor/Onion site support via SOCKS proxy (split-tunneling).
@@ -232,7 +232,7 @@ proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_
 
 ## Troubleshooting
 
-- BreachVIP 403: Cloudflare may block datacenter IPs. Try manual search or change IP.
+- BreachVIP 403: Cloudflare may block datacenter IPs. Configure proxy settings in Settings → BreachVIP Proxy Configuration, or use environment variables (see below).
 - HIBP skipped: missing or invalid `hibp_api_key`.
 - Missing Python providers: ensure `SOCIAL_HUNT_ALLOW_PY_PLUGINS=1`.
 - Demask not working: set `REPLICATE_API_TOKEN` or `SOCIAL_HUNT_FACE_AI_URL`.
@@ -285,7 +285,36 @@ IOPaint as shown in `APACHE_SETUP.md`.
 
 ### Breach Search
 ![Breach Search](assets/screenshots/breach-search.png)
-*Data breach lookup powered by BreachVIP*
+*Data breach lookup powered by BreachVIP with proxy bypass support*
+
+### BreachVIP Proxy Configuration
+
+BreachVIP searches can now be routed through proxy servers to bypass Cloudflare blocks and regional restrictions.
+
+**Web UI Configuration:**
+1. Navigate to Settings → BreachVIP Proxy Configuration
+2. Enable proxy and enter your proxy details
+3. Choose connection strategy:
+   - **Regular First**: Try direct connection first, proxy as failover
+   - **Proxy First**: Try proxy first, direct as failover  
+   - **Proxy Only**: Use proxy exclusively
+
+**Environment Variables:**
+```bash
+export BREACHVIP_PROXY_ENABLED="true"
+export BREACHVIP_PROXY_URL="http://proxy-server:8080"
+export BREACHVIP_PROXY_AUTH="username:password"
+export BREACHVIP_PROXY_STRATEGY="regular_first"  # or "proxy_first", "proxy_only"
+export BREACHVIP_USE_RESIDENTIAL_IP="true"
+```
+
+**Supported Proxy Types:**
+- HTTP/HTTPS proxies (`http://proxy:8080`)
+- SOCKS5 proxies (`socks5://proxy:1080`) 
+- Authenticated proxies with username:password
+- Residential and datacenter proxies
+
+See `BREACHVIP_PROXY_SETUP.md` for detailed configuration guide.
 
 ### Reverse Image Search
 ![Reverse Image](assets/screenshots/reverse-image.png)

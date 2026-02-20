@@ -33,6 +33,10 @@ services:
       # Optional: persist temporary uploads for reverse image search
       - ../web/temp_uploads:/app/web/temp_uploads
 
+      # For downloaded models
+      
+      - ../DeepMosaics/pretrained_models/:/app/DeepMosaics/pretrained_models/:rw
+
     restart: unless-stopped
 
   # Optional: Nginx reverse proxy (pick one proxy profile: nginx or apache)

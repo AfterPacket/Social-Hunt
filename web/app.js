@@ -1978,6 +1978,25 @@ function initSettingsView() {
   const restartBtn = document.getElementById("restartBtn");
   const demoModeToggle = document.getElementById("demoModeToggle");
   const saveDemoModeBtn = document.getElementById("saveDemoMode");
+
+  // BreachVIP proxy settings elements
+  const breachvipProxyEnabled = document.getElementById(
+    "breachvipProxyEnabled",
+  );
+  const breachvipProxySettings = document.getElementById(
+    "breachvipProxySettings",
+  );
+  const breachvipProxyUrl = document.getElementById("breachvipProxyUrl");
+  const breachvipProxyAuth = document.getElementById("breachvipProxyAuth");
+  const breachvipProxyStrategy = document.getElementById(
+    "breachvipProxyStrategy",
+  );
+  const breachvipResidentialIp = document.getElementById(
+    "breachvipResidentialIp",
+  );
+  const breachvipProxySave = document.getElementById("breachvipProxySave");
+  const breachvipProxyTest = document.getElementById("breachvipProxyTest");
+
   let demoModeSaving = false;
   let originalSettingKeys = new Set();
 
@@ -2028,6 +2047,36 @@ function initSettingsView() {
 
     if (settings.theme && themeSelect) {
       themeSelect.value = settings.theme.value || "default";
+    }
+
+    // Load BreachVIP proxy settings
+
+    if (breachvipProxyEnabled) {
+      const proxyEnabled = settings["breachvip.proxy_enabled"]?.value || false;
+      breachvipProxyEnabled.checked = !!proxyEnabled;
+
+      // Show/hide proxy settings based on enabled state
+      if (breachvipProxySettings) {
+        breachvipProxySettings.style.display = proxyEnabled ? "block" : "none";
+      }
+    }
+
+    if (breachvipProxyUrl) {
+      breachvipProxyUrl.value = settings["breachvip.proxy_url"]?.value || "";
+    }
+
+    if (breachvipProxyAuth && settings["breachvip.proxy_auth"]?.is_set) {
+      breachvipProxyAuth.placeholder = "••••••• (configured)";
+    }
+
+    if (breachvipProxyStrategy) {
+      breachvipProxyStrategy.value =
+        settings["breachvip.proxy_strategy"]?.value || "regular_first";
+    }
+
+    if (breachvipResidentialIp) {
+      breachvipResidentialIp.checked =
+        !!settings["breachvip.use_residential_ip"]?.value;
     }
 
     if (demoModeToggle) {
@@ -2280,6 +2329,149 @@ function initSettingsView() {
   if (demoModeToggle) {
     if (saveDemoModeBtn) saveDemoModeBtn.onclick = updateDemoMode;
     demoModeToggle.addEventListener("change", updateDemoMode);
+  }
+
+  // BreachVIP proxy settings event handlers
+  if (breachvipProxyEnabled) {
+    breachvipProxyEnabled.addEventListener("change", () => {
+      if (breachvipProxySettings) {
+        breachvipProxySettings.style.display = breachvipProxyEnabled.checked
+          ? "block"
+          : "none";
+      }
+    });
+  }
+
+  if (breachvipProxySave) {
+    breachvipProxySave.onclick = async () => {
+      const proxyAuth = breachvipProxyAuth?.value?.trim() || "";
+
+      const proxySettings = {
+        "breachvip.proxy_enabled": breachvipProxyEnabled?.checked || false,
+        "breachvip.proxy_url": breachvipProxyUrl?.value?.trim() || "",
+        "breachvip.proxy_auth": proxyAuth,
+        "breachvip.proxy_strategy":
+          breachvipProxyStrategy?.value || "regular_first",
+        "breachvip.use_residential_ip":
+          breachvipResidentialIp?.checked || false,
+        // Clean up any old nested format
+        breachvip: null,
+      };
+
+      // Mark proxy_auth as secret if it has a value
+      const secretKeys = [];
+      if (proxyAuth) {
+        secretKeys.push("breachvip.proxy_auth");
+      }
+
+      // Add secret keys to settings
+      if (secretKeys.length > 0) {
+        proxySettings["__secret_keys"] = secretKeys;
+      }
+
+      console.log("[DEBUG] Saving BreachVIP proxy settings:", proxySettings);
+
+      try {
+        const requestBody = { settings: proxySettings };
+        console.log(
+          "[DEBUG] Request body:",
+          JSON.stringify(requestBody, null, 2),
+        );
+
+        const r = await fetch("/sh-api/settings", {
+          method: "PUT",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify(requestBody),
+        });
+
+        console.log("[DEBUG] Response status:", r.status, r.statusText);
+
+        if (r.ok) {
+          const responseData = await r.json().catch(() => null);
+          console.log("[DEBUG] Response data:", responseData);
+
+          showToast(
+            "BreachVIP proxy settings saved successfully",
+            3000,
+            "success",
+          );
+          // Clear the auth input and show placeholder
+          if (breachvipProxyAuth && proxySettings["breachvip.proxy_auth"]) {
+            breachvipProxyAuth.value = "";
+            breachvipProxyAuth.placeholder = "••••••• (configured)";
+          }
+
+          // Reload settings to ensure they persist and display correctly
+          setTimeout(() => {
+            load();
+          }, 500);
+        } else {
+          const error = await r.text();
+          console.log("[DEBUG] Error response:", error);
+          showToast(`Failed to save proxy settings: ${error}`, 5000, "error");
+        }
+      } catch (e) {
+        console.log("[DEBUG] Exception:", e);
+        showToast(`Error saving proxy settings: ${e.message}`, 5000, "error");
+      }
+    };
+  }
+
+  if (breachvipProxyTest) {
+    breachvipProxyTest.onclick = async () => {
+      const proxyUrl = breachvipProxyUrl?.value?.trim();
+      const proxyAuth = breachvipProxyAuth?.value?.trim();
+      const strategy = breachvipProxyStrategy?.value || "regular_first";
+
+      if (!proxyUrl) {
+        showToast("Please enter a proxy URL to test", 3000, "warning");
+        return;
+      }
+
+      breachvipProxyTest.disabled = true;
+      breachvipProxyTest.textContent = "Testing...";
+
+      try {
+        // Test with a sample BreachVIP search
+        const testData = {
+          username: "test@example.com",
+          providers: ["breachvip"],
+        };
+
+        // Temporarily save settings for the test
+        const tempSettings = {
+          "breachvip.proxy_enabled": true,
+          "breachvip.proxy_url": proxyUrl,
+          "breachvip.proxy_auth": proxyAuth,
+          "breachvip.proxy_strategy": strategy,
+        };
+
+        const r = await fetch("/sh-api/settings", {
+          method: "PUT",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ settings: tempSettings }),
+        });
+
+        if (r.ok) {
+          showToast(
+            `Proxy test completed. Check server logs for connection details.`,
+            5000,
+            "info",
+          );
+        } else {
+          showToast(
+            "Proxy test failed - could not apply settings",
+            3000,
+            "error",
+          );
+        }
+      } catch (e) {
+        showToast(`Proxy test error: ${e.message}`, 5000, "error");
+      } finally {
+        breachvipProxyTest.disabled = false;
+        breachvipProxyTest.textContent = "Test Connection";
+      }
+    };
   }
 
   load();

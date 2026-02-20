@@ -74,6 +74,88 @@
     </div>
 </div>
 
+<div class="card">
+    <h3>BreachVIP Proxy Configuration</h3>
+    <p class="muted">
+        Configure proxy settings for BreachVIP searches to bypass Cloudflare
+        blocks.
+    </p>
+
+    <div
+        class="row"
+        style="align-items: center; gap: 12px; margin-bottom: 10px"
+    >
+        <label
+            class="muted"
+            style="display: flex; align-items: center; gap: 8px"
+        >
+            <input id="breachvipProxyEnabled" type="checkbox" />
+            Enable Proxy for BreachVIP
+        </label>
+    </div>
+
+    <div id="breachvipProxySettings" style="display: none">
+        <div class="row" style="margin-bottom: 10px">
+            <input
+                id="breachvipProxyUrl"
+                placeholder="http://proxy-server:8080"
+                style="flex: 1"
+            />
+            <label class="muted" style="min-width: 80px; margin-left: 10px"
+                >Proxy URL</label
+            >
+        </div>
+
+        <div class="row" style="margin-bottom: 10px">
+            <input
+                id="breachvipProxyAuth"
+                type="password"
+                placeholder="username:password (optional)"
+                style="flex: 1"
+            />
+            <label class="muted" style="min-width: 80px; margin-left: 10px"
+                >Auth (optional)</label
+            >
+        </div>
+
+        <div class="row" style="margin-bottom: 10px">
+            <select id="breachvipProxyStrategy" style="flex: 1">
+                <option value="regular_first">
+                    Try Direct VPS First, Proxy as Failover
+                </option>
+                <option value="proxy_first">
+                    Try Proxy First, Direct VPS as Failover
+                </option>
+                <option value="proxy_only">
+                    Use Proxy Only (No Direct VPS)
+                </option>
+            </select>
+            <label class="muted" style="min-width: 80px; margin-left: 10px"
+                >Strategy</label
+            >
+        </div>
+
+        <div class="row" style="align-items: center; gap: 12px">
+            <label
+                class="muted"
+                style="display: flex; align-items: center; gap: 8px"
+            >
+                <input id="breachvipResidentialIp" type="checkbox" />
+                Use Residential IP when available
+            </label>
+        </div>
+    </div>
+
+    <div class="row" style="margin-top: 15px">
+        <button id="breachvipProxySave" class="btn good" type="button">
+            Save Proxy Settings
+        </button>
+        <button id="breachvipProxyTest" class="btn" type="button">
+            Test Connection
+        </button>
+    </div>
+</div>
+
 <p class="muted">
     Add integrations as key/value pairs. Secrets are stored server-side and
     never shown back.
