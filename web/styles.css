@@ -18,6 +18,7 @@
     --danger: #ffb4b4;
     --good: #a6f3c4;
     --warn: #ffd78a;
+    --warn-rgb: 255, 215, 138;
     --accent: #8cc8ff;
     --accent-rgb: 140, 200, 255;
     --radius: 14px;
@@ -52,6 +53,7 @@
     --danger: #f7768e;
     --good: #9ece6a;
     --warn: #ff9e64;
+    --warn-rgb: 255, 158, 100;
     --accent: #bb9af7;
     --accent-rgb: 187, 154, 247;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -72,6 +74,7 @@
     --danger: #ff6666;
     --good: #66ff66;
     --warn: #ffee66;
+    --warn-rgb: 255, 238, 102;
     --accent: #33aaff;
     --accent-rgb: 51, 170, 255;
     --glass-bg: rgba(51, 170, 255, 0.08);
@@ -91,6 +94,7 @@
     --danger: #ff003c;
     --good: #00ff9f;
     --warn: #fcee0a;
+    --warn-rgb: 252, 238, 10;
     --accent: #fcee0a;
     --accent-rgb: 252, 238, 10;
     --shadow: 0 0 20px rgba(252, 238, 10, 0.1);
@@ -111,6 +115,7 @@
     --danger: #ff3b3b;
     --good: #9dff3a;
     --warn: #ffb347;
+    --warn-rgb: 255, 179, 71;
     --accent: #9dff3a;
     --accent-rgb: 157, 255, 58;
     --shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
@@ -138,6 +143,7 @@
     --danger: #b00024;
     --good: #68e9ff;
     --warn: #ffb347;
+    --warn-rgb: 255, 179, 71;
     --accent: #b5ff2a;
     --accent-rgb: 181, 255, 42;
     --shadow: 0 12px 26px rgba(0, 0, 0, 0.45);
@@ -163,6 +169,7 @@
     --danger: #ff4a4a;
     --good: #ffd27a;
     --warn: #ffb347;
+    --warn-rgb: 255, 179, 71;
     --accent: #ff8b3d;
     --accent-rgb: 255, 139, 61;
     --shadow: 0 16px 30px rgba(0, 0, 0, 0.55);
@@ -188,6 +195,7 @@
     --danger: #ff5e6c;
     --good: #68f3c0;
     --warn: #ffd27a;
+    --warn-rgb: 255, 210, 122;
     --accent: #ff77c6;
     --accent-rgb: 255, 119, 198;
     --shadow: 0 14px 32px rgba(0, 0, 0, 0.6);
@@ -215,6 +223,7 @@
     --danger: #ff6b4a;
     --good: #7ce2a5;
     --warn: #f2c35e;
+    --warn-rgb: 242, 195, 94;
     --accent: #f2c35e;
     --accent-rgb: 242, 195, 94;
     --shadow: 0 16px 30px rgba(0, 0, 0, 0.55);
@@ -244,6 +253,7 @@
     --danger: #d00000;
     --good: #008000;
     --warn: #856404;
+    --warn-rgb: 133, 100, 4;
     --accent: #0056b3;
     --accent-rgb: 0, 86, 179;
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -780,6 +790,58 @@ a:hover::after {
     background: rgba(var(--accent-rgb), 0.08);
     border-color: rgba(var(--accent-rgb), 0.2);
     transform: translateY(-1px);
+}
+
+/* Demo badge styling that works with all themes */
+.demo-badge {
+    background: var(--warn) !important;
+    color: var(--bg) !important;
+    border-color: var(--warn) !important;
+    font-weight: 700 !important;
+    animation: demoPulse 2s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.demo-badge:hover {
+    background: var(--warn) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes demoPulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.02);
+    }
+}
+
+/* Demo warning card styling */
+.demo-warning {
+    border-left: 4px solid var(--warn) !important;
+    background: rgba(var(--warn-rgb), 0.08) !important;
+    border: 1px solid var(--border) !important;
+    border-left: 4px solid var(--warn) !important;
+    margin-bottom: 16px;
+}
+
+.demo-warning-title {
+    color: var(--warn);
+    font-weight: 800;
+    margin-bottom: 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.demo-warning-text {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 /* Enhanced view container */
