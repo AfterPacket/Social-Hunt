@@ -348,18 +348,13 @@ function initDashboardView() {
   if (go) go.onclick = () => loadView("search");
 
   // Initialize dashboard stats with access to main app functions
-  console.log("Setting up dashboard stats initialization");
   setTimeout(() => {
-    console.log("Attempting to initialize dashboard stats...");
     initializeDashboardStats();
   }, 200);
 
   // Initialize dashboard-specific features if elements exist
   if (document.querySelector(".tip-item")) {
-    console.log("Found tip elements, initializing tips");
     initializeDashboardTips();
-  } else {
-    console.log("No tip elements found in DOM");
   }
 }
 
@@ -370,13 +365,11 @@ function initializeDashboardTips() {
   let autoRotateInterval;
 
   function showTip(tipNumber) {
-    console.log(`Showing tip ${tipNumber}`);
     try {
       const tipItems = document.querySelectorAll(".tip-item");
       const tipDots = document.querySelectorAll(".tip-dot");
 
       if (tipItems.length === 0 || tipDots.length === 0) {
-        console.warn("Tip elements not found");
         return;
       }
 
@@ -393,12 +386,33 @@ function initializeDashboardTips() {
         currentDotEl.classList.add("active");
         currentTip = tipNumber;
         console.log(`Tip ${tipNumber} activated successfully`);
-      } else {
-        console.warn(`Tip elements not found for tip ${tipNumber}`);
       }
     } catch (error) {
-      console.error("Error showing tip:", error);
-    }
+      // Silently handle tip display errors
+    }</end_text>
+
+<old_text line=452>
+// Dashboard stats initialization using main app functions
+function initializeDashboardStats() {
+  console.log("=== DASHBOARD STATS DEBUG ===");
+  console.log("Checking if stat elements exist...");
+
+  const totalEl = document.getElementById("totalSearches");
+  const reverseEl = document.getElementById("reverseSearches");
+  const breachEl = document.getElementById("breachSearches");
+  const providersEl = document.getElementById("activeProviders");
+
+  console.log("Elements found:", {
+    totalSearches: !!totalEl,
+    reverseSearches: !!reverseEl,
+    breachSearches: !!breachEl,
+    activeProviders: !!providersEl,
+  });
+
+  if (!totalEl || !reverseEl || !breachEl || !providersEl) {
+    console.error("Some stat elements are missing from DOM!");
+    return;
+  }
   }
 
   // Setup navigation buttons
@@ -451,58 +465,22 @@ function initializeDashboardTips() {
 
 // Dashboard stats initialization using main app functions
 function initializeDashboardStats() {
-  console.log("=== DASHBOARD STATS DEBUG ===");
-  console.log("Checking if stat elements exist...");
-
   const totalEl = document.getElementById("totalSearches");
   const reverseEl = document.getElementById("reverseSearches");
   const breachEl = document.getElementById("breachSearches");
   const providersEl = document.getElementById("activeProviders");
 
-  console.log("Elements found:", {
-    totalSearches: !!totalEl,
-    reverseSearches: !!reverseEl,
-    breachSearches: !!breachEl,
-    activeProviders: !!providersEl,
-  });
-
   if (!totalEl || !reverseEl || !breachEl || !providersEl) {
-    console.error("Some stat elements are missing from DOM!");
     return;
   }
 
   try {
-    console.log("Loading data using constants:", {
-      KEY_SEARCH_HISTORY,
-      KEY_REVERSE_HISTORY,
-      KEY_DEMASK_HISTORY,
-    });
-
     // Load statistics from localStorage using main app functions
     const searchHistory = loadJsonArray(KEY_SEARCH_HISTORY);
     const reverseHistory = loadJsonArray(KEY_REVERSE_HISTORY);
     const demaskHistory = loadJsonArray(KEY_DEMASK_HISTORY);
 
-    console.log("Raw localStorage data:", {
-      searchRaw: localStorage.getItem(KEY_SEARCH_HISTORY),
-      reverseRaw: localStorage.getItem(KEY_REVERSE_HISTORY),
-      demaskRaw: localStorage.getItem(KEY_DEMASK_HISTORY),
-    });
-
-    console.log("Loaded history arrays:", {
-      searchHistory: searchHistory,
-      reverseHistory: reverseHistory,
-      demaskHistory: demaskHistory,
-    });
-
-    console.log("History lengths:", {
-      searches: searchHistory.length,
-      reverse: reverseHistory.length,
-      demask: demaskHistory.length,
-    });
-
     // Update UI elements with values
-    console.log("Updating stat values...");
     updateDashboardStatValue("totalSearches", searchHistory.length);
     updateDashboardStatValue("reverseSearches", reverseHistory.length);
 
@@ -511,61 +489,44 @@ function initializeDashboardStats() {
       (item) =>
         item && (item.type === "breach-search" || item.type === "breach"),
     ).length;
-    console.log("Breach count:", breachCount);
     updateDashboardStatValue("breachSearches", breachCount);
 
     // Load provider count
     providersEl.textContent = "...";
-    console.log("Loading providers...");
 
     // Try to fetch providers using main app function
     if (typeof fetchProviders === "function") {
-      console.log("fetchProviders function is available");
       fetchProviders()
         .then((providers) => {
-          console.log("fetchProviders result:", providers);
           if (providers && Array.isArray(providers)) {
             updateDashboardStatValue("activeProviders", providers.length);
-            console.log(`Successfully loaded ${providers.length} providers`);
           } else {
-            console.log("No providers or invalid format");
             updateDashboardStatValue("activeProviders", 0);
           }
         })
         .catch((error) => {
-          console.error("fetchProviders failed:", error);
           providersEl.textContent = "?";
         });
     } else {
-      console.log("fetchProviders function not available, trying direct API");
       // Fallback: try to get providers from API directly
       fetch("/sh-api/providers")
-        .then((response) => {
-          console.log("Direct API response status:", response.status);
-          return response.json();
-        })
+        .then((response) => response.json())
         .then((data) => {
-          console.log("Direct API data:", data);
           const count = Array.isArray(data)
             ? data.length
             : data.providers
               ? data.providers.length
               : 0;
           updateDashboardStatValue("activeProviders", count);
-          console.log(`Loaded ${count} providers via direct API`);
         })
         .catch((error) => {
-          console.error("Direct API failed:", error);
           providersEl.textContent = "?";
         });
     }
 
     // Setup refresh controls
     setupDashboardRefresh();
-    console.log("Dashboard stats initialization completed");
   } catch (error) {
-    console.error("Critical error in dashboard stats:", error);
-
     // Set fallback values
     const elements = [
       "totalSearches",
@@ -577,7 +538,6 @@ function initializeDashboardStats() {
       const el = document.getElementById(id);
       if (el) {
         el.textContent = "?";
-        console.log(`Set fallback for ${id}`);
       }
     });
   }
@@ -585,15 +545,8 @@ function initializeDashboardStats() {
 
 // Helper function to update stat values with animation
 function updateDashboardStatValue(elementId, value) {
-  console.log(`Updating ${elementId} with value:`, value);
   const element = document.getElementById(elementId);
-
-  if (!element) {
-    console.error(`Element ${elementId} not found!`);
-    return;
-  }
-
-  console.log(`Found element ${elementId}, updating to ${value}`);
+  if (!element) return;
 
   // Animate the value change
   element.style.transform = "scale(1.1)";
@@ -603,7 +556,6 @@ function updateDashboardStatValue(elementId, value) {
     element.textContent = value.toString();
     element.style.transform = "scale(1)";
     element.style.color = "";
-    console.log(`Successfully updated ${elementId} to ${value}`);
   }, 150);
 }
 
@@ -623,97 +575,10 @@ function setupDashboardRefresh() {
         refreshBtn.innerHTML = '<span class="btn-icon">🔄</span> Refresh';
       }, 1000);
     });
-    console.log("Dashboard refresh button initialized");
   }
 }
 
-// Console debugging functions for stats (available globally)
-window.debugStats = function () {
-  console.log("=== STATS DEBUG INFO ===");
-  console.log("Search History:", loadJsonArray(KEY_SEARCH_HISTORY));
-  console.log("Reverse History:", loadJsonArray(KEY_REVERSE_HISTORY));
-  console.log("Demask History:", loadJsonArray(KEY_DEMASK_HISTORY));
-  console.log("Raw localStorage:");
-  console.log("- search:", localStorage.getItem(KEY_SEARCH_HISTORY));
-  console.log("- reverse:", localStorage.getItem(KEY_REVERSE_HISTORY));
-  console.log("- demask:", localStorage.getItem(KEY_DEMASK_HISTORY));
-};
 
-window.createTestSearchData = function () {
-  const testData = [
-    {
-      ts: Date.now() - 3600000,
-      username: "test_user1",
-      providers_count: 15,
-      job_id: "test_search_1",
-      results_count: 8,
-      state: "completed",
-      type: "search",
-    },
-    {
-      ts: Date.now() - 7200000,
-      username: "test_user2",
-      providers_count: 12,
-      job_id: "test_search_2",
-      results_count: 5,
-      state: "completed",
-      type: "search",
-    },
-    {
-      ts: Date.now() - 10800000,
-      username: "breach_test@email.com",
-      providers_count: 8,
-      job_id: "test_breach_1",
-      results_count: 3,
-      state: "completed",
-      type: "breach-search",
-    },
-  ];
-  localStorage.setItem(KEY_SEARCH_HISTORY, JSON.stringify(testData));
-  console.log("Created test search data:", testData);
-  if (typeof initializeDashboardStats === "function") {
-    initializeDashboardStats();
-  }
-};
-
-window.createTestReverseData = function () {
-  const testData = [
-    {
-      ts: Date.now() - 1800000,
-      image_url: "https://example.com/test1.jpg",
-      links: ["https://twitter.com/test1", "https://instagram.com/test1"],
-    },
-    {
-      ts: Date.now() - 5400000,
-      image_url: "https://example.com/test2.jpg",
-      links: ["https://facebook.com/test2"],
-    },
-  ];
-  localStorage.setItem(KEY_REVERSE_HISTORY, JSON.stringify(testData));
-  console.log("Created test reverse data:", testData);
-  if (typeof initializeDashboardStats === "function") {
-    initializeDashboardStats();
-  }
-};
-
-window.clearAllStatsData = function () {
-  localStorage.removeItem(KEY_SEARCH_HISTORY);
-  localStorage.removeItem(KEY_REVERSE_HISTORY);
-  localStorage.removeItem(KEY_DEMASK_HISTORY);
-  console.log("Cleared all stats data");
-  if (typeof initializeDashboardStats === "function") {
-    initializeDashboardStats();
-  }
-};
-
-window.refreshDashboardStats = function () {
-  console.log("Manually refreshing dashboard stats...");
-  if (typeof initializeDashboardStats === "function") {
-    initializeDashboardStats();
-  } else {
-    console.error("initializeDashboardStats function not available");
-  }
-};
 
 // ----------------------
 // Search
