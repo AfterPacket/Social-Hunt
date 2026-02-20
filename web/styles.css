@@ -1885,3 +1885,61 @@ body.sidebar-open .sidebar {
         border: 1px solid #ddd;
     }
 }
+
+/* BreachVIP Proxy Settings */
+#breachvipProxySettings {
+    background: var(--panel2);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+#breachvipProxySettings .row {
+    margin-bottom: 12px;
+}
+
+#breachvipProxySettings .row:last-child {
+    margin-bottom: 0;
+}
+
+#breachvipProxySettings input[type="text"],
+#breachvipProxySettings input[type="password"],
+#breachvipProxySettings select {
+    background: var(--panel3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 14px;
+}
+
+#breachvipProxySettings input[type="text"]:focus,
+#breachvipProxySettings input[type="password"]:focus,
+#breachvipProxySettings select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
+    outline: none;
+}
+
+#breachvipProxyEnabled {
+    accent-color: var(--accent);
+    margin-right: 8px;
+}
+
+#breachvipProxyTest {
+    background: var(--panel3);
+    border: 1px solid var(--border);
+}
+
+#breachvipProxyTest:hover {
+    background: var(--panel2);
+    border-color: var(--accent);
+}
+
+#breachvipProxySave {
+    background: var(--good);
+    color: var(--bg);
+    font-weight: 500;
+}
