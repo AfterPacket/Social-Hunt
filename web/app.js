@@ -1234,9 +1234,9 @@ function renderBreachView(job, containerId) {
     if (raw.length > 0) {
       if (prof.demo_mode) {
         html += `
-          <div class="card" style="border-left: 4px solid var(--warn); background: rgba(255, 193, 7, 0.05);">
-            <div style="color: var(--warn); font-weight: 800; margin-bottom: 5px;">DEMO MODE ACTIVE</div>
-            <div class="muted" style="font-size: 0.9rem;">
+          <div class="card demo-warning">
+            <div class="demo-warning-title">DEMO MODE ACTIVE</div>
+            <div class="demo-warning-text">
               Personal information has been censored and results are limited to 5 records for demonstration purposes.
             </div>
           </div>
