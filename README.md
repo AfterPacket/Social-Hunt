@@ -19,6 +19,7 @@ Social-Hunt is an OSINT framework for cross-platform username discovery, breach 
 Known-good environments for self-hosting:
 
 - Ubuntu 22.04 LTS (Jammy) on VPS providers (tested)
+- Raspberry Pi 5 — Raspberry Pi OS (Bookworm, 64-bit) (tested — see [Raspberry Pi 5 Setup](#raspberry-pi-5-setup))
 
 Notes:
 - Other Debian/Ubuntu-based VPS images should work, but may require minor adjustments.
@@ -79,6 +80,124 @@ python run.py
 Open `http://localhost:8000`.
 
 For a full setup guide (virtualenv, tokens, Docker details), see `README_RUN.md`.
+
+### Raspberry Pi 5 Setup
+
+Social-Hunt runs on Raspberry Pi 5 (Raspberry Pi OS Bookworm, 64-bit). DeepMosaic is not recommended on Pi due to storage and compute constraints — all other features work.
+
+The default system Python on Bookworm is 3.11+ which is fine, but `pip install -r requirements.txt` will fail due to Pillow and dlib compatibility issues with newer setuptools. The fix is to use **pyenv** to pin Python 3.11.9 and rebuild a clean venv.
+
+#### 1. Install build dependencies
+
+```bash
+sudo apt update
+sudo apt install -y build-essential curl git \
+  libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
+  libsqlite3-dev libffi-dev libncursesw5-dev xz-utils \
+  tk-dev libxml2-dev libxmlsec1-dev liblzma-dev
+```
+
+#### 2. Install pyenv
+
+```bash
+curl https://pyenv.run | bash
+```
+
+Add to `~/.bashrc`:
+
+```bash
+export PATH="$HOME/.pyenv/bin:$PATH"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+```
+
+Reload the shell:
+
+```bash
+exec "$SHELL"
+pyenv --version
+```
+
+#### 3. Install Python 3.11.9
+
+```bash
+pyenv install 3.11.9
+cd ~/Social-Hunt
+pyenv local 3.11.9
+python --version   # must show 3.11.9
+```
+
+#### 4. Create venv and install dependencies
+
+```bash
+rm -rf venv
+python -m venv venv
+source venv/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
+```
+
+#### 5. Run
+
+```bash
+python run.py
+```
+
+Open `http://localhost:8000` on the Pi, or `http://<pi-ip>:8000` from another device on the same network.
+
+#### 6. Run as a systemd service (optional)
+
+To have Social-Hunt start automatically on boot:
+
+```bash
+sudo nano /etc/systemd/system/socialhunt.service
+```
+
+Paste (replace `kittysec` with your username):
+
+```ini
+[Unit]
+Description=Social Hunt OSINT Framework
+After=network.target
+
+[Service]
+Type=simple
+User=kittysec
+WorkingDirectory=/home/kittysec/Social-Hunt
+ExecStart=/home/kittysec/Social-Hunt/venv/bin/python run.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable socialhunt
+sudo systemctl start socialhunt
+sudo systemctl status socialhunt
+```
+
+Useful commands:
+
+```bash
+sudo systemctl restart socialhunt   # after updates
+sudo journalctl -u socialhunt -f    # live logs
+```
+
+#### Known Pi limitations
+
+| Feature | Status |
+| :-- | :-- |
+| Username search | Works |
+| Breach search | Works |
+| Reverse image | Works |
+| Google Dorks | Works |
+| Secure Notes | Works |
+| IOPaint inpainting | Works (CPU, slow) |
+| Face matching | Works if dlib compiles |
+| DeepMosaic | Not recommended (storage/compute) |
 
 ## CLI Usage
 
