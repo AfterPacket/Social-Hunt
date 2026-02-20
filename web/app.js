@@ -3289,7 +3289,7 @@ function downloadJob(job, format = "json") {
       const bvip = results.find((r) => r.provider === "breachvip");
       const raw = bvip?.profile?.raw_results || [];
       if (raw.length > 0) {
-        csvContent += "--- Detailed Records ---\n";
+        csvContent += "--- BreachVIP Records ---\n";
         const allKeys = new Set();
         raw.forEach((row) => Object.keys(row).forEach((k) => allKeys.add(k)));
         const keys = Array.from(allKeys);
@@ -3301,6 +3301,24 @@ function downloadJob(job, format = "json") {
               .join(",") + "\n";
         });
       }
+
+      // 3. Snusbase Detailed
+      const snus = results.find((r) => r.provider === "snusbase");
+      const snusRaw = snus?.profile?.raw_results || [];
+      if (snusRaw.length > 0) {
+        csvContent += "--- Snusbase Records ---\n";
+        const snusKeys = new Set();
+        snusRaw.forEach((row) => Object.keys(row).forEach((k) => snusKeys.add(k)));
+        const snusCols = Array.from(snusKeys);
+        csvContent += snusCols.join(",") + "\n";
+        snusRaw.forEach((row) => {
+          csvContent +=
+            snusCols
+              .map((k) => `"${String(row[k] ?? "").replace(/"/g, '""')}"`)
+              .join(",") + "\n";
+        });
+      }
+
       if (!csvContent) csvContent = "No breach data found.";
     } else {
       const rows = job.results || [];
