@@ -948,17 +948,111 @@ async def api_plugin_delete(
 
 
 @app.post("/sh-api/demask")
+def _generate_face_coverage_mask(image_bytes: bytes) -> bytes:
+    """
+    Use OpenCV face detection to locate the face(s) in the image and return
+    a PNG mask where the face-covering region (lower ~65 % of each face bbox,
+    widened slightly) is WHITE (inpaint here) and everything else is BLACK
+    (leave untouched).
+
+    If no face is detected we fall back to masking a generous central ellipse
+    so the inpainting model still has something useful to work with.
+    """
+    import cv2
+    import numpy as np
+    from PIL import Image as PILImage
+    from PIL import ImageDraw, ImageFilter
+
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    img_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    if img_cv is None:
+        # Cannot decode — return a solid-centre ellipse mask as emergency fallback
+        pil_img = PILImage.open(BytesIO(image_bytes)).convert("RGB")
+        w, h = pil_img.size
+        mask = PILImage.new("L", (w, h), 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse([w // 4, h // 4, 3 * w // 4, 3 * h // 4], fill=255)
+        buf = BytesIO()
+        mask.save(buf, format="PNG")
+        return buf.getvalue()
+
+    h_img, w_img = img_cv.shape[:2]
+    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+    gray = cv2.equalizeHist(gray)
+
+    face_cascade = cv2.CascadeClassifier(
+        cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    )
+    # Also try profile cascade for side-on faces
+    profile_cascade = cv2.CascadeClassifier(
+        cv2.data.haarcascades + "haarcascade_profileface.xml"
+    )
+
+    faces = face_cascade.detectMultiScale(
+        gray, scaleFactor=1.05, minNeighbors=4, minSize=(60, 60)
+    )
+    if len(faces) == 0:
+        faces = profile_cascade.detectMultiScale(
+            gray, scaleFactor=1.05, minNeighbors=4, minSize=(60, 60)
+        )
+
+    mask = PILImage.new("L", (w_img, h_img), 0)
+    draw = ImageDraw.Draw(mask)
+
+    if len(faces) > 0:
+        for fx, fy, fw, fh in faces:
+            # Mask from ~35 % down (just below the eyes) to just below the chin
+            # with a small horizontal padding so we catch the jaw edges
+            padding_x = int(fw * 0.08)
+            top = fy + int(fh * 0.35)
+            bottom = fy + fh + int(fh * 0.08)
+            left = max(0, fx - padding_x)
+            right = min(w_img, fx + fw + padding_x)
+            draw.rectangle([left, top, right, bottom], fill=255)
+    else:
+        # No face found — mask a generous centre region
+        print("[Demask] No face detected; using centre-region fallback mask.")
+        cx, cy = w_img // 2, h_img // 2
+        draw.ellipse(
+            [cx - w_img // 4, cy - h_img // 6, cx + w_img // 4, cy + h_img // 3],
+            fill=255,
+        )
+
+    # Feather edges slightly so the inpainted region blends naturally
+    mask = mask.filter(ImageFilter.GaussianBlur(radius=6))
+    # Re-threshold to keep it binary-ish after blur
+    mask = mask.point(lambda p: 255 if p > 30 else 0)
+
+    buf = BytesIO()
+    mask.save(buf, format="PNG")
+    return buf.getvalue()
+
+
 async def api_demask(
     file: UploadFile = File(...),
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
     """
-    AI demasking using Replicate library for automatic version management.
-    Performs mask removal followed by face restoration for forensic clarity.
+    AI demasking pipeline (Replicate):
+
+    Step 1 — SD Inpainting (stability-ai/stable-diffusion-inpainting)
+        An OpenCV face detector auto-generates a tight mask over the
+        face-covering region.  SD inpainting ONLY modifies that region,
+        so hair, forehead, skin tone, eyebrows and all surrounding identity
+        cues are preserved — this is what prevents gender swaps and
+        full-image hallucinations.
+
+    Step 2 — CodeFormer face restoration (fidelity 0.5)
+        Sharpens the inpainted face region.  Fidelity is kept at 0.5 so
+        CodeFormer enhances rather than replaces the generated face.
+
+    Fallback — If SD inpainting is unavailable, instruct-pix2pix is tried
+        with tighter guidance values before giving up.
     """
     require_admin(x_plugin_token)
 
-    # 1. Get Replicate API Token
+    # ── 1. Replicate token ────────────────────────────────────────────────────
     settings = settings_store.load()
     replicate_token = (os.getenv("REPLICATE_API_TOKEN") or "").strip() or settings.get(
         "replicate_api_token"
@@ -967,6 +1061,7 @@ async def api_demask(
         replicate_token = replicate_token.get("value")
 
     if not replicate_token:
+        # Try local face-restoration service as last resort
         try:
             content = await file.read()
             restored_bytes = await restore_face(content, strength=0.7)
@@ -975,158 +1070,171 @@ async def api_demask(
                     BytesIO(restored_bytes), media_type="image/png"
                 )
         except Exception as e:
-            print(f"[DEBUG] Local demask fallback failed: {e}")
-
+            print(f"[Demask] Local fallback failed: {e}")
         raise HTTPException(
             status_code=400,
-            detail="AI service unavailable. Configure REPLICATE_API_TOKEN or SOCIAL_HUNT_FACE_AI_URL.",
+            detail="AI service unavailable. Configure REPLICATE_API_TOKEN in Settings.",
         )
 
     try:
-        # 2. Prepare the image
+        # ── 2. Read & encode image ────────────────────────────────────────────
         content = await file.read()
-        print(f"[DEBUG] Demasking: processing {file.filename}")
+        print(f"[Demask] Processing: {file.filename}  ({len(content)} bytes)")
 
-        # Prefer direct Base64 encoding for better reliability with Replicate model containers
-        b64_img = (
-            f"data:{file.content_type};base64,{base64.b64encode(content).decode()}"
-        )
-
-        # 3. Step 1: Remove the mask using Pix2Pix
-        print("[DEBUG] Demasking: step 1 (instruct-pix2pix)...")
+        mime = file.content_type or "image/jpeg"
+        b64_img = f"data:{mime};base64,{base64.b64encode(content).decode()}"
 
         rep_client = replicate.Client(api_token=replicate_token)
 
-        # Programmatically fetch latest versions to avoid 404 errors
+        # ── 3. Auto-generate face coverage mask ───────────────────────────────
+        print("[Demask] Generating face coverage mask…")
+        mask_bytes = await asyncio.to_thread(_generate_face_coverage_mask, content)
+        b64_mask = f"data:image/png;base64,{base64.b64encode(mask_bytes).decode()}"
+        print("[Demask] Mask generated.")
+
+        # ── 4. Fetch model versions ───────────────────────────────────────────
+        inpaint_model_id = "stability-ai/stable-diffusion-inpainting"
+        codeformer_model_id = "sczhou/codeformer"
+
         try:
-            model_pix2pix = await asyncio.to_thread(
-                rep_client.models.get, "timothybrooks/instruct-pix2pix"
+            m_inpaint = await asyncio.to_thread(rep_client.models.get, inpaint_model_id)
+            m_codeformer = await asyncio.to_thread(
+                rep_client.models.get, codeformer_model_id
             )
-            model_codeformer = await asyncio.to_thread(
-                rep_client.models.get, "sczhou/codeformer"
-            )
-            v_pix2pix = model_pix2pix.latest_version.id
-            v_codeformer = model_codeformer.latest_version.id
+            v_inpaint = m_inpaint.latest_version.id
+            v_codeformer = m_codeformer.latest_version.id
         except Exception as me:
-            print(f"[ERROR] Failed to fetch Replicate model metadata: {me}")
-            # Use safe defaults if metadata fetch fails
-            v_pix2pix = (
-                "30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f"
+            print(
+                f"[Demask] Could not fetch model metadata: {me} — using pinned versions."
+            )
+            v_inpaint = (
+                "a9758cbfbd5f3c2094457d996681af52552901775aa2d6dd0b17fd15df959bef"
             )
             v_codeformer = (
                 "7de2ea4a352033cfa2f21683c7a9511da922ec5ad9f9e61298d0b3dd16742617"
             )
 
+        # ── 5. Step 1: SD Inpainting — only the masked region changes ─────────
+        print("[Demask] Step 1 — SD inpainting…")
+        inpainted_url = ""
         try:
-            # Reverting to Pix2Pix with optimized forensic parameters to fix identity loss and distortion
             output_1 = await asyncio.to_thread(
                 rep_client.run,
-                f"timothybrooks/instruct-pix2pix:{v_pix2pix}",
+                f"{inpaint_model_id}:{v_inpaint}",
                 input={
                     "image": b64_img,
-                    "prompt": "remove only the face covering (mask, balaclava, ski mask, sunglasses); keep the same people, clothing, pose, background, and number of people unchanged; preserve identity; realistic face",
-                    "negative_prompt": "new person, different identity, change gender, change ethnicity, extra faces, extra people, cloned face, multiple heads, distorted, blurry, cartoon, mask remains, makeup, jungle, trees, nature, psychedelic, abstract, colorful, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, fused fingers, too many fingers, long neck",
-                    "num_inference_steps": 25,
-                    "image_guidance_scale": 2.4,  # Preserve structure to reduce hallucinations
-                    "guidance_scale": 3.0,  # Reduce aggressive edits
+                    "mask": b64_mask,
+                    # Prompt: describe the TARGET state of the masked region only
+                    "prompt": (
+                        "realistic human face, natural skin, clear facial features, "
+                        "photo-realistic, no face covering, no mask, no balaclava, "
+                        "consistent skin tone, same ethnicity, same gender"
+                    ),
+                    "negative_prompt": (
+                        "mask, balaclava, ski mask, face covering, sunglasses, "
+                        "different gender, different ethnicity, distorted, blurry, "
+                        "cartoon, painting, extra faces, mutation, deformed, "
+                        "bad anatomy, watermark, text"
+                    ),
+                    "num_outputs": 1,
+                    "num_inference_steps": 50,
+                    "guidance_scale": 7.5,
+                    # scheduler: DPMSolverMultistep gives crisp faces
+                    "scheduler": "DPMSolverMultistep",
                 },
             )
-            # Ensure output is converted from FileOutput object to string URL
             if isinstance(output_1, list) and len(output_1) > 0:
                 inpainted_url = str(output_1[0])
             else:
-                inpainted_url = str(output_1)
+                inpainted_url = str(output_1) if output_1 else ""
         except Exception as e:
-            print(f"[ERROR] Demasking Step 1 failed: {e}")
+            print(f"[Demask] SD inpainting failed: {e}")
 
-            # Fallback to Catbox if Base64 failed (sometimes happens with large payloads or 404s)
-            print("[DEBUG] Attempting Catbox fallback for Step 1...")
-            inpainted_url = ""
+        # ── 5b. Fallback: pix2pix with corrected guidance values ─────────────
+        if not inpainted_url:
+            print("[Demask] Falling back to instruct-pix2pix…")
             try:
-                async with httpx.AsyncClient() as hc:
-                    files = {
-                        "fileToUpload": (file.filename, content, file.content_type)
-                    }
-                    data = {"reqtype": "fileupload", "userhash": ""}
-                    cres = await hc.post(
-                        "https://catbox.moe/user/api.php", data=data, files=files
-                    )
-                    if cres.status_code == 200:
-                        file_url = cres.text.strip()
-                        output_1 = await asyncio.to_thread(
-                            rep_client.run,
-                            f"timothybrooks/instruct-pix2pix:{v_pix2pix}",
-                            input={
-                                "image": file_url,
-                                "prompt": "remove only the face covering (mask, balaclava, ski mask, sunglasses); keep the same people, clothing, pose, background, and number of people unchanged; preserve identity; realistic face",
-                                "negative_prompt": "new person, different identity, change gender, change ethnicity, extra faces, extra people, cloned face, multiple heads, distorted, blurry, cartoon, mask remains, makeup, jungle, trees, nature, psychedelic, abstract, colorful, mutation, deformed, ugly, bad anatomy, bad proportions, extra limbs, fused fingers, too many fingers, long neck",
-                                "num_inference_steps": 25,
-                                "image_guidance_scale": 2.4,
-                                "guidance_scale": 3.0,
-                            },
-                        )
-                        # Ensure output is converted from FileOutput object to string URL
-                        if isinstance(output_1, list) and len(output_1) > 0:
-                            inpainted_url = str(output_1[0])
-                        else:
-                            inpainted_url = str(output_1)
-            except Exception as fe:
-                print(f"[ERROR] Fallback failed: {fe}")
-
-            if not inpainted_url:
-                raise HTTPException(
-                    status_code=500, detail=f"AI Step 1 failed: {str(e)}"
+                m_p2p = await asyncio.to_thread(
+                    rep_client.models.get, "timothybrooks/instruct-pix2pix"
+                )
+                v_p2p = m_p2p.latest_version.id
+            except Exception:
+                v_p2p = (
+                    "30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f"
                 )
 
+            try:
+                output_fb = await asyncio.to_thread(
+                    rep_client.run,
+                    f"timothybrooks/instruct-pix2pix:{v_p2p}",
+                    input={
+                        "image": b64_img,
+                        "prompt": (
+                            "reveal the face beneath the mask or covering; "
+                            "keep gender, ethnicity, hair, clothing and background "
+                            "completely unchanged; realistic photo"
+                        ),
+                        "negative_prompt": (
+                            "change gender, change ethnicity, new person, hallucinate, "
+                            "different identity, extra faces, distorted, cartoon, blurry, "
+                            "mask remains, sunglasses, face covering"
+                        ),
+                        "num_inference_steps": 50,
+                        # Higher image_guidance preserves structure; higher guidance
+                        # makes the model actually follow the instruction
+                        "image_guidance_scale": 2.0,
+                        "guidance_scale": 8.0,
+                    },
+                )
+                if isinstance(output_fb, list) and len(output_fb) > 0:
+                    inpainted_url = str(output_fb[0])
+                else:
+                    inpainted_url = str(output_fb) if output_fb else ""
+            except Exception as e2:
+                print(f"[Demask] pix2pix fallback also failed: {e2}")
+
         if not inpainted_url:
-            raise HTTPException(status_code=504, detail="AI Step 1 returned no output.")
+            raise HTTPException(
+                status_code=500, detail="Step 1 (inpainting) produced no output."
+            )
 
-        print(f"[DEBUG] Demasking: step 1 complete, url: {inpainted_url}")
+        print(f"[Demask] Step 1 complete → {inpainted_url}")
 
-        # 4. Step 2: Face Restoration (CodeFormer)
-        print("[DEBUG] Demasking: step 2 (codeformer)...")
+        # ── 6. Step 2: CodeFormer — sharpen the inpainted face ───────────────
+        # fidelity=0.5 means CodeFormer ENHANCES the existing face rather than
+        # replacing it wholesale (fidelity=1.0 was causing gender swaps).
+        print("[Demask] Step 2 — CodeFormer…")
         try:
             output_2 = await asyncio.to_thread(
                 rep_client.run,
-                f"sczhou/codeformer:{v_codeformer}",
+                f"{codeformer_model_id}:{v_codeformer}",
                 input={
                     "image": inpainted_url,
                     "upscale": 1,
                     "face_upsample": True,
-                    "codeformer_fidelity": 1.0,  # Maximized fidelity to further reduce hallucinations
+                    "codeformer_fidelity": 0.5,  # 0.5 = enhance, not replace
                 },
             )
-            # Ensure output is converted from FileOutput object to string URL
             if isinstance(output_2, list) and len(output_2) > 0:
-                final_output_url = str(output_2[0])
+                final_url = str(output_2[0])
             else:
-                final_output_url = str(output_2) if output_2 else None
+                final_url = str(output_2) if output_2 else None
 
-            if final_output_url:
-                async with httpx.AsyncClient() as hc:
-                    img_res = await hc.get(final_output_url)
-                    return StreamingResponse(
-                        BytesIO(img_res.content), media_type="image/png"
-                    )
-
-            # Fallback to step 1 result
+            fetch_url = final_url if final_url else inpainted_url
             async with httpx.AsyncClient() as hc:
-                img_res = await hc.get(inpainted_url)
-                return StreamingResponse(
-                    BytesIO(img_res.content), media_type="image/png"
-                )
+                img_res = await hc.get(fetch_url)
+            return StreamingResponse(BytesIO(img_res.content), media_type="image/png")
+
         except Exception as e:
-            print(f"[WARN] Demasking Step 2 failed: {e}. Returning Step 1 result.")
+            print(f"[Demask] CodeFormer failed ({e}); returning Step 1 result.")
             async with httpx.AsyncClient() as hc:
                 img_res = await hc.get(inpainted_url)
-                return StreamingResponse(
-                    BytesIO(img_res.content), media_type="image/png"
-                )
+            return StreamingResponse(BytesIO(img_res.content), media_type="image/png")
 
     except HTTPException:
         raise
     except Exception as e:
-        print(f"[ERROR] Demasking failed: {e}")
+        print(f"[Demask] Unhandled error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
