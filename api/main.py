@@ -1118,10 +1118,12 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list]:
         fh = bottom - top
         fw = right - left
 
-        # Cover from ~30 % below the top of the face box (eye-line) down to
-        # just below the chin.  Widen by 10 % on each side to catch jaw edges.
+        # Cover from ~50 % below the top of the face box (nose-bridge line) down
+        # to just below the chin.  Starting at 50 % avoids masking the eyes and
+        # upper nose, which are the strongest identity anchors — leaving them
+        # visible constrains the model and reduces hallucinated features.
         pad_x = int(fw * 0.10)
-        mask_top = top + int(fh * 0.30)
+        mask_top = top + int(fh * 0.50)
         mask_bottom = min(h_img, bottom + int(fh * 0.06))
         mask_left = max(0, left - pad_x)
         mask_right = min(w_img, right + pad_x)
@@ -1129,12 +1131,89 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list]:
         draw.rectangle([mask_left, mask_top, mask_right, mask_bottom], fill=255)
 
     # Feather edges so the inpainted region blends naturally at boundaries
-    mask = mask.filter(ImageFilter.GaussianBlur(radius=8))
+    mask = mask.filter(ImageFilter.GaussianBlur(radius=6))
     mask = mask.point(lambda p: 255 if p > 25 else 0)
 
     buf = BytesIO()
     mask.save(buf, format="PNG")
     return buf.getvalue(), face_boxes
+
+
+def _crop_for_inpainting(
+    image_bytes: bytes,
+    mask_bytes: bytes,
+    face_boxes: list,
+) -> tuple:
+    """
+    Crop the face region (+ generous padding) from the full image and mask,
+    resize both to 512×512 for SD inpainting, and return everything needed
+    to composite the result back onto the original later.
+
+    Returns:
+        crop_img_b64  – base64 data-URI of the 512×512 crop
+        crop_mask_b64 – base64 data-URI of the 512×512 mask crop
+        crop_region   – (left, top, right, bottom) in original pixel coords
+        orig_size     – (width, height) of the original image
+        crop_size     – (width, height) of the un-resized crop
+    """
+    from PIL import Image as PILImage
+
+    original = PILImage.open(BytesIO(image_bytes)).convert("RGB")
+    mask_pil = PILImage.open(BytesIO(mask_bytes)).convert("L")
+    orig_w, orig_h = original.size
+
+    if not face_boxes:
+        # No face box — send full image, caller composites normally
+        b64_img = f"data:image/png;base64,{base64.b64encode(image_bytes).decode()}"
+        b64_msk = f"data:image/png;base64,{base64.b64encode(mask_bytes).decode()}"
+        return (
+            b64_img,
+            b64_msk,
+            (0, 0, orig_w, orig_h),
+            (orig_w, orig_h),
+            (orig_w, orig_h),
+        )
+
+    # Build a bounding box that encompasses all detected faces + 60 % padding
+    tops = [b[0] for b in face_boxes]
+    rights = [b[1] for b in face_boxes]
+    bottoms = [b[2] for b in face_boxes]
+    lefts = [b[3] for b in face_boxes]
+
+    fh = min(bottoms) - max(tops)
+    fw = max(rights) - min(lefts)
+    pad = int(max(fh, fw) * 0.60)
+
+    cl = max(0, min(lefts) - pad)
+    ct = max(0, min(tops) - pad)
+    cr = min(orig_w, max(rights) + pad)
+    cb = min(orig_h, max(bottoms) + pad)
+
+    # Enforce minimum 256 px on each axis
+    if cr - cl < 256:
+        extra = (256 - (cr - cl)) // 2
+        cl = max(0, cl - extra)
+        cr = min(orig_w, cr + extra)
+    if cb - ct < 256:
+        extra = (256 - (cb - ct)) // 2
+        ct = max(0, ct - extra)
+        cb = min(orig_h, cb + extra)
+
+    crop_region = (cl, ct, cr, cb)
+    crop_w, crop_h = cr - cl, cb - ct
+
+    img_crop = original.crop(crop_region).resize((512, 512), PILImage.LANCZOS)
+    mask_crop = mask_pil.crop(crop_region).resize((512, 512), PILImage.NEAREST)
+
+    buf_i = BytesIO()
+    img_crop.save(buf_i, format="PNG")
+    buf_m = BytesIO()
+    mask_crop.save(buf_m, format="PNG")
+
+    b64_img = f"data:image/png;base64,{base64.b64encode(buf_i.getvalue()).decode()}"
+    b64_msk = f"data:image/png;base64,{base64.b64encode(buf_m.getvalue()).decode()}"
+
+    return b64_img, b64_msk, crop_region, (orig_w, orig_h), (crop_w, crop_h)
 
 
 @app.post("/sh-api/demask")
@@ -1203,14 +1282,28 @@ async def api_demask(
         mask_bytes, face_boxes = await asyncio.to_thread(
             _generate_face_coverage_mask, content
         )
-        b64_mask = f"data:image/png;base64,{base64.b64encode(mask_bytes).decode()}"
         print("[Demask] Mask generated.")
 
-        # ── 4. Sample visible skin tone to anchor the prompt ─────────────────
+        # ── 4. Sample visible skin tone to anchor the prompt ──────────────────
         skin_tone_hint = await asyncio.to_thread(_sample_skin_tone, content, face_boxes)
         print(f"[Demask] Skin tone sampled: {skin_tone_hint}")
 
-        # ── 5. Fetch inpainting model version ─────────────────────────────────
+        # ── 5. Crop face region for focused, low-upscale inpainting ──────────
+        # Sending just the face crop to SD (resized to 512×512) and pasting the
+        # result back means we only upscale by ~1.3× instead of 2–3×, which
+        # eliminates most of the plastic/smooth render look.
+        print("[Demask] Preparing face crop for inpainting…")
+        (
+            crop_b64_img,
+            crop_b64_mask,
+            crop_region,
+            orig_size,
+            crop_size,
+        ) = await asyncio.to_thread(
+            _crop_for_inpainting, content, mask_bytes, face_boxes
+        )
+
+        # ── 6. Fetch inpainting model version ─────────────────────────────────
         inpaint_model_id = "stability-ai/stable-diffusion-inpainting"
         try:
             m_inpaint = await asyncio.to_thread(rep_client.models.get, inpaint_model_id)
@@ -1223,32 +1316,38 @@ async def api_demask(
                 "a9758cbfbd5f3c2094457d996681af52552901775aa2d6dd0b17fd15df959bef"
             )
 
-        # ── 6. SD Inpainting — only the masked region is modified ─────────────
-        print("[Demask] Running SD inpainting…")
+        # Shared negative prompt — blocks cartoon look AND hallucinated hair
+        NEGATIVE = (
+            "cartoon, 3d render, cgi, anime, illustration, painting, drawing, "
+            "plastic skin, smooth skin, airbrushed, overly smooth, "
+            "beard, stubble, facial hair, mustache, goatee, five o'clock shadow, "
+            "different gender, different ethnicity, new person, extra faces, "
+            "mask, balaclava, face covering, surgical mask, sunglasses, "
+            "distorted, blurry, deformed, bad anatomy, watermark, text, logo"
+        )
+
+        # ── 7. SD Inpainting on the face crop ─────────────────────────────────
+        print("[Demask] Running SD inpainting on face crop…")
         inpainted_url = ""
         try:
             output_1 = await asyncio.to_thread(
                 rep_client.run,
                 f"{inpaint_model_id}:{v_inpaint}",
                 input={
-                    "image": b64_img,
-                    "mask": b64_mask,
+                    "image": crop_b64_img,
+                    "mask": crop_b64_mask,
                     "prompt": (
                         f"photo-realistic human face, {skin_tone_hint}, "
-                        "natural skin texture, photographic, RAW photo, "
+                        "natural skin texture, photographic, RAW photo, DSLR, "
+                        "clean shaven, no facial hair, "
                         "same person, same gender, same ethnicity, "
-                        "no face covering, no mask, no balaclava"
+                        "no face covering, no mask"
                     ),
-                    "negative_prompt": (
-                        "cartoon, 3d render, anime, illustration, painting, drawing, "
-                        "cgi, plastic skin, smooth skin, different gender, "
-                        "different ethnicity, new person, extra faces, "
-                        "mask, balaclava, face covering, surgical mask, "
-                        "distorted, blurry, deformed, bad anatomy, watermark, text"
-                    ),
+                    "negative_prompt": NEGATIVE,
                     "num_outputs": 1,
-                    "num_inference_steps": 50,
-                    "guidance_scale": 7.5,
+                    "num_inference_steps": 60,
+                    # Lower guidance = less "prompt-y", more photographic
+                    "guidance_scale": 6.0,
                     "scheduler": "DPMSolverMultistep",
                 },
             )
@@ -1259,9 +1358,11 @@ async def api_demask(
         except Exception as e:
             print(f"[Demask] SD inpainting failed: {e}")
 
-        # ── 6b. Fallback: pix2pix with corrected guidance ─────────────────────
+        # ── 7b. Fallback: pix2pix on the full image ────────────────────────────
         if not inpainted_url:
-            print("[Demask] Falling back to instruct-pix2pix…")
+            print("[Demask] Falling back to instruct-pix2pix on full image…")
+            mime = file.content_type or "image/jpeg"
+            b64_full = f"data:{mime};base64,{base64.b64encode(content).decode()}"
             try:
                 m_p2p = await asyncio.to_thread(
                     rep_client.models.get, "timothybrooks/instruct-pix2pix"
@@ -1276,19 +1377,15 @@ async def api_demask(
                     rep_client.run,
                     f"timothybrooks/instruct-pix2pix:{v_p2p}",
                     input={
-                        "image": b64_img,
+                        "image": b64_full,
                         "prompt": (
                             f"reveal the face beneath the covering, {skin_tone_hint}, "
+                            "clean shaven, no facial hair, "
                             "keep gender, ethnicity, hair, clothing and background "
-                            "completely unchanged, realistic photo, photographic"
+                            "completely unchanged, realistic photo"
                         ),
-                        "negative_prompt": (
-                            "cartoon, 3d render, anime, illustration, cgi, "
-                            "change gender, change ethnicity, different person, "
-                            "extra faces, distorted, blurry, mask remains, "
-                            "face covering, surgical mask"
-                        ),
-                        "num_inference_steps": 50,
+                        "negative_prompt": NEGATIVE,
+                        "num_inference_steps": 60,
                         "image_guidance_scale": 2.0,
                         "guidance_scale": 8.0,
                     },
@@ -1307,11 +1404,12 @@ async def api_demask(
 
         print(f"[Demask] Inpainting complete → {inpainted_url}")
 
-        # ── 7. Composite inpainted region back onto the original ──────────────
-        # SD inpainting outputs at 512×512. We composite ONLY the masked pixels
-        # back onto the original full-resolution image so there is no crop/zoom.
-        # CodeFormer is intentionally skipped — it turns faces into 3-D renders.
-        print("[Demask] Compositing result onto original image…")
+        # ── 8. Composite crop result back onto the original ───────────────────
+        # The SD result is 512×512 of the face crop.  We resize it back to the
+        # crop's original pixel dimensions (e.g. 320×400) — a much smaller
+        # upscale than going straight to full-image size — then paste it back
+        # using the mask so only the covered region changes.
+        print("[Demask] Compositing crop result onto original image…")
         try:
             from PIL import Image as PILImage
 
@@ -1322,23 +1420,30 @@ async def api_demask(
             original_pil = PILImage.open(BytesIO(content)).convert("RGB")
             orig_w, orig_h = original_pil.size
 
-            # Scale inpainted result back up to original dimensions
-            inpainted_resized = inpainted_pil.resize((orig_w, orig_h), PILImage.LANCZOS)
+            cl, ct, cr, cb = crop_region
+            crop_w, crop_h = crop_size
 
-            # Use the same mask (resized) to composite only the face region
-            mask_pil = PILImage.open(BytesIO(mask_bytes)).convert("L")
-            mask_pil = mask_pil.resize((orig_w, orig_h), PILImage.LANCZOS)
+            # Resize the 512×512 SD result back to the crop's native dimensions
+            inpainted_crop = inpainted_pil.resize((crop_w, crop_h), PILImage.LANCZOS)
 
-            # composite(A, B, mask): uses A where mask=255, B where mask=0
-            composited = PILImage.composite(inpainted_resized, original_pil, mask_pil)
+            # Get the matching crop of the full-res mask for compositing
+            mask_pil_full = PILImage.open(BytesIO(mask_bytes)).convert("L")
+            mask_crop_pil = mask_pil_full.crop((cl, ct, cr, cb))
+
+            # composite(A, B, mask): A where mask=white, B where mask=black
+            orig_crop = original_pil.crop((cl, ct, cr, cb))
+            merged_crop = PILImage.composite(inpainted_crop, orig_crop, mask_crop_pil)
+
+            # Paste the merged crop back onto a full-resolution copy of original
+            result = original_pil.copy()
+            result.paste(merged_crop, (cl, ct))
 
             out_buf = BytesIO()
-            composited.save(out_buf, format="PNG")
+            result.save(out_buf, format="PNG")
             out_buf.seek(0)
             return StreamingResponse(out_buf, media_type="image/png")
 
         except Exception as comp_err:
-            # Composite failed — return raw inpaint result rather than nothing
             print(f"[Demask] Composite failed ({comp_err}); returning raw inpaint.")
             async with httpx.AsyncClient() as hc:
                 img_res = await hc.get(inpainted_url)
