@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 try:
     import face_recognition
     _FACE_RECOGNITION_AVAILABLE = True
-except Exception:
+except BaseException:
     face_recognition = None  # type: ignore[assignment]
     _FACE_RECOGNITION_AVAILABLE = False
 import httpx
@@ -16,7 +16,7 @@ try:
     from PIL import Image
     from PIL import UnidentifiedImageError as PILUnidentifiedImageError
     _IMAGING_AVAILABLE = True
-except Exception:
+except BaseException:
     imagehash = None  # type: ignore[assignment]
     Image = None  # type: ignore[assignment]
     PILUnidentifiedImageError = Exception  # type: ignore[assignment]

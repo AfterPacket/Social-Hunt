@@ -19,7 +19,7 @@ def load_plugin_addons() -> Dict[str, BaseAddon]:
     for m in pkgutil.iter_modules(pkg.__path__, pkg.__name__ + "."):
         try:
             mod = importlib.import_module(m.name)
-        except Exception as e:
+        except BaseException as e:
             print(f"[WARN] Skipping addon module {m.name!r}: {e}")
             continue
 
