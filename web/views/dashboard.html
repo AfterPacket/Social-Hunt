@@ -139,7 +139,7 @@
     <!-- System Status Card -->
     <div class="card quarter status-card">
       <div class="card-header">
-        <h3></h3>
+        <h3>
           <span class="card-icon">⚙️</span>
           System Status
         </h3>
@@ -150,7 +150,7 @@
           <span class="status-label">Server</span>
         </div>
         <div class="status-item">
-          <div class="status-indicator" id="tokenStatus"></div>
+          <div class="status-indicator" id="dashTokenStatus"></div>
           <span class="status-label">Authentication</span>
         </div>
         <div class="status-item">
@@ -870,7 +870,7 @@ function initializeSystemStatus() {
   document.getElementById("serverStatus").className = "status-indicator status-good";
 
   // Token status
-  const tokenIndicator = document.getElementById("tokenStatus");
+  const tokenIndicator = document.getElementById("dashTokenStatus");
   if (getToken()) {
     tokenIndicator.className = "status-indicator status-good";
   } else {
