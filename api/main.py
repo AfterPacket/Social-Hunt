@@ -1235,7 +1235,7 @@ def _detect_facial_hair(
         return "unknown"
 
 
-def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list]:
+def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list, bool]:
     """
     Generate a PNG inpainting mask that covers the face-covering region
     (gaiter, balaclava, surgical mask, ski mask, etc.) in WHITE.
@@ -1323,11 +1323,13 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list]:
     # When someone wears a full gaiter + cap, zero facial features are exposed
     # so any detector will fail.  We place a generous mask in the upper-centre
     # of the frame — statistically where a head appears in portrait/bust shots.
+    used_heuristic = False
     if not face_boxes:
         print(
             "[Demask] No face detected (subject likely fully covered). "
             "Applying head-region heuristic mask."
         )
+        used_heuristic = True
         # Upper-centre band: horizontally centred, spanning ~15 %–70 % of height
         pad_x = int(w_img * 0.20)
         top_y = int(h_img * 0.10)
@@ -1360,7 +1362,99 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list]:
 
     buf = BytesIO()
     mask.save(buf, format="PNG")
-    return buf.getvalue(), face_boxes
+    return buf.getvalue(), face_boxes, used_heuristic
+
+
+def _detect_gender_from_body(image_bytes: bytes) -> str:
+    """
+    Estimate gender from visible upper-body cues when the face is fully covered
+    and the eyebrow-based heuristic cannot be trusted.
+
+    Strategy: compare shoulder width (sampled at ~35–45 % image height) against
+    the waist/lower-torso width (sampled at ~65–75 % image height).  Male bodies
+    typically have shoulders wider than or equal to the hips; female bodies tend
+    to narrow more at the waist relative to the shoulders.
+
+    We also look at the average colour saturation in both strips — high-contrast
+    tactical/military gear (low saturation, dark tones) is a weak but useful cue.
+
+    Returns: "man", "woman", or "unknown"
+    """
+    from PIL import Image as PILImage
+
+    try:
+        pil = PILImage.open(BytesIO(image_bytes)).convert("RGB")
+        w_img, h_img = pil.size
+
+        # ── shoulder strip: 35–45 % of image height, centre 80 % of width ──
+        sh_top = int(h_img * 0.35)
+        sh_bot = int(h_img * 0.45)
+        sh_left = int(w_img * 0.10)
+        sh_right = int(w_img * 0.90)
+        if sh_bot <= sh_top or sh_right <= sh_left:
+            return "unknown"
+
+        shoulder_crop = pil.crop((sh_left, sh_top, sh_right, sh_bot))
+        sh_pixels = list(shoulder_crop.getdata())
+
+        # ── waist/hip strip: 65–75 % of image height, centre 80 % of width ──
+        wp_top = int(h_img * 0.65)
+        wp_bot = int(h_img * 0.75)
+        wp_left = int(w_img * 0.10)
+        wp_right = int(w_img * 0.90)
+
+        # Determine effective occupied width in each strip by finding the
+        # outermost non-background pixels (significantly darker than the
+        # image average brightness, which avoids false-positives from light bg).
+        def _effective_width(pixels, strip_w, strip_h, threshold_lum=200):
+            """Return fraction of strip width that contains non-background pixels."""
+            if not pixels or strip_w <= 0 or strip_h <= 0:
+                return 0.5
+            # Build column luminance averages
+            col_lums = []
+            for col in range(strip_w):
+                col_pix = [
+                    pixels[row * strip_w + col]
+                    for row in range(strip_h)
+                    if row * strip_w + col < len(pixels)
+                ]
+                if col_pix:
+                    avg_l = sum(
+                        p[0] * 0.299 + p[1] * 0.587 + p[2] * 0.114 for p in col_pix
+                    ) / len(col_pix)
+                    col_lums.append(avg_l)
+            # Count columns below the background threshold (non-background)
+            occupied = sum(1 for l in col_lums if l < threshold_lum)
+            return occupied / max(1, len(col_lums))
+
+        sh_w = sh_right - sh_left
+        sh_h = sh_bot - sh_top
+        sh_frac = _effective_width(sh_pixels, sh_w, sh_h)
+
+        wp_frac = 0.5  # default
+        if wp_bot > wp_top and wp_right > wp_left:
+            waist_crop = pil.crop((wp_left, wp_top, wp_right, wp_bot))
+            wp_pixels = list(waist_crop.getdata())
+            wp_frac = _effective_width(wp_pixels, wp_right - wp_left, wp_bot - wp_top)
+
+        ratio = sh_frac / max(wp_frac, 0.01)
+        print(
+            f"[Demask] Body gender: shoulder_frac={sh_frac:.3f}, "
+            f"waist_frac={wp_frac:.3f}, ratio={ratio:.3f}"
+        )
+
+        # Broader shoulders relative to waist → "man"
+        # Male ratio typically ≥ 1.05; female ratio typically ≤ 0.97
+        if ratio >= 1.05:
+            return "man"
+        elif ratio <= 0.95:
+            return "woman"
+        else:
+            return "unknown"
+
+    except Exception as e:
+        print(f"[Demask] Body gender detection failed ({e}); returning unknown.")
+        return "unknown"
 
 
 def _crop_for_inpainting(
@@ -1503,17 +1597,28 @@ async def api_demask(
 
         # ── 3. Auto-generate face coverage mask ───────────────────────────────
         print("[Demask] Generating face coverage mask…")
-        mask_bytes, face_boxes = await asyncio.to_thread(
+        mask_bytes, face_boxes, used_heuristic = await asyncio.to_thread(
             _generate_face_coverage_mask, content
         )
-        print("[Demask] Mask generated.")
+        print(f"[Demask] Mask generated. used_heuristic={used_heuristic}")
 
         # ── 4. Sample visible skin tone, detect gender and facial hair ────────
         skin_tone_hint = await asyncio.to_thread(_sample_skin_tone, content, face_boxes)
         print(f"[Demask] Skin tone sampled: {skin_tone_hint}")
 
-        gender_hint = await asyncio.to_thread(_detect_gender_hint, content, face_boxes)
-        print(f"[Demask] Gender hint: {gender_hint}")
+        if used_heuristic:
+            # The heuristic face-box spans a huge region (10–72 % of height) that
+            # does NOT correspond to real facial regions — the eyebrow-darkness
+            # approach produces garbage results (often falsely "woman") when the
+            # cap brim makes forehead + brow strip equally dark.  Fall back to
+            # body-shape analysis instead.
+            gender_hint = await asyncio.to_thread(_detect_gender_from_body, content)
+            print(f"[Demask] Gender hint (body-based, heuristic mode): {gender_hint}")
+        else:
+            gender_hint = await asyncio.to_thread(
+                _detect_gender_hint, content, face_boxes
+            )
+            print(f"[Demask] Gender hint (eyebrow-based): {gender_hint}")
 
         # ── 4b. Pre-fill gaiter region with skin colour ────────────────────────
         # This prevents SD from "replacing mask with mask" — the model sees
@@ -1615,26 +1720,49 @@ async def api_demask(
             else ""
         )
 
+        # When we genuinely cannot determine gender (body analysis was
+        # inconclusive AND the face was fully hidden), SD models are
+        # statistically biased toward generating female faces.  Adding
+        # soft anti-female terms here keeps the output gender-neutral
+        # rather than defaulting female, without forcing "man" either.
+        extra_gender_negative = ""
+        if gender_hint == "unknown" and used_heuristic:
+            extra_gender_negative = (
+                "feminine features, female face, woman's face, girl's face, "
+                "makeup, lipstick, mascara, eyeliner, "
+            )
+            print(
+                "[Demask] Gender unknown in heuristic mode — "
+                "adding anti-female-bias terms to negative prompt."
+            )
+
         NEGATIVE = NEGATIVE_BASE + (
             (" " + hair_negative if hair_negative else "")
             + (" " + gender_negative if gender_negative else "")
+            + (" " + extra_gender_negative if extra_gender_negative else "")
         )
 
         INPAINT_INPUT = {
             "image": crop_b64_img,
             "mask": crop_b64_mask,
             "prompt": (
+                f"candid press photo, photojournalism, RAW photo, DSLR, "
                 f"photo-realistic {gender_positive}human face, {skin_tone_hint}, "
                 f"{hair_positive} "
-                "natural skin texture, photographic, RAW photo, DSLR, "
-                "same ethnicity, no face covering, no mask, no surgical mask, "
-                "open face, revealed face"
+                "natural skin texture, visible pores, film grain, realistic lighting, "
+                "sharp focus, 8k, same ethnicity, no face covering, no mask, "
+                "no surgical mask, open face, revealed face"
             ),
             "negative_prompt": NEGATIVE,
             "num_outputs": 1,
             "num_inference_steps": 60,
-            "guidance_scale": 5.0,
-            "scheduler": "DPMSolverMultistep",
+            # Lower guidance keeps skin texture natural and prevents the
+            # over-stylised / plastic-skin look that 5.0+ causes.
+            "guidance_scale": 4.0,
+            # K_EULER_ANCESTRAL introduces stochastic noise at each step which
+            # produces more organic, photographic skin compared to the fully
+            # deterministic DPMSolverMultistep.
+            "scheduler": "K_EULER_ANCESTRAL",
         }
 
         # ── 7a. Try primary (realistic-vision photorealistic fine-tune) ────────
