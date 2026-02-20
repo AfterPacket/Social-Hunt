@@ -24,12 +24,32 @@
                     <button class="menu-btn" data-view="dashboard">
                         Dashboard
                     </button>
-                    <button class="menu-btn" data-view="search">Search</button>
+                    <div class="menu-group">
+                        <div class="menu-group-header">
+                            <button class="menu-btn" data-view="search">
+                                Search
+                            </button>
+                            <button
+                                class="menu-btn menu-toggle-btn"
+                                type="button"
+                                aria-expanded="false"
+                                aria-controls="searchSubmenu"
+                                data-menu-toggle="search"
+                            >
+                                v
+                            </button>
+                        </div>
+                        <div class="menu-submenu" id="searchSubmenu">
+                            <button
+                                class="menu-btn menu-sub-btn"
+                                data-view="google-dorks"
+                            >
+                                Google Dorks
+                            </button>
+                        </div>
+                    </div>
                     <button class="menu-btn" data-view="breach-search">
                         Breach Search
-                    </button>
-                    <button class="menu-btn" data-view="google-dorks">
-                        Google Dorks
                     </button>
                     <button class="menu-btn" data-view="reverse">
                         Reverse Image
