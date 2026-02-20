@@ -947,7 +947,71 @@ async def api_plugin_delete(
     return {"ok": True, "deleted": name}
 
 
-def _generate_face_coverage_mask(image_bytes: bytes) -> bytes:
+def _sample_skin_tone(
+    image_bytes: bytes,
+    face_boxes: list,
+) -> str:
+    """
+    Sample pixels from the forehead region (above the covered area) to derive
+    a rough skin-tone description that can be injected into the inpainting
+    prompt. This anchors the model to the subject's actual complexion so it
+    does not generate a face with the wrong ethnicity.
+    """
+    from PIL import Image as PILImage
+
+    try:
+        pil = PILImage.open(BytesIO(image_bytes)).convert("RGB")
+        w_img, h_img = pil.size
+
+        samples: list[tuple[int, int, int]] = []
+
+        for top, right, bottom, left in face_boxes:
+            fh = bottom - top
+            fw = right - left
+            # Forehead strip: top 20 % of the face box, centre 50 % horizontally
+            fore_top = top
+            fore_bot = top + max(1, int(fh * 0.20))
+            fore_left = left + int(fw * 0.25)
+            fore_right = right - int(fw * 0.25)
+            if fore_bot <= fore_top or fore_right <= fore_left:
+                continue
+            crop = pil.crop((fore_left, fore_top, fore_right, fore_bot))
+            samples.extend(list(crop.getdata()))
+
+            # Also sample neck region just below the face box
+            neck_top = bottom + int(fh * 0.05)
+            neck_bot = min(h_img, bottom + int(fh * 0.25))
+            if neck_bot > neck_top:
+                neck_crop = pil.crop((fore_left, neck_top, fore_right, neck_bot))
+                samples.extend(list(neck_crop.getdata()))
+
+        if not samples:
+            return "natural skin tone"
+
+        avg_r = sum(p[0] for p in samples) // len(samples)
+        avg_g = sum(p[1] for p in samples) // len(samples)
+        avg_b = sum(p[2] for p in samples) // len(samples)
+
+        # Rough ITA (Individual Typology Angle) approximation to classify tone
+        if avg_r > 210 and avg_g > 180:
+            return "very fair caucasian skin, light complexion, pale skin"
+        elif avg_r > 185 and avg_g > 150:
+            return "fair caucasian skin, light skin tone"
+        elif avg_r > 160 and avg_g > 120:
+            return "medium skin tone, light-medium complexion"
+        elif avg_r > 130 and avg_g > 90:
+            return "olive or tan skin tone, medium-dark complexion"
+        elif avg_r > 100:
+            return "dark skin tone, brown complexion"
+        else:
+            return "very dark skin tone, deep brown complexion"
+
+    except Exception as e:
+        print(f"[Demask] Skin tone sampling failed ({e}); using generic hint.")
+        return "natural skin tone"
+
+
+def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list]:
     """
     Generate a PNG inpainting mask that covers the face-covering region
     (gaiter, balaclava, surgical mask, ski mask, etc.) in WHITE.
@@ -976,7 +1040,7 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> bytes:
     w_img, h_img = pil_img.size
 
     # face_locations returns (top, right, bottom, left) in CSS order
-    face_boxes: list[tuple[int, int, int, int]] = []  # (top, right, bottom, left)
+    face_boxes: list = []  # (top, right, bottom, left)
 
     # ── 1. face_recognition (dlib) ────────────────────────────────────────────
     try:
@@ -1070,7 +1134,7 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> bytes:
 
     buf = BytesIO()
     mask.save(buf, format="PNG")
-    return buf.getvalue()
+    return buf.getvalue(), face_boxes
 
 
 @app.post("/sh-api/demask")
@@ -1081,19 +1145,22 @@ async def api_demask(
     """
     AI demasking pipeline (Replicate):
 
-    Step 1 — SD Inpainting (stability-ai/stable-diffusion-inpainting)
-        An OpenCV face detector auto-generates a tight mask over the
-        face-covering region.  SD inpainting ONLY modifies that region,
-        so hair, forehead, skin tone, eyebrows and all surrounding identity
-        cues are preserved — this is what prevents gender swaps and
-        full-image hallucinations.
+    Step 1 — Skin-tone sampling
+        Samples visible skin pixels from the forehead / neck region so the
+        inpainting prompt is anchored to the subject's actual complexion.
 
-    Step 2 — CodeFormer face restoration (fidelity 0.5)
-        Sharpens the inpainted face region.  Fidelity is kept at 0.5 so
-        CodeFormer enhances rather than replaces the generated face.
+    Step 2 — SD Inpainting (stability-ai/stable-diffusion-inpainting)
+        An auto-generated mask covers only the face-covering region.
+        SD inpainting fills ONLY that region; everything else is untouched.
 
-    Fallback — If SD inpainting is unavailable, instruct-pix2pix is tried
-        with tighter guidance values before giving up.
+    Step 3 — Composite back onto original
+        The SD model outputs at 512 × 512.  We up-sample just the masked
+        pixels and composite them back over the original full-resolution
+        image so the result is never cropped or zoomed.
+
+    CodeFormer is intentionally omitted — it turns faces into 3-D renders.
+
+    Fallback — instruct-pix2pix with corrected guidance if inpainting fails.
     """
     require_admin(x_plugin_token)
 
@@ -1133,34 +1200,31 @@ async def api_demask(
 
         # ── 3. Auto-generate face coverage mask ───────────────────────────────
         print("[Demask] Generating face coverage mask…")
-        mask_bytes = await asyncio.to_thread(_generate_face_coverage_mask, content)
+        mask_bytes, face_boxes = await asyncio.to_thread(
+            _generate_face_coverage_mask, content
+        )
         b64_mask = f"data:image/png;base64,{base64.b64encode(mask_bytes).decode()}"
         print("[Demask] Mask generated.")
 
-        # ── 4. Fetch model versions ───────────────────────────────────────────
-        inpaint_model_id = "stability-ai/stable-diffusion-inpainting"
-        codeformer_model_id = "sczhou/codeformer"
+        # ── 4. Sample visible skin tone to anchor the prompt ─────────────────
+        skin_tone_hint = await asyncio.to_thread(_sample_skin_tone, content, face_boxes)
+        print(f"[Demask] Skin tone sampled: {skin_tone_hint}")
 
+        # ── 5. Fetch inpainting model version ─────────────────────────────────
+        inpaint_model_id = "stability-ai/stable-diffusion-inpainting"
         try:
             m_inpaint = await asyncio.to_thread(rep_client.models.get, inpaint_model_id)
-            m_codeformer = await asyncio.to_thread(
-                rep_client.models.get, codeformer_model_id
-            )
             v_inpaint = m_inpaint.latest_version.id
-            v_codeformer = m_codeformer.latest_version.id
         except Exception as me:
             print(
-                f"[Demask] Could not fetch model metadata: {me} — using pinned versions."
+                f"[Demask] Could not fetch model metadata: {me} — using pinned version."
             )
             v_inpaint = (
                 "a9758cbfbd5f3c2094457d996681af52552901775aa2d6dd0b17fd15df959bef"
             )
-            v_codeformer = (
-                "7de2ea4a352033cfa2f21683c7a9511da922ec5ad9f9e61298d0b3dd16742617"
-            )
 
-        # ── 5. Step 1: SD Inpainting — only the masked region changes ─────────
-        print("[Demask] Step 1 — SD inpainting…")
+        # ── 6. SD Inpainting — only the masked region is modified ─────────────
+        print("[Demask] Running SD inpainting…")
         inpainted_url = ""
         try:
             output_1 = await asyncio.to_thread(
@@ -1169,22 +1233,22 @@ async def api_demask(
                 input={
                     "image": b64_img,
                     "mask": b64_mask,
-                    # Prompt: describe the TARGET state of the masked region only
                     "prompt": (
-                        "realistic human face, natural skin, clear facial features, "
-                        "photo-realistic, no face covering, no mask, no balaclava, "
-                        "consistent skin tone, same ethnicity, same gender"
+                        f"photo-realistic human face, {skin_tone_hint}, "
+                        "natural skin texture, photographic, RAW photo, "
+                        "same person, same gender, same ethnicity, "
+                        "no face covering, no mask, no balaclava"
                     ),
                     "negative_prompt": (
-                        "mask, balaclava, ski mask, face covering, sunglasses, "
-                        "different gender, different ethnicity, distorted, blurry, "
-                        "cartoon, painting, extra faces, mutation, deformed, "
-                        "bad anatomy, watermark, text"
+                        "cartoon, 3d render, anime, illustration, painting, drawing, "
+                        "cgi, plastic skin, smooth skin, different gender, "
+                        "different ethnicity, new person, extra faces, "
+                        "mask, balaclava, face covering, surgical mask, "
+                        "distorted, blurry, deformed, bad anatomy, watermark, text"
                     ),
                     "num_outputs": 1,
                     "num_inference_steps": 50,
                     "guidance_scale": 7.5,
-                    # scheduler: DPMSolverMultistep gives crisp faces
                     "scheduler": "DPMSolverMultistep",
                 },
             )
@@ -1195,7 +1259,7 @@ async def api_demask(
         except Exception as e:
             print(f"[Demask] SD inpainting failed: {e}")
 
-        # ── 5b. Fallback: pix2pix with corrected guidance values ─────────────
+        # ── 6b. Fallback: pix2pix with corrected guidance ─────────────────────
         if not inpainted_url:
             print("[Demask] Falling back to instruct-pix2pix…")
             try:
@@ -1207,7 +1271,6 @@ async def api_demask(
                 v_p2p = (
                     "30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f"
                 )
-
             try:
                 output_fb = await asyncio.to_thread(
                     rep_client.run,
@@ -1215,18 +1278,17 @@ async def api_demask(
                     input={
                         "image": b64_img,
                         "prompt": (
-                            "reveal the face beneath the mask or covering; "
+                            f"reveal the face beneath the covering, {skin_tone_hint}, "
                             "keep gender, ethnicity, hair, clothing and background "
-                            "completely unchanged; realistic photo"
+                            "completely unchanged, realistic photo, photographic"
                         ),
                         "negative_prompt": (
-                            "change gender, change ethnicity, new person, hallucinate, "
-                            "different identity, extra faces, distorted, cartoon, blurry, "
-                            "mask remains, sunglasses, face covering"
+                            "cartoon, 3d render, anime, illustration, cgi, "
+                            "change gender, change ethnicity, different person, "
+                            "extra faces, distorted, blurry, mask remains, "
+                            "face covering, surgical mask"
                         ),
                         "num_inference_steps": 50,
-                        # Higher image_guidance preserves structure; higher guidance
-                        # makes the model actually follow the instruction
                         "image_guidance_scale": 2.0,
                         "guidance_scale": 8.0,
                     },
@@ -1240,38 +1302,44 @@ async def api_demask(
 
         if not inpainted_url:
             raise HTTPException(
-                status_code=500, detail="Step 1 (inpainting) produced no output."
+                status_code=500, detail="Inpainting produced no output."
             )
 
-        print(f"[Demask] Step 1 complete → {inpainted_url}")
+        print(f"[Demask] Inpainting complete → {inpainted_url}")
 
-        # ── 6. Step 2: CodeFormer — sharpen the inpainted face ───────────────
-        # fidelity=0.5 means CodeFormer ENHANCES the existing face rather than
-        # replacing it wholesale (fidelity=1.0 was causing gender swaps).
-        print("[Demask] Step 2 — CodeFormer…")
+        # ── 7. Composite inpainted region back onto the original ──────────────
+        # SD inpainting outputs at 512×512. We composite ONLY the masked pixels
+        # back onto the original full-resolution image so there is no crop/zoom.
+        # CodeFormer is intentionally skipped — it turns faces into 3-D renders.
+        print("[Demask] Compositing result onto original image…")
         try:
-            output_2 = await asyncio.to_thread(
-                rep_client.run,
-                f"{codeformer_model_id}:{v_codeformer}",
-                input={
-                    "image": inpainted_url,
-                    "upscale": 1,
-                    "face_upsample": True,
-                    "codeformer_fidelity": 0.5,  # 0.5 = enhance, not replace
-                },
-            )
-            if isinstance(output_2, list) and len(output_2) > 0:
-                final_url = str(output_2[0])
-            else:
-                final_url = str(output_2) if output_2 else None
+            from PIL import Image as PILImage
 
-            fetch_url = final_url if final_url else inpainted_url
             async with httpx.AsyncClient() as hc:
-                img_res = await hc.get(fetch_url)
-            return StreamingResponse(BytesIO(img_res.content), media_type="image/png")
+                inp_resp = await hc.get(inpainted_url)
+            inpainted_pil = PILImage.open(BytesIO(inp_resp.content)).convert("RGB")
 
-        except Exception as e:
-            print(f"[Demask] CodeFormer failed ({e}); returning Step 1 result.")
+            original_pil = PILImage.open(BytesIO(content)).convert("RGB")
+            orig_w, orig_h = original_pil.size
+
+            # Scale inpainted result back up to original dimensions
+            inpainted_resized = inpainted_pil.resize((orig_w, orig_h), PILImage.LANCZOS)
+
+            # Use the same mask (resized) to composite only the face region
+            mask_pil = PILImage.open(BytesIO(mask_bytes)).convert("L")
+            mask_pil = mask_pil.resize((orig_w, orig_h), PILImage.LANCZOS)
+
+            # composite(A, B, mask): uses A where mask=255, B where mask=0
+            composited = PILImage.composite(inpainted_resized, original_pil, mask_pil)
+
+            out_buf = BytesIO()
+            composited.save(out_buf, format="PNG")
+            out_buf.seek(0)
+            return StreamingResponse(out_buf, media_type="image/png")
+
+        except Exception as comp_err:
+            # Composite failed — return raw inpaint result rather than nothing
+            print(f"[Demask] Composite failed ({comp_err}); returning raw inpaint.")
             async with httpx.AsyncClient() as hc:
                 img_res = await hc.get(inpainted_url)
             return StreamingResponse(BytesIO(img_res.content), media_type="image/png")
