@@ -1398,16 +1398,32 @@ async def api_demask(
             _crop_for_inpainting, content, mask_bytes, face_boxes
         )
 
-        # ── 6. Fetch inpainting model version ─────────────────────────────────
-        inpaint_model_id = "stability-ai/stable-diffusion-inpainting"
+        # ── 6. Resolve inpainting models ──────────────────────────────────────
+        # Primary: lucataco/realistic-vision-v5-inpainting — photorealistic
+        #          fine-tune of SD 1.5, produces natural skin texture and avoids
+        #          the "plastic CGI face" characteristic of the base model.
+        # Fallback: stability-ai/stable-diffusion-inpainting (SD 1.5 base)
+        INPAINT_PRIMARY = "lucataco/realistic-vision-v5-inpainting"
+        INPAINT_SECONDARY = "stability-ai/stable-diffusion-inpainting"
+
+        v_inpaint_primary = None
+        v_inpaint_secondary = None
+
         try:
-            m_inpaint = await asyncio.to_thread(rep_client.models.get, inpaint_model_id)
-            v_inpaint = m_inpaint.latest_version.id
-        except Exception as me:
-            print(
-                f"[Demask] Could not fetch model metadata: {me} — using pinned version."
+            m_primary = await asyncio.to_thread(rep_client.models.get, INPAINT_PRIMARY)
+            v_inpaint_primary = m_primary.latest_version.id
+            print(f"[Demask] Primary model: {INPAINT_PRIMARY}@{v_inpaint_primary}")
+        except Exception as e:
+            print(f"[Demask] Could not fetch primary model ({e}); will use secondary.")
+
+        try:
+            m_secondary = await asyncio.to_thread(
+                rep_client.models.get, INPAINT_SECONDARY
             )
-            v_inpaint = (
+            v_inpaint_secondary = m_secondary.latest_version.id
+        except Exception:
+            # Pinned SD 1.5 inpainting version as last resort
+            v_inpaint_secondary = (
                 "a9758cbfbd5f3c2094457d996681af52552901775aa2d6dd0b17fd15df959bef"
             )
 
@@ -1446,39 +1462,63 @@ async def api_demask(
 
         NEGATIVE = NEGATIVE_BASE + (" " + hair_negative if hair_negative else "")
 
-        # ── 7. SD Inpainting on the face crop ─────────────────────────────────
-        print("[Demask] Running SD inpainting on face crop…")
+        # ── 7. Inpainting on the face crop ────────────────────────────────────
+        # guidance_scale 5.0: low enough to stay photographic, high enough to
+        # actually follow "no mask". Lower = more natural skin, less "stylized".
         inpainted_url = ""
-        try:
-            output_1 = await asyncio.to_thread(
-                rep_client.run,
-                f"{inpaint_model_id}:{v_inpaint}",
-                input={
-                    "image": crop_b64_img,
-                    "mask": crop_b64_mask,
-                    "prompt": (
-                        f"photo-realistic human face, {skin_tone_hint}, "
-                        f"{hair_positive} "
-                        "natural skin texture, photographic, RAW photo, DSLR, "
-                        "same person, same gender, same ethnicity, "
-                        "no face covering, no mask"
-                    ),
-                    "negative_prompt": NEGATIVE,
-                    "num_outputs": 1,
-                    "num_inference_steps": 60,
-                    # Lower guidance = less "prompt-y", more photographic
-                    "guidance_scale": 6.0,
-                    "scheduler": "DPMSolverMultistep",
-                },
-            )
-            if isinstance(output_1, list) and len(output_1) > 0:
-                inpainted_url = str(output_1[0])
-            else:
-                inpainted_url = str(output_1) if output_1 else ""
-        except Exception as e:
-            print(f"[Demask] SD inpainting failed: {e}")
 
-        # ── 7b. Fallback: pix2pix on the full image ────────────────────────────
+        INPAINT_INPUT = {
+            "image": crop_b64_img,
+            "mask": crop_b64_mask,
+            "prompt": (
+                f"photo-realistic human face, {skin_tone_hint}, "
+                f"{hair_positive} "
+                "natural skin texture, photographic, RAW photo, DSLR, "
+                "same person, same gender, same ethnicity, "
+                "no face covering, no mask"
+            ),
+            "negative_prompt": NEGATIVE,
+            "num_outputs": 1,
+            "num_inference_steps": 60,
+            "guidance_scale": 5.0,
+            "scheduler": "DPMSolverMultistep",
+        }
+
+        # ── 7a. Try primary (realistic-vision photorealistic fine-tune) ────────
+        if v_inpaint_primary:
+            print(f"[Demask] Running primary inpainting ({INPAINT_PRIMARY})…")
+            try:
+                out = await asyncio.to_thread(
+                    rep_client.run,
+                    f"{INPAINT_PRIMARY}:{v_inpaint_primary}",
+                    input=INPAINT_INPUT,
+                )
+                inpainted_url = (
+                    str(out[0]) if isinstance(out, list) and out else str(out or "")
+                )
+                if inpainted_url:
+                    print(f"[Demask] Primary succeeded → {inpainted_url}")
+            except Exception as e:
+                print(f"[Demask] Primary inpainting failed ({e}); trying secondary.")
+
+        # ── 7b. Fallback: SD 1.5 base inpainting ──────────────────────────────
+        if not inpainted_url:
+            print(f"[Demask] Running secondary inpainting ({INPAINT_SECONDARY})…")
+            try:
+                out = await asyncio.to_thread(
+                    rep_client.run,
+                    f"{INPAINT_SECONDARY}:{v_inpaint_secondary}",
+                    input=INPAINT_INPUT,
+                )
+                inpainted_url = (
+                    str(out[0]) if isinstance(out, list) and out else str(out or "")
+                )
+                if inpainted_url:
+                    print(f"[Demask] Secondary succeeded → {inpainted_url}")
+            except Exception as e:
+                print(f"[Demask] Secondary inpainting failed: {e}")
+
+        # ── 7c. Last-resort fallback: pix2pix on the full image ───────────────
         if not inpainted_url:
             print("[Demask] Falling back to instruct-pix2pix on full image…")
             mime = file.content_type or "image/jpeg"
