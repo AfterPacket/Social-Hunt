@@ -5,7 +5,7 @@ Social-Hunt is an OSINT framework for cross-platform username discovery, breach 
 ## Features
 
 - Username presence scanning across many platforms using YAML providers.
-- Breach intelligence via Have I Been Pwned (HIBP) and BreachVIP with proxy support for Cloudflare bypass.
+- Breach intelligence via Have I Been Pwned (HIBP), BreachVIP, and Snusbase — email, username, IP, and phone lookups across indexed breach databases.
 - Face matching against profile avatars using face recognition and image hashing.
 - Reverse image OSINT links (Google Lens, Bing, Yandex, etc.).
 - Tor/Onion site support via SOCKS proxy (split-tunneling).
@@ -99,10 +99,13 @@ Useful options:
 Settings are stored in `data/settings.json` (or `SOCIAL_HUNT_SETTINGS_PATH`).
 
 Common keys:
-- `admin_token` (dashboard admin token; can be set via the Token page)
-- `hibp_api_key` (required for HIBP)
-- `replicate_api_token` (required for Replicate-based demasking)
-- `public_url` (base URL for reverse-image links)
+- `admin_token` — dashboard admin token; can be set via the Token page
+- `hibp_api_key` — required for Have I Been Pwned breach lookups (get a key at [haveibeenpwned.com/API/Key](https://haveibeenpwned.com/API/Key))
+- `snusbase_api_key` — required for Snusbase breach record lookups (included with any paid membership at [snusbase.com](https://snusbase.com))
+- `replicate_api_token` — required for Replicate-based demasking
+- `public_url` — base URL for reverse-image links
+
+Keys are added via **Settings → Add API** in the dashboard. Mark any key as **Secret** so the value is never returned to the browser after saving.
 
 Settings resolution order is:
 1) `data/settings.json` (or `SOCIAL_HUNT_SETTINGS_PATH`)
@@ -130,6 +133,44 @@ Settings resolution order is:
 | `SOCIAL_HUNT_FACE_AI_URL` | External face restoration endpoint |
 | `REPLICATE_API_TOKEN` | Replicate API token for demasking |
 | `SOCIAL_HUNT_PROXY` | SOCKS Proxy URL for .onion/darkweb access (e.g., `socks5h://127.0.0.1:9050`) |
+
+## Breach Search / API Integrations
+
+Breach Search runs lookups across three providers simultaneously. Each requires an API key added in **Settings → Add API** (mark as **Secret**).
+
+| Provider | Key name | What it searches | Where to get a key |
+| :-- | :-- | :-- | :-- |
+| **Have I Been Pwned** | `hibp_api_key` | Email addresses against known breach databases | [haveibeenpwned.com/API/Key](https://haveibeenpwned.com/API/Key) |
+| **BreachVIP** | *(no key needed)* | Username / email / phone across breach dumps | [breach.vip](https://breach.vip) (free tier) |
+| **Snusbase** | `snusbase_api_key` | Email, username, IP, phone across indexed breach records | [snusbase.com](https://snusbase.com) (paid membership) |
+
+### Search type auto-detection
+
+Snusbase automatically chooses the correct search field based on your input:
+
+| Input format | Fields searched |
+| :-- | :-- |
+| Contains `@` and `.` | `email` |
+| Digits only, 7–15 chars (phone) | `username`, `email` |
+| Four dot-separated octets (IP) | `lastip` |
+| Anything else | `email`, `username` |
+
+### Provider statuses
+
+| Status | Meaning |
+| :-- | :-- |
+| FOUND | At least one record returned |
+| NOT FOUND | Query returned no results |
+| SKIPPED / UNKNOWN | API key not set in Settings |
+| BLOCKED | Rate-limited (429) or IP blocked (503) |
+| ERROR | Network failure, timeout, or API error |
+
+### Example: adding a Snusbase key
+
+1. Go to **Settings** in the dashboard.
+2. Click **Add API**.
+3. Key: `snusbase_api_key` — Value: your activation code — check **Secret**.
+4. Click **Save**. The key is picked up on the next scan without a restart.
 
 ## Tor / Darkweb Support
 
@@ -232,8 +273,10 @@ proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_
 
 ## Troubleshooting
 
-- BreachVIP 403: Cloudflare may block datacenter IPs. Configure proxy settings in Settings → BreachVIP Proxy Configuration, or use environment variables (see below).
-- HIBP skipped: missing or invalid `hibp_api_key`.
+- BreachVIP 503/blocked: breach.vip may block datacenter IPs. Results will show a BLOCKED status — no configuration change can bypass this; try from a residential IP or VPN.
+- HIBP skipped: add `hibp_api_key` in Settings (get a key at [haveibeenpwned.com/API/Key](https://haveibeenpwned.com/API/Key)).
+- Snusbase skipped: add `snusbase_api_key` in Settings (included with any paid Snusbase membership at [snusbase.com](https://snusbase.com)). Mark it as **Secret**.
+- API keys not taking effect: keys added in Settings are picked up immediately on the next scan — no server restart required.
 - Missing Python providers: ensure `SOCIAL_HUNT_ALLOW_PY_PLUGINS=1`.
 - Demask not working: set `REPLICATE_API_TOKEN` or `SOCIAL_HUNT_FACE_AI_URL`.
 - If the downloader fails for any reason, you may have to manually download the models from [Google Drive](https://drive.google.com/open?id=1LTERcN33McoiztYEwBxMuRjjgxh4DEPs) for DeepMosaics.
@@ -285,36 +328,7 @@ IOPaint as shown in `APACHE_SETUP.md`.
 
 ### Breach Search
 ![Breach Search](assets/screenshots/breach-search.png)
-*Data breach lookup powered by BreachVIP with proxy bypass support*
-
-### BreachVIP Proxy Configuration
-
-BreachVIP searches can now be routed through proxy servers to bypass Cloudflare blocks and regional restrictions.
-
-**Web UI Configuration:**
-1. Navigate to Settings → BreachVIP Proxy Configuration
-2. Enable proxy and enter your proxy details
-3. Choose connection strategy:
-   - **Regular First**: Try direct connection first, proxy as failover
-   - **Proxy First**: Try proxy first, direct as failover  
-   - **Proxy Only**: Use proxy exclusively
-
-**Environment Variables:**
-```bash
-export BREACHVIP_PROXY_ENABLED="true"
-export BREACHVIP_PROXY_URL="http://proxy-server:8080"
-export BREACHVIP_PROXY_AUTH="username:password"
-export BREACHVIP_PROXY_STRATEGY="regular_first"  # or "proxy_first", "proxy_only"
-export BREACHVIP_USE_RESIDENTIAL_IP="true"
-```
-
-**Supported Proxy Types:**
-- HTTP/HTTPS proxies (`http://proxy:8080`)
-- SOCKS5 proxies (`socks5://proxy:1080`) 
-- Authenticated proxies with username:password
-- Residential and datacenter proxies
-
-See `BREACHVIP_PROXY_SETUP.md` for detailed configuration guide.
+*Data breach lookup powered by HIBP, BreachVIP, and Snusbase — search by email, username, IP, or phone*
 
 ### Reverse Image Search
 ![Reverse Image](assets/screenshots/reverse-image.png)
