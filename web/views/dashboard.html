@@ -23,33 +23,45 @@
   </div>
 
   <!-- Quick Stats Row -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">🎯</div>
-      <div class="stat-content">
-        <div class="stat-value" id="totalSearches">-</div>
-        <div class="stat-label">Total Searches</div>
+  <div class="stats-section">
+    <div class="stats-header">
+      <h3>📊 Statistics</h3>
+      <div class="stats-controls">
+        <button class="btn btn-small btn-outline" id="refreshStats" type="button">
+          <span class="btn-icon">🔄</span>
+          Refresh
+        </button>
+
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">🌐</div>
-      <div class="stat-content">
-        <div class="stat-value" id="activeProviders">-</div>
-        <div class="stat-label">Active Providers</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-content">
+          <div class="stat-value" id="totalSearches">-</div>
+          <div class="stat-label">Total Searches</div>
+        </div>
       </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🖼️</div>
-      <div class="stat-content">
-        <div class="stat-value" id="reverseSearches">-</div>
-        <div class="stat-label">Image Searches</div>
+      <div class="stat-card">
+        <div class="stat-icon">🌐</div>
+        <div class="stat-content">
+          <div class="stat-value" id="activeProviders">-</div>
+          <div class="stat-label">Active Providers</div>
+        </div>
       </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🔒</div>
-      <div class="stat-content">
-        <div class="stat-value" id="breachSearches">-</div>
-        <div class="stat-label">Breach Searches</div>
+      <div class="stat-card">
+        <div class="stat-icon">🖼️</div>
+        <div class="stat-content">
+          <div class="stat-value" id="reverseSearches">-</div>
+          <div class="stat-label">Image Searches</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔒</div>
+        <div class="stat-content">
+          <div class="stat-value" id="breachSearches">-</div>
+          <div class="stat-label">Breach Searches</div>
+        </div>
       </div>
     </div>
   </div>
@@ -310,11 +322,61 @@
   margin-right: 8px;
 }
 
+.stats-section {
+  margin-bottom: 24px;
+}
+
+.stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stats-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.2rem;
+}
+
+.stats-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-small {
+  padding: 6px 10px;
+  font-size: 12px;
+  min-width: auto;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.btn-outline:hover {
+  background: var(--panel3);
+  border-color: var(--border2);
+  color: var(--text);
+}
+
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-  margin-bottom: 24px;
 }
 
 .stat-card {
@@ -632,6 +694,15 @@
     gap: 8px;
   }
 
+  .stats-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stats-controls {
+    justify-content: center;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -660,23 +731,136 @@ function initDashboardView() {
 }
 
 function initializeStats() {
-  // Load statistics from localStorage
-  const searchHistory = loadJsonArray(KEY_SEARCH_HISTORY);
-  const reverseHistory = loadJsonArray(KEY_REVERSE_HISTORY);
-  const demaskHistory = loadJsonArray(KEY_DEMASK_HISTORY);
+  console.log("Initializing dashboard statistics");
 
-  document.getElementById('totalSearches').textContent = searchHistory.length;
-  document.getElementById('reverseSearches').textContent = reverseHistory.length;
-  document.getElementById('breachSearches').textContent =
-    searchHistory.filter(item => item.type === 'breach-search').length;
+  // Define constants locally in case they're not available
+  const KEY_SEARCH_HISTORY = "socialhunt_search_history";
+  const KEY_REVERSE_HISTORY = "sh_reverse_history";
+  const KEY_DEMASK_HISTORY = "sh_demask_history";
 
-  // Load provider count
-  fetchProviders().then(providers => {
-    document.getElementById('activeProviders').textContent = providers.length;
-  }).catch(() => {
-    document.getElementById('activeProviders').textContent = '?';
-  });
+  // Helper function to safely load JSON from localStorage
+  function safeLoadJsonArray(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.warn(`Failed to load ${key}:`, error);
+      return [];
+    }
+  }
+
+  try {
+    // Load statistics from localStorage
+    const searchHistory = safeLoadJsonArray(KEY_SEARCH_HISTORY);
+    const reverseHistory = safeLoadJsonArray(KEY_REVERSE_HISTORY);
+    const demaskHistory = safeLoadJsonArray(KEY_DEMASK_HISTORY);
+
+    console.log("Loaded history data:", {
+      searches: searchHistory.length,
+      reverse: reverseHistory.length,
+      demask: demaskHistory.length
+    });
+
+    // Update UI elements with animation
+    updateStatValue('totalSearches', searchHistory.length);
+    updateStatValue('reverseSearches', reverseHistory.length);
+
+    // Count breach searches from search history
+    const breachCount = searchHistory.filter(item =>
+      item && (item.type === 'breach-search' || item.type === 'breach')
+    ).length;
+    updateStatValue('breachSearches', breachCount);
+
+    // Load provider count with better error handling
+    const activeProvidersEl = document.getElementById('activeProviders');
+    if (activeProvidersEl) {
+      activeProvidersEl.textContent = "...";
+
+      // Try to fetch providers
+      if (typeof fetchProviders === 'function') {
+        fetchProviders()
+          .then(providers => {
+            if (providers && Array.isArray(providers)) {
+              updateStatValue('activeProviders', providers.length);
+              console.log(`Loaded ${providers.length} providers`);
+            } else {
+              updateStatValue('activeProviders', 0);
+            }
+          })
+          .catch(error => {
+            console.warn('Failed to fetch providers:', error);
+            activeProvidersEl.textContent = "?";
+          });
+      } else {
+        // Fallback: try to get providers from API directly
+        fetch('/sh-api/providers')
+          .then(response => response.json())
+          .then(data => {
+            const count = Array.isArray(data) ? data.length : (data.providers ? data.providers.length : 0);
+            updateStatValue('activeProviders', count);
+            console.log(`Loaded ${count} providers via direct API`);
+          })
+          .catch(error => {
+            console.warn('Failed to fetch providers via API:', error);
+            activeProvidersEl.textContent = "?";
+          });
+      }
+    }
+
+    // Setup refresh and test data buttons
+    setupStatControls();
+
+  } catch (error) {
+    console.error('Error initializing stats:', error);
+
+    // Set fallback values
+    const elements = ['totalSearches', 'reverseSearches', 'breachSearches', 'activeProviders'];
+    elements.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = "?";
+    });
+  }
 }
+
+// Helper function to update stat values with animation
+function updateStatValue(elementId, value) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
+  // Animate the value change
+  element.style.transform = 'scale(1.1)';
+  element.style.color = 'var(--accent)';
+
+  setTimeout(() => {
+    element.textContent = value.toString();
+    element.style.transform = 'scale(1)';
+    element.style.color = '';
+  }, 150);
+}
+
+// Setup refresh controls
+function setupStatControls() {
+  const refreshBtn = document.getElementById('refreshStats');
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = '<span class="spinner"></span> Refreshing...';
+
+      setTimeout(() => {
+        initializeStats();
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = '<span class="btn-icon">🔄</span> Refresh';
+      }, 1000);
+    });
+  }
+
+
+}
+
+
 
 function initializeTips() {
   let currentTip = 1;
