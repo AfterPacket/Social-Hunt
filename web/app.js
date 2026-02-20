@@ -937,7 +937,7 @@ async function initBreachSearchView() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: term,
-        providers: ["breachvip", "hibp"], // Use both breachvip and hibp
+        providers: ["breachvip", "hibp", "snusbase"],
       }),
     });
 
@@ -951,7 +951,7 @@ async function initBreachSearchView() {
     // Add to history right away
     addSearchHistoryEntry({
       username: term,
-      providers: ["breachvip", "hibp"],
+      providers: ["breachvip", "hibp", "snusbase"],
       job_id: jobId,
       type: "breach",
     });
@@ -1218,8 +1218,10 @@ function renderBreachView(job, containerId) {
     results.find((r) => r.provider === "hibp")?.profile?.breach_count || 0;
   const bvipCount =
     results.find((r) => r.provider === "breachvip")?.profile?.result_count || 0;
+  const snusCount =
+    results.find((r) => r.provider === "snusbase")?.profile?.result_count || 0;
 
-  if (hibpCount > 0 || bvipCount > 0) {
+  if (hibpCount > 0 || bvipCount > 0 || snusCount > 0) {
     html += `
       <div class="row" style="margin-bottom: 20px; gap: 15px;">
         ${
@@ -1238,6 +1240,16 @@ function renderBreachView(job, containerId) {
           <div class="card" style="flex: 1; text-align: center; border-bottom: 3px solid var(--good);">
             <div style="font-size: 2rem; font-weight: 800; color: var(--good);">${bvipCount}</div>
             <div class="muted">Detailed Records (BreachVIP)</div>
+          </div>
+        `
+            : ""
+        }
+        ${
+          snusCount > 0
+            ? `
+          <div class="card" style="flex: 1; text-align: center; border-bottom: 3px solid var(--accent);">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--accent);">${snusCount}</div>
+            <div class="muted">Detailed Records (Snusbase)</div>
           </div>
         `
             : ""
@@ -1390,6 +1402,79 @@ function renderBreachView(job, containerId) {
     }
   }
 
+  // 4. Snusbase Detailed Records
+  const snus = results.find((r) => r.provider === "snusbase");
+  if (snus && snus.status === "found") {
+    const prof = snus.profile || {};
+    const raw = prof.raw_results || [];
+
+    if (raw.length > 0) {
+      if (prof.demo_mode) {
+        html += `
+          <div class="card demo-warning">
+            <div class="demo-warning-title">DEMO MODE ACTIVE</div>
+            <div class="demo-warning-text">
+              Personal information has been censored and results are limited for demonstration purposes.
+            </div>
+          </div>
+        `;
+      }
+      const exclude = ["_id", "_db", "id", "source", "breach"];
+      const keys = new Set();
+      raw.forEach((row) => {
+        Object.keys(row).forEach((k) => {
+          if (!exclude.includes(k) && row[k]) keys.add(k);
+        });
+      });
+      const headerKeys = Array.from(keys).sort();
+      const isTruncated = raw.length > 500;
+      const displayRows = isTruncated ? raw.slice(0, 500) : raw;
+
+      html += `
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div style="font-size: 1.1rem; font-weight: 800;">Snusbase Records</div>
+            <div class="badge">${snusCount} Results</div>
+          </div>
+          <div class="tablewrap">
+            <table style="font-size: 13px; border-radius: 8px;">
+              <thead>
+                <tr>
+                  <th>Database</th>
+                  ${headerKeys.map((k) => `<th>${escapeHtml(k)}</th>`).join("")}
+                </tr>
+              </thead>
+              <tbody>
+                ${displayRows
+                  .map((row) => {
+                    const src = row._db || row.source || row.breach || "Unknown";
+                    return `
+                    <tr>
+                      <td style="font-weight:bold; color: var(--accent);">${escapeHtml(src)}</td>
+                      ${headerKeys
+                        .map((k) => {
+                          const val = row[k];
+                          let display =
+                            val && typeof val === "object"
+                              ? JSON.stringify(val)
+                              : String(val || "");
+                          if (display.length > 256) display = display.substring(0, 253) + "...";
+                          return `<td>${escapeHtml(display)}</td>`;
+                        })
+                        .join("")}
+                    </tr>
+                  `;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+          ${isTruncated ? `<div class="muted" style="text-align:center; padding: 10px;">Showing first 500 of ${raw.length} results. Export for full data.</div>` : ""}
+        </div>
+      `;
+    }
+  }
+
   if (job.state === "running") {
     html += `
       <div class="card" style="text-align: center; padding: 20px; border: 1px dashed var(--border);">
@@ -1480,6 +1565,17 @@ function renderBreachView(job, containerId) {
             text += "\n";
           });
         }
+        const snus = (job.results || []).find((r) => r.provider === "snusbase");
+        if (snus && snus.profile?.raw_results) {
+          text += `Snusbase Detailed Records:\n`;
+          snus.profile.raw_results.forEach((row) => {
+            text += `--- ${row._db || row.source || "Record"} ---\n`;
+            Object.entries(row).forEach(([k, v]) => {
+              if (v && typeof v !== "object") text += `${k}: ${v}\n`;
+            });
+            text += "\n";
+          });
+        }
         if (window.addNoteDirectly) {
           window.addNoteDirectly(`Breach: ${job.username || job.term}`, text);
         } else {
@@ -1515,7 +1611,7 @@ async function initSearchView() {
     statusEl.textContent = "Loading providers...";
     let names = await fetchProviders();
     // Exclude breach-specific providers from general search
-    names = names.filter((n) => n !== "hibp" && n !== "breachvip");
+    names = names.filter((n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase");
     renderProviders(names);
     statusEl.textContent = `Loaded ${names.length} providers.`;
   };
@@ -1537,7 +1633,7 @@ async function initSearchView() {
   // auto-load
   let names = await fetchProviders();
   // Exclude breach-specific providers from general search
-  names = names.filter((n) => n !== "hibp" && n !== "breachvip");
+  names = names.filter((n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase");
   renderProviders(names);
 
   const who = await fetchWhoami();
