@@ -1,0 +1,47 @@
+[Unit]
+Description=Social-Hunt DEV (dev branch, port 8001)
+After=network.target
+
+[Service]
+Type=simple
+User=jordan
+WorkingDirectory=/home/jordan/Social-Hunt-dev
+
+# ---------- environment ----------
+# Separate port so dev and prod can run side-by-side
+Environment=SOCIAL_HUNT_PORT=8001
+Environment=SOCIAL_HUNT_HOST=0.0.0.0
+
+# Keeps dev data isolated from the production data directory
+Environment=SOCIAL_HUNT_SETTINGS_PATH=/home/jordan/Social-Hunt-dev/data/settings.json
+Environment=SOCIAL_HUNT_JOBS_DIR=/home/jordan/Social-Hunt-dev/data/jobs
+
+# Use a DIFFERENT token from production so the two instances are independent
+Environment=SOCIAL_HUNT_PLUGIN_TOKEN=CHANGE_ME_DEV_TOKEN_MIN_20_CHARS
+
+# Optional: enable hot-reload in dev (set to 0 in production)
+Environment=SOCIAL_HUNT_RELOAD=1
+
+# Uncomment to allow web plugin uploads in dev
+# Environment=SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD=1
+
+# Uncomment to allow bootstrap token setup via UI in dev
+# Environment=SOCIAL_HUNT_ENABLE_TOKEN_BOOTSTRAP=1
+
+# Load extra overrides from a local .env file if present (won't fail if missing)
+EnvironmentFile=-/home/jordan/Social-Hunt-dev/.env
+
+ExecStart=/home/jordan/Social-Hunt-dev/venv/bin/python run.py
+
+Restart=always
+RestartSec=5
+
+# Basic hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/home/jordan/Social-Hunt-dev/data
+ReadWritePaths=/home/jordan/Social-Hunt-dev/web/temp_uploads
+ReadWritePaths=/home/jordan/Social-Hunt-dev/plugins
+
+[Install]
+WantedBy=multi-user.target
