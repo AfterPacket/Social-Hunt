@@ -2881,17 +2881,23 @@ async def api_auth_verify(
     request: Request,
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
-    # Parse body manually so a missing/empty body never causes a 422.
-    # app.js calls this endpoint with no body for session re-verification;
-    # login.html sends JSON with hcaptcha_token when captcha is active.
-    hcaptcha_token: str = ""
+    # Parse body manually — app.js calls this with NO body for session
+    # re-verification; login.html sends JSON with hcaptcha_token.
+    # Only enforce captcha when a body was actually submitted (login form).
+    raw = b""
     try:
         raw = await request.body()
-        if raw:
-            parsed = json.loads(raw)
-            hcaptcha_token = parsed.get("hcaptcha_token") or ""
     except Exception:
         pass
+
+    hcaptcha_token: str = ""
+    is_login_submission = bool(raw)
+    if is_login_submission:
+        try:
+            parsed = json.loads(raw)
+            hcaptcha_token = parsed.get("hcaptcha_token") or ""
+        except Exception:
+            pass
 
     client_ip = (request.client.host if request.client else None) or "unknown"
 
@@ -2900,7 +2906,8 @@ async def api_auth_verify(
         mins = lockout_sec // 60
         raise HTTPException(status_code=429, detail=f"Too many failed attempts. Try again in {mins} minute(s).")
 
-    if not await _verify_hcaptcha(hcaptcha_token):
+    # Only check captcha for actual login form submissions, not session checks
+    if is_login_submission and not await _verify_hcaptcha(hcaptcha_token):
         raise HTTPException(status_code=400, detail="CAPTCHA verification failed.")
 
     try:
