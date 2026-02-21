@@ -46,10 +46,11 @@ async def add_security_headers(request: Request, call_next):
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: blob:; "
-        "connect-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://js.hcaptcha.com; "
+        "style-src 'self' 'unsafe-inline' https://newassets.hcaptcha.com; "
+        "img-src 'self' data: blob: https://newassets.hcaptcha.com; "
+        "connect-src 'self' https://hcaptcha.com https://newassets.hcaptcha.com; "
+        "frame-src 'self' https://newassets.hcaptcha.com; "
         "font-src 'self' data:; "
         "form-action 'self'; "
         "frame-ancestors 'self';"
@@ -143,6 +144,83 @@ def _bootstrap_allowed(request: Request) -> bool:
         provided = (request.headers.get("X-Bootstrap-Secret") or "").strip()
         return provided == secret
     return False
+
+
+# ---- login rate limiter ----
+import threading as _threading
+
+
+class _LoginRateLimiter:
+    """Per-IP brute-force protection for the auth/verify endpoint."""
+
+    MAX_FAILURES = 5
+    WINDOW_SEC = 60
+    LOCKOUT_SEC = 300  # 5 minutes
+
+    def __init__(self):
+        self._lock = _threading.Lock()
+        self._records: Dict[str, Any] = {}
+
+    def _rec(self, ip: str) -> Dict:
+        return self._records.setdefault(
+            ip,
+            {"failures": 0, "window_start": time.monotonic(), "locked_until": 0.0},
+        )
+
+    def is_locked(self, ip: str) -> bool:
+        with self._lock:
+            rec = self._rec(ip)
+            now = time.monotonic()
+            if now < rec["locked_until"]:
+                return True
+            if now - rec["window_start"] > self.WINDOW_SEC:
+                rec["failures"] = 0
+                rec["window_start"] = now
+            return False
+
+    def record_failure(self, ip: str) -> int:
+        """Record a failed attempt. Returns remaining attempts before lockout."""
+        with self._lock:
+            rec = self._rec(ip)
+            now = time.monotonic()
+            if now - rec["window_start"] > self.WINDOW_SEC:
+                rec["failures"] = 0
+                rec["window_start"] = now
+            rec["failures"] += 1
+            remaining = max(0, self.MAX_FAILURES - rec["failures"])
+            if rec["failures"] >= self.MAX_FAILURES:
+                rec["locked_until"] = now + self.LOCKOUT_SEC
+            return remaining
+
+    def record_success(self, ip: str) -> None:
+        with self._lock:
+            self._records.pop(ip, None)
+
+
+_login_limiter = _LoginRateLimiter()
+
+
+async def _verify_hcaptcha(token: str) -> bool:
+    """Verify hCaptcha response server-side. Returns True if disabled or valid."""
+    secret = (os.getenv("HCAPTCHA_SECRET") or "").strip()
+    if not secret:
+        return True  # CAPTCHA not configured — skip
+    if not token:
+        return False
+    try:
+        async with httpx.AsyncClient(trust_env=False) as c:
+            r = await c.post(
+                "https://api.hcaptcha.com/siteverify",
+                data={"secret": secret, "response": token},
+                timeout=5,
+            )
+        return r.json().get("success", False)
+    except Exception:
+        return True  # fail open on network error
+
+
+class AuthVerifyReq(BaseModel):
+    hcaptcha_token: Optional[str] = None
 
 
 class AdminTokenPutReq(BaseModel):
@@ -2781,9 +2859,29 @@ async def root():
 
 @app.post("/sh-api/auth/verify")
 async def api_auth_verify(
+    request: Request,
+    req: AuthVerifyReq = None,
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
-    require_admin(x_plugin_token)
+    if req is None:
+        req = AuthVerifyReq()
+    client_ip = (request.client.host if request.client else None) or "unknown"
+
+    if _login_limiter.is_locked(client_ip):
+        raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in 5 minutes.")
+
+    if not await _verify_hcaptcha(req.hcaptcha_token or ""):
+        raise HTTPException(status_code=400, detail="CAPTCHA verification failed.")
+
+    try:
+        require_admin(x_plugin_token)
+    except HTTPException:
+        remaining = _login_limiter.record_failure(client_ip)
+        if remaining == 0:
+            raise HTTPException(status_code=429, detail="Too many failed attempts. Locked out for 5 minutes.")
+        raise HTTPException(status_code=401, detail=f"Invalid token. {remaining} attempt(s) remaining.")
+
+    _login_limiter.record_success(client_ip)
     return {"ok": True}
 
 
@@ -2795,6 +2893,13 @@ async def api_public_theme():
     if isinstance(theme, dict):
         return {"theme": theme.get("value") or "default"}
     return {"theme": theme or "default"}
+
+
+@app.get("/sh-api/public/captcha-config")
+async def api_captcha_config():
+    """Returns hCaptcha site key for the login page. Public endpoint."""
+    site_key = (os.getenv("HCAPTCHA_SITE_KEY") or "").strip()
+    return {"enabled": bool(site_key), "site_key": site_key}
 
 
 @app.get("/login")

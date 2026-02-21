@@ -99,6 +99,9 @@
                             autofocus
                         />
                     </div>
+                    <div id="captchaContainer" style="display:none; margin-bottom: 1rem;">
+                        <div id="hcaptchaWidget" class="h-captcha"></div>
+                    </div>
                     <button type="submit" class="btn good" style="width: 100%">
                         Sign in
                     </button>
@@ -258,11 +261,30 @@
             }, 2000);
 
             const KEY = "socialhunt_token";
+            let captchaEnabled = false;
 
-            // If we have a token, go to main app
+            // Redirect if already logged in
             if (localStorage.getItem(KEY)) {
                 window.location.replace("/");
             }
+
+            // Load hCaptcha config and inject widget if enabled
+            fetch("/sh-api/public/captcha-config")
+                .then((r) => r.json())
+                .then((cfg) => {
+                    if (!cfg.enabled) return;
+                    captchaEnabled = true;
+                    const script = document.createElement("script");
+                    script.src = "https://js.hcaptcha.com/1/api.js";
+                    script.async = true;
+                    script.defer = true;
+                    document.head.appendChild(script);
+                    const container = document.getElementById("captchaContainer");
+                    const widget = document.getElementById("hcaptchaWidget");
+                    container.style.display = "block";
+                    widget.setAttribute("data-sitekey", cfg.site_key);
+                })
+                .catch(() => {});
 
             document.getElementById("loginForm").onsubmit = async (e) => {
                 e.preventDefault();
@@ -276,21 +298,43 @@
                 btn.disabled = true;
                 btn.textContent = "Verifying...";
 
+                const hcaptchaToken =
+                    window.hcaptcha && captchaEnabled
+                        ? hcaptcha.getResponse()
+                        : "";
+
                 try {
                     const res = await fetch("/sh-api/auth/verify", {
                         method: "POST",
-                        headers: { "X-Plugin-Token": token },
+                        headers: {
+                            "X-Plugin-Token": token,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ hcaptcha_token: hcaptchaToken }),
                     });
 
                     if (res.ok) {
                         localStorage.setItem(KEY, token);
                         window.location.replace("/");
-                    } else {
-                        msg.textContent = "Invalid token";
-                        msg.style.display = "block";
-                        btn.disabled = false;
-                        btn.textContent = "Sign in";
+                        return;
                     }
+
+                    const data = await res.json().catch(() => ({}));
+                    if (res.status === 429) {
+                        msg.textContent =
+                            data.detail ||
+                            "Too many failed attempts. Try again later.";
+                    } else if (res.status === 400) {
+                        msg.textContent =
+                            "CAPTCHA verification failed. Please try again.";
+                        if (window.hcaptcha) hcaptcha.reset();
+                    } else {
+                        msg.textContent = data.detail || "Invalid token";
+                        if (window.hcaptcha) hcaptcha.reset();
+                    }
+                    msg.style.display = "block";
+                    btn.disabled = false;
+                    btn.textContent = "Sign in";
                 } catch (err) {
                     msg.textContent = "Connection error";
                     msg.style.display = "block";
