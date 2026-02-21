@@ -12,7 +12,7 @@ from ..paths import resolve_path
 from ..providers_base import BaseProvider
 from ..types import ProviderResult, ResultStatus
 
-API_URL = "https://leakcheck.io/api/v2"
+API_BASE = "https://leakcheck.io/api/v2/query"
 
 
 class LeakCheckProvider(BaseProvider):
@@ -50,12 +50,22 @@ class LeakCheckProvider(BaseProvider):
         return None
 
     def build_url(self, username: str) -> str:
-        return API_URL
+        return f"{API_BASE}/{username}"
 
     def _determine_query_type(self, term: str) -> str:
-        """Let LeakCheck auto-detect unless we can be certain it's an email."""
+        """Determine LeakCheck query type from input format."""
         if "@" in term and "." in term:
             return "email"
+        clean = (
+            term.replace("+", "").replace("-", "")
+            .replace(" ", "").replace("(", "").replace(")", "")
+        )
+        if clean.isdigit() and 7 <= len(clean) <= 15:
+            return "phone"
+        if "." in term and term.count(".") == 3:
+            parts = term.split(".")
+            if all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
+                return "auto"
         return "auto"
 
     async def check(
@@ -63,8 +73,9 @@ class LeakCheckProvider(BaseProvider):
     ) -> ProviderResult:
         start = time.monotonic()
         ts = datetime.now(timezone.utc).isoformat()
-        url = API_URL
         api_key = self._get_api_key()
+        search_term = (username or "").strip()
+        url = f"{API_BASE}/{search_term}" if search_term else API_BASE
 
         if not api_key:
             return ProviderResult(
@@ -80,7 +91,6 @@ class LeakCheckProvider(BaseProvider):
                 timestamp_iso=ts,
             )
 
-        search_term = (username or "").strip()
         if not search_term:
             return ProviderResult(
                 provider=self.name,
@@ -100,20 +110,22 @@ class LeakCheckProvider(BaseProvider):
         evidence: Dict[str, Any] = {"leakcheck": True}
 
         try:
-            params: Dict[str, Any] = {
-                "query": search_term,
-                "limit": 100,
-            }
+            import urllib.parse
+            params: Dict[str, Any] = {"limit": 100}
             if query_type != "auto":
                 params["type"] = query_type
 
+            encoded_term = urllib.parse.quote(search_term, safe="")
+            request_url = f"{API_BASE}/{encoded_term}"
+
             async with httpx.AsyncClient(trust_env=False) as direct_client:
                 response = await direct_client.get(
-                    url,
+                    request_url,
                     params=params,
                     timeout=self.timeout,
                     headers={
                         "X-API-Key": api_key,
+                        "Accept": "application/json",
                         "User-Agent": "Social-Hunt",
                     },
                 )
