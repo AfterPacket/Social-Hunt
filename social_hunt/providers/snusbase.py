@@ -17,7 +17,7 @@ API_URL = "https://api.snusbase.com/data/search"
 SEARCH_TYPES = {
     "email": ["email"],
     "username": ["username"],
-    "phone": ["username", "email"],
+    "phone": ["phone"],
     "ip": ["lastip"],
     "default": ["email", "username"],
 }
@@ -70,7 +70,7 @@ class SnusbaseProvider(BaseProvider):
             .replace(" ", "").replace("(", "").replace(")", "")
         )
         if clean.isdigit() and 7 <= len(clean) <= 15:
-            return ["username", "email"]
+            return ["phone"]
         if "." in term and term.count(".") == 3:
             parts = term.split(".")
             if all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
