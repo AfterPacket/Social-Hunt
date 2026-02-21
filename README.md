@@ -255,13 +255,14 @@ Settings resolution order is:
 
 ## Breach Search / API Integrations
 
-Breach Search runs lookups across three providers simultaneously. Each requires an API key added in **Settings → Add API** (mark as **Secret**).
+Breach Search runs lookups across four providers simultaneously. Each requires an API key added in **Settings → Add API** (mark as **Secret**).
 
 | Provider | Key name | What it searches | Where to get a key |
 | :-- | :-- | :-- | :-- |
 | **Have I Been Pwned** | `hibp_api_key` | Email addresses against known breach databases | [haveibeenpwned.com/API/Key](https://haveibeenpwned.com/API/Key) |
 | **BreachVIP** | *(no key needed)* | Username / email / phone across breach dumps | [breach.vip](https://breach.vip) (free tier) |
-| **Snusbase** | `snusbase_api_key` | Email, username, IP, phone across indexed breach records | [snusbase.com](https://snusbase.com) (paid membership) |
+| **Snusbase** | `snusbase_api_key` | Email, username, IP across indexed breach records | [snusbase.com](https://snusbase.com) (paid membership) |
+| **LeakCheck** | `leakcheck_api_key` | Email, username, phone, and stealer log data | [leakcheck.io](https://leakcheck.io) |
 
 ### Search type auto-detection
 

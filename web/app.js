@@ -1277,7 +1277,7 @@ async function initBreachSearchView() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: term,
-        providers: ["breachvip", "hibp", "snusbase"],
+        providers: ["breachvip", "hibp", "snusbase", "leakcheck"],
       }),
     });
 
@@ -1291,7 +1291,7 @@ async function initBreachSearchView() {
     // Add to history right away
     addSearchHistoryEntry({
       username: term,
-      providers: ["breachvip", "hibp", "snusbase"],
+      providers: ["breachvip", "hibp", "snusbase", "leakcheck"],
       job_id: jobId,
       type: "breach",
     });
@@ -1560,8 +1560,10 @@ function renderBreachView(job, containerId) {
     results.find((r) => r.provider === "breachvip")?.profile?.result_count || 0;
   const snusCount =
     results.find((r) => r.provider === "snusbase")?.profile?.result_count || 0;
+  const leakcheckCount =
+    results.find((r) => r.provider === "leakcheck")?.profile?.result_count || 0;
 
-  if (hibpCount > 0 || bvipCount > 0 || snusCount > 0) {
+  if (hibpCount > 0 || bvipCount > 0 || snusCount > 0 || leakcheckCount > 0) {
     html += `
       <div class="row" style="margin-bottom: 20px; gap: 15px;">
         ${
@@ -1590,6 +1592,16 @@ function renderBreachView(job, containerId) {
           <div class="card" style="flex: 1; text-align: center; border-bottom: 3px solid var(--accent);">
             <div style="font-size: 2rem; font-weight: 800; color: var(--accent);">${snusCount}</div>
             <div class="muted">Detailed Records (Snusbase)</div>
+          </div>
+        `
+            : ""
+        }
+        ${
+          leakcheckCount > 0
+            ? `
+          <div class="card" style="flex: 1; text-align: center; border-bottom: 3px solid var(--warn);">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--warn);">${leakcheckCount}</div>
+            <div class="muted">Detailed Records (LeakCheck)</div>
           </div>
         `
             : ""
@@ -1791,6 +1803,82 @@ function renderBreachView(job, containerId) {
                     return `
                     <tr>
                       <td style="font-weight:bold; color: var(--accent);">${escapeHtml(src)}</td>
+                      ${headerKeys
+                        .map((k) => {
+                          const val = row[k];
+                          let display =
+                            val && typeof val === "object"
+                              ? JSON.stringify(val)
+                              : String(val || "");
+                          if (display.length > 256) display = display.substring(0, 253) + "...";
+                          return `<td>${escapeHtml(display)}</td>`;
+                        })
+                        .join("")}
+                    </tr>
+                  `;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+          ${isTruncated ? `<div class="muted" style="text-align:center; padding: 10px;">Showing first 500 of ${raw.length} results. Export for full data.</div>` : ""}
+        </div>
+      `;
+    }
+  }
+
+  // 5. LeakCheck Detailed Records
+  const leakcheck = results.find((r) => r.provider === "leakcheck");
+  if (leakcheck && leakcheck.status === "found") {
+    const prof = leakcheck.profile || {};
+    const raw = prof.raw_results || [];
+
+    if (raw.length > 0) {
+      if (prof.demo_mode) {
+        html += `
+          <div class="card demo-warning">
+            <div class="demo-warning-title">DEMO MODE ACTIVE</div>
+            <div class="demo-warning-text">
+              Personal information has been censored and results are limited for demonstration purposes.
+            </div>
+          </div>
+        `;
+      }
+      const exclude = ["_id", "id", "sources"];
+      const keys = new Set();
+      raw.forEach((row) => {
+        Object.keys(row).forEach((k) => {
+          if (!exclude.includes(k) && row[k]) keys.add(k);
+        });
+      });
+      const headerKeys = Array.from(keys).sort();
+      const isTruncated = raw.length > 500;
+      const displayRows = isTruncated ? raw.slice(0, 500) : raw;
+
+      html += `
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div style="font-size: 1.1rem; font-weight: 800;">LeakCheck Records</div>
+            <div class="badge">${leakcheckCount} Results</div>
+          </div>
+          <div class="tablewrap">
+            <table style="font-size: 13px; border-radius: 8px;">
+              <thead>
+                <tr>
+                  <th>Source</th>
+                  ${headerKeys.map((k) => `<th>${escapeHtml(k)}</th>`).join("")}
+                </tr>
+              </thead>
+              <tbody>
+                ${displayRows
+                  .map((row) => {
+                    const srcs = row.sources || [];
+                    const src = Array.isArray(srcs) && srcs.length > 0
+                      ? (typeof srcs[0] === "object" ? srcs[0].name : srcs[0])
+                      : "Unknown";
+                    return `
+                    <tr>
+                      <td style="font-weight:bold; color: var(--warn);">${escapeHtml(String(src))}</td>
                       ${headerKeys
                         .map((k) => {
                           const val = row[k];
