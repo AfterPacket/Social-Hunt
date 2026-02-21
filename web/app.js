@@ -451,7 +451,6 @@ function initializeDashboardTips() {
         return;
       }
 
-      // Remove active class from all tips and dots
       tipItems.forEach((item) => item.classList.remove("active"));
       tipDots.forEach((dot) => dot.classList.remove("active"));
 
@@ -530,7 +529,6 @@ function initializeDashboardStats() {
   }
 
   try {
-    // Load statistics from localStorage using main app functions
     const searchHistory = loadJsonArray(KEY_SEARCH_HISTORY);
     const reverseHistory = loadJsonArray(KEY_REVERSE_HISTORY);
     const demaskHistory = loadJsonArray(KEY_DEMASK_HISTORY);
@@ -539,7 +537,6 @@ function initializeDashboardStats() {
     updateDashboardStatValue("totalSearches", searchHistory.length);
     updateDashboardStatValue("reverseSearches", reverseHistory.length);
 
-    // Count breach searches from search history
     const breachCount = searchHistory.filter(
       (item) =>
         item && (item.type === "breach-search" || item.type === "breach"),
@@ -563,7 +560,6 @@ function initializeDashboardStats() {
           providersEl.textContent = "?";
         });
     } else {
-      // Fallback: try to get providers from API directly
       fetch("/sh-api/providers")
         .then((response) => response.json())
         .then((data) => {
@@ -1673,7 +1669,6 @@ function renderBreachView(job, containerId) {
           </div>
         `;
       }
-      // Determine columns dynamically from data
       const exclude = [
         "_id",
         "id",
@@ -2038,7 +2033,6 @@ async function initSearchView() {
   loadBtn.onclick = async () => {
     statusEl.textContent = "Loading providers...";
     let names = await fetchProviders();
-    // Exclude breach-specific providers from general search
     names = names.filter((n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase");
     renderProviders(names);
     statusEl.textContent = `Loaded ${names.length} providers.`;
@@ -2060,7 +2054,6 @@ async function initSearchView() {
 
   // auto-load
   let names = await fetchProviders();
-  // Exclude breach-specific providers from general search
   names = names.filter((n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase");
   renderProviders(names);
 
@@ -3600,7 +3593,6 @@ async function initDeepMosaicView() {
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
-        // Extract job ID from filename
         const filename = response.headers.get("content-disposition");
         const jobMatch = filename && filename.match(/deepmosaic_(\w+)_/);
         currentJobId = jobMatch ? jobMatch[1] : Date.now().toString();
