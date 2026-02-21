@@ -270,7 +270,7 @@ Snusbase automatically chooses the correct search field based on your input:
 | Input format | Fields searched |
 | :-- | :-- |
 | Contains `@` and `.` | `email` |
-| Digits only, 7–15 chars (phone) | `phone` |
+| Digits only, 7–15 chars (phone) | `username`, `email` |
 | Four dot-separated octets (IP) | `lastip` |
 | Anything else | `email`, `username` |
 
