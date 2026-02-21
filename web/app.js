@@ -2513,8 +2513,8 @@ function initSettingsView() {
   const savePublicUrlBtn = document.getElementById("saveSettings");
   const themeSelect = document.getElementById("themeSelect");
   const saveThemeBtn = document.getElementById("saveTheme");
-  const updateBtn = document.getElementById("updateBtn"); // Assuming this exists now
-  const updateLog = document.getElementById("updateLog"); // Assuming this exists now
+  const updateBtn = document.getElementById("updateBtn");
+  const updateLog = document.getElementById("updateLog");
   const restartBtn = document.getElementById("restartBtn");
   const demoModeToggle = document.getElementById("demoModeToggle");
   const saveDemoModeBtn = document.getElementById("saveDemoMode");
