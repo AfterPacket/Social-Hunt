@@ -18,6 +18,18 @@
 #     SorkoPiko
 #     TURROKS
 # search_domains:
+linktree:
+  url: https://linktr.ee/{username}
+  timeout: 15
+  ua_profile: "desktop_chrome"
+  success_patterns:
+    - "linktr.ee/{username}"
+    - "LinkProfile"
+    - "ltr-link"
+  error_patterns:
+    - "Sorry, this page isn't available"
+    - "page not found"
+    - "404"
 community adobe:
   url: https://community.adobe.com/t5/forums/searchpage/tab/user?q={username}
   timeout: 20
