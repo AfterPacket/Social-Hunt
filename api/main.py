@@ -2879,11 +2879,20 @@ async def root():
 @app.post("/sh-api/auth/verify")
 async def api_auth_verify(
     request: Request,
-    req: Optional[AuthVerifyReq] = Body(default=None),
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
-    if req is None:
-        req = AuthVerifyReq()
+    # Parse body manually so a missing/empty body never causes a 422.
+    # app.js calls this endpoint with no body for session re-verification;
+    # login.html sends JSON with hcaptcha_token when captcha is active.
+    hcaptcha_token: str = ""
+    try:
+        raw = await request.body()
+        if raw:
+            parsed = json.loads(raw)
+            hcaptcha_token = parsed.get("hcaptcha_token") or ""
+    except Exception:
+        pass
+
     client_ip = (request.client.host if request.client else None) or "unknown"
 
     if _login_limiter.is_locked(client_ip):
@@ -2891,7 +2900,7 @@ async def api_auth_verify(
         mins = lockout_sec // 60
         raise HTTPException(status_code=429, detail=f"Too many failed attempts. Try again in {mins} minute(s).")
 
-    if not await _verify_hcaptcha(req.hcaptcha_token or ""):
+    if not await _verify_hcaptcha(hcaptcha_token):
         raise HTTPException(status_code=400, detail="CAPTCHA verification failed.")
 
     try:
