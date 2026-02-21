@@ -33,12 +33,26 @@ app = FastAPI(title="Social-Hunt API", version="2.2.0")
 
 
 @app.middleware("http")
-async def add_no_cache_header(request: Request, call_next):
+async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     # Disable caching for all responses to ensure users always see the latest UI and data
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
+    # Security headers (address OWASP ZAP findings)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self'; "
+        "font-src 'self' data:; "
+        "frame-ancestors 'self';"
+    )
     return response
 
 
