@@ -51,6 +51,7 @@ async def add_security_headers(request: Request, call_next):
         "img-src 'self' data: blob:; "
         "connect-src 'self'; "
         "font-src 'self' data:; "
+        "form-action 'self'; "
         "frame-ancestors 'self';"
     )
     return response
