@@ -252,6 +252,50 @@ Settings resolution order is:
 | `SOCIAL_HUNT_FACE_AI_URL` | External face restoration endpoint |
 | `REPLICATE_API_TOKEN` | Replicate API token for demasking |
 | `SOCIAL_HUNT_PROXY` | SOCKS Proxy URL for .onion/darkweb access (e.g., `socks5h://127.0.0.1:9050`) |
+| `HCAPTCHA_SITE_KEY` | hCaptcha site key — enables CAPTCHA widget on the login page |
+| `HCAPTCHA_SECRET` | hCaptcha secret key — required for server-side CAPTCHA verification |
+
+## Login Security
+
+### Rate limiting
+
+The login endpoint (`/sh-api/auth/verify`) has built-in per-IP brute-force protection. Limits adjust automatically based on whether hCaptcha is configured:
+
+| Mode | Max failures | Window | Lockout |
+| :-- | :-- | :-- | :-- |
+| No captcha (default) | 20 | 10 minutes | 60 seconds |
+| hCaptcha active | 5 | 60 seconds | 5 minutes |
+
+**If you lock yourself out**, the lockout is in-memory and clears on server restart:
+
+```bash
+# systemd
+sudo systemctl restart socialhunt
+
+# manual
+# Ctrl+C the running process, then restart with python run.py
+```
+
+The lockout resets automatically after the lockout period even without a restart (60 s without captcha, 5 min with captcha).
+
+### hCaptcha (optional)
+
+Add a CAPTCHA challenge to the login form to block automated attacks. Uses [hcaptcha.com](https://hcaptcha.com) — free tier, no billing required.
+
+**Setup:**
+
+1. Sign up at [hcaptcha.com](https://hcaptcha.com) and create a new site.
+2. Copy the **Site Key** and **Secret Key**.
+3. Add to your environment file (`/etc/socialhunt.env` on Pi, or `.env`):
+
+```bash
+HCAPTCHA_SITE_KEY=your_site_key_here
+HCAPTCHA_SECRET=your_secret_key_here
+```
+
+4. Restart the server. The CAPTCHA widget will appear on the login page automatically.
+
+Without these env vars the login page works normally (no widget, relaxed rate limits).
 
 ## Breach Search / API Integrations
 
@@ -393,6 +437,7 @@ proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_
 
 ## Troubleshooting
 
+- Locked out of login (too many failed attempts): the lockout is in-memory — restart the server (`sudo systemctl restart socialhunt` or `Ctrl+C` + `python run.py`) to clear it immediately. Without hCaptcha configured the lockout is only 60 seconds anyway.
 - BreachVIP 503/blocked: breach.vip may block datacenter IPs. Results will show a BLOCKED status — no configuration change can bypass this; try from a residential IP or VPN.
 - HIBP skipped: add `hibp_api_key` in Settings (get a key at [haveibeenpwned.com/API/Key](https://haveibeenpwned.com/API/Key)).
 - Snusbase skipped: add `snusbase_api_key` in Settings (included with any paid Snusbase membership at [snusbase.com](https://snusbase.com)). Mark it as **Secret**.
