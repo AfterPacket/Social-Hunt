@@ -1,8 +1,7 @@
 fastapi
 starlette
 uvicorn[standard]>=0.34.0
-httpx>=0.28.1
-httpx-socks
+httpx[socks]>=0.28.1
 PyYAML>=6.0.2
 beautifulsoup4>=4.12.3
 numpy>=1.21.6,<2.0
