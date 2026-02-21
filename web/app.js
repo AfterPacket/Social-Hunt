@@ -91,7 +91,7 @@ function createSkeleton(type = "card", count = 1) {
   return skeletons;
 }
 
-// ---- token helpers ----
+// ---- helpers ----
 function getToken() {
   return localStorage.getItem("socialhunt_token");
 }
@@ -409,7 +409,6 @@ function initializeSystemStatus() {
     serverIndicator.className = "status-indicator status-good";
   }
 
-  // Authentication — green if a token is stored, yellow if not
   const tokenIndicator = document.getElementById("dashTokenStatus");
   if (tokenIndicator) {
     if (getToken()) {
@@ -944,7 +943,7 @@ function initGoogleDorksView() {
     { category: "Site Info",    query: "site:{target} inurl:robots.txt" },
     { category: "Site Info",    query: '"intitle:index of" site:{target}' },
 
-    // ── Login / Admin Panels ──────────────────────────────────────────
+    // ── Login Panels ──────────────────────────────────────────────────
     { category: "Login Panels", query: "site:{target} inurl:login" },
     { category: "Login Panels", query: "site:{target} inurl:admin" },
     { category: "Login Panels", query: "site:{target} inurl:signin" },
@@ -2327,7 +2326,6 @@ function initTokensView() {
       const j = await r.json().catch(() => ({}));
       if (statusEl) statusEl.textContent = JSON.stringify(j, null, 2);
 
-      // If bootstrap secret is not required, hide the field to reduce confusion
       if (bootstrapSecretInput && !j.bootstrap_secret_required) {
         bootstrapSecretInput.style.display = "none";
       }
@@ -2613,7 +2611,6 @@ function initSettingsView() {
       presentKeys.add(k);
       if (secret) secretKeys.add(k);
 
-      // If secret and user left placeholder, don't overwrite
       if (secret && (v === "•••••• (set)" || v.trim() === "")) continue;
       out[k] = v;
     }
@@ -2700,7 +2697,6 @@ function initSettingsView() {
     };
   }
 
-  // UPDATE SYSTEM (Re-added)
   if (updateBtn) {
     updateBtn.onclick = async () => {
       if (!confirm("Are you sure you want to pull updates from GitHub?"))
@@ -3079,15 +3075,11 @@ async function initSecureNotesView() {
         )
           return;
 
-        // Try to decrypt the imported file with current key to verify password
         const salt = new Uint8Array(
           atob(importedData.salt)
             .split("")
             .map((c) => c.charCodeAt(0)),
         );
-
-        // Note: Decryption will only work if master password matches the one used for the backup
-        // We attempt decryption here to validate.
         const decrypted = await decrypt(importedData, currentKey);
 
         // If successful, update local state
