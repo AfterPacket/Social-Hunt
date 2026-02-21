@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 import replicate
-from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
+from fastapi import Body, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -2879,7 +2879,7 @@ async def root():
 @app.post("/sh-api/auth/verify")
 async def api_auth_verify(
     request: Request,
-    req: AuthVerifyReq = None,
+    req: Optional[AuthVerifyReq] = Body(default=None),
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
     if req is None:
