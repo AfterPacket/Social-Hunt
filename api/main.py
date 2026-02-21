@@ -150,16 +150,33 @@ def _bootstrap_allowed(request: Request) -> bool:
 import threading as _threading
 
 
-class _LoginRateLimiter:
-    """Per-IP brute-force protection for the auth/verify endpoint."""
+def _captcha_active() -> bool:
+    """Returns True when hCaptcha is configured (both env vars present)."""
+    return bool((os.getenv("HCAPTCHA_SECRET") or "").strip())
 
-    MAX_FAILURES = 5
-    WINDOW_SEC = 60
-    LOCKOUT_SEC = 300  # 5 minutes
+
+class _LoginRateLimiter:
+    """
+    Per-IP brute-force protection for the auth/verify endpoint.
+
+    Limits are tightened automatically when hCaptcha is active (bots are
+    blocked at the captcha layer so 5 attempts is plenty).  When captcha is
+    not configured the limits are relaxed so a human mistyping their own
+    token cannot easily lock themselves out.
+
+    With captcha   : 5 failures / 60 s window → 5-minute lockout
+    Without captcha: 20 failures / 600 s window → 60-second lockout
+    """
 
     def __init__(self):
         self._lock = _threading.Lock()
         self._records: Dict[str, Any] = {}
+
+    @staticmethod
+    def _limits():
+        if _captcha_active():
+            return 5, 60, 300      # max_failures, window_sec, lockout_sec
+        return 20, 600, 60         # relaxed — human-friendly
 
     def _rec(self, ip: str) -> Dict:
         return self._records.setdefault(
@@ -168,28 +185,30 @@ class _LoginRateLimiter:
         )
 
     def is_locked(self, ip: str) -> bool:
+        max_failures, window_sec, _ = self._limits()
         with self._lock:
             rec = self._rec(ip)
             now = time.monotonic()
             if now < rec["locked_until"]:
                 return True
-            if now - rec["window_start"] > self.WINDOW_SEC:
+            if now - rec["window_start"] > window_sec:
                 rec["failures"] = 0
                 rec["window_start"] = now
             return False
 
     def record_failure(self, ip: str) -> int:
         """Record a failed attempt. Returns remaining attempts before lockout."""
+        max_failures, window_sec, lockout_sec = self._limits()
         with self._lock:
             rec = self._rec(ip)
             now = time.monotonic()
-            if now - rec["window_start"] > self.WINDOW_SEC:
+            if now - rec["window_start"] > window_sec:
                 rec["failures"] = 0
                 rec["window_start"] = now
             rec["failures"] += 1
-            remaining = max(0, self.MAX_FAILURES - rec["failures"])
-            if rec["failures"] >= self.MAX_FAILURES:
-                rec["locked_until"] = now + self.LOCKOUT_SEC
+            remaining = max(0, max_failures - rec["failures"])
+            if rec["failures"] >= max_failures:
+                rec["locked_until"] = now + lockout_sec
             return remaining
 
     def record_success(self, ip: str) -> None:
@@ -2868,7 +2887,9 @@ async def api_auth_verify(
     client_ip = (request.client.host if request.client else None) or "unknown"
 
     if _login_limiter.is_locked(client_ip):
-        raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in 5 minutes.")
+        _, _, lockout_sec = _LoginRateLimiter._limits()
+        mins = lockout_sec // 60
+        raise HTTPException(status_code=429, detail=f"Too many failed attempts. Try again in {mins} minute(s).")
 
     if not await _verify_hcaptcha(req.hcaptcha_token or ""):
         raise HTTPException(status_code=400, detail="CAPTCHA verification failed.")
@@ -2878,7 +2899,9 @@ async def api_auth_verify(
     except HTTPException:
         remaining = _login_limiter.record_failure(client_ip)
         if remaining == 0:
-            raise HTTPException(status_code=429, detail="Too many failed attempts. Locked out for 5 minutes.")
+            _, _, lockout_sec = _LoginRateLimiter._limits()
+            mins = lockout_sec // 60
+            raise HTTPException(status_code=429, detail=f"Too many failed attempts. Locked out for {mins} minute(s).")
         raise HTTPException(status_code=401, detail=f"Invalid token. {remaining} attempt(s) remaining.")
 
     _login_limiter.record_success(client_ip)
