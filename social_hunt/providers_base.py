@@ -10,6 +10,7 @@ class BaseProvider(ABC):
     name: str = "base"
     timeout: int = 10
     ua_profile: str = "desktop_chrome"
+    use_proxy: bool = False  # Set True on providers that benefit from proxy routing
 
     @abstractmethod
     def build_url(self, username: str) -> str:

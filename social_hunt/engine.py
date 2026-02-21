@@ -69,9 +69,10 @@ class SocialHuntEngine:
 
                 await self.limiter.wait(url)
 
-                # Select client based on URL (Tor split-tunneling)
+                # Select client: proxy for .onion URLs or providers that opt in
                 use_client = client_direct
-                if ".onion" in url and client_proxy:
+                wants_proxy = ".onion" in url or getattr(prov, "use_proxy", False)
+                if wants_proxy and client_proxy:
                     use_client = client_proxy
 
                 async with sem:

@@ -4,8 +4,6 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-import httpx
-
 from ..demo import censor_breach_data, is_demo_mode
 from ..providers_base import BaseProvider
 from ..types import ProviderResult, ResultStatus
@@ -28,6 +26,7 @@ class BreachVIPProvider(BaseProvider):
     name = "breachvip"
     timeout = 15
     ua_profile = "desktop_chrome"
+    use_proxy = True
 
     def build_url(self, username: str) -> str:
         return "https://breach.vip/api/search"
@@ -129,13 +128,12 @@ class BreachVIPProvider(BaseProvider):
         evidence: Dict[str, Any] = {"breachvip": True}
 
         try:
-            async with httpx.AsyncClient(trust_env=False) as direct_client:
-                response = await direct_client.post(
-                    self.build_url(username),
-                    timeout=self.timeout,
-                    headers=breachvip_headers,
-                    json=request_body,
-                )
+            response = await client.post(
+                self.build_url(username),
+                timeout=self.timeout,
+                headers=breachvip_headers,
+                json=request_body,
+            )
 
             elapsed = int((time.monotonic() - start) * 1000)
 
