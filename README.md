@@ -251,7 +251,8 @@ Settings resolution order is:
 | `SOCIAL_HUNT_DEMO_MODE` | Censor sensitive fields in results |
 | `SOCIAL_HUNT_FACE_AI_URL` | External face restoration endpoint |
 | `REPLICATE_API_TOKEN` | Replicate API token for demasking |
-| `SOCIAL_HUNT_PROXY` | SOCKS Proxy URL for .onion/darkweb access (e.g., `socks5h://127.0.0.1:9050`) |
+| `SOCIAL_HUNT_PROXY` | SOCKS proxy URL for `.onion`/darkweb access only (e.g., `socks5h://127.0.0.1:9050`) |
+| `SOCIAL_HUNT_CLEARNET_PROXY` | HTTP/SOCKS proxy for clearnet providers that benefit from proxy routing (e.g., `http://user:pass@proxy.example.com:8080`) |
 | `HCAPTCHA_SITE_KEY` | hCaptcha site key — enables CAPTCHA widget on the login page |
 | `HCAPTCHA_SECRET` | hCaptcha secret key — required for server-side CAPTCHA verification |
 
@@ -338,7 +339,7 @@ Snusbase automatically chooses the correct search field based on your input:
 
 ## Tor / Darkweb Support
 
-Social-Hunt supports scanning `.onion` sites by routing traffic through a Tor proxy. It uses split-tunneling, so regular sites (like Twitter) use your direct connection while `.onion` sites go through the proxy.
+Social-Hunt supports scanning `.onion` sites by routing traffic through a Tor proxy. It uses split-tunneling — regular clearnet sites use your direct connection while `.onion` sites go through Tor.
 For safety, avatar face matching skips `.onion` hosts.
 
 ### Prerequisites
@@ -349,11 +350,11 @@ For safety, avatar face matching skips `.onion` hosts.
    ```
 
 ### Configuration
-Set the `SOCIAL_HUNT_PROXY` environment variable before starting the app. Use `socks5h://` to ensure DNS resolution happens over Tor.
+Set `SOCIAL_HUNT_PROXY` to your Tor SOCKS address. Use `socks5h://` to ensure DNS resolution happens over Tor (required for `.onion` hostnames).
 
 **Linux/Mac:**
 ```bash
-export SOCIAL_HUNT_PROXY="socks5://127.0.0.1:9050"
+export SOCIAL_HUNT_PROXY="socks5h://127.0.0.1:9050"
 python run.py
 ```
 
@@ -362,7 +363,20 @@ python run.py
 $env:SOCIAL_HUNT_PROXY="socks5h://127.0.0.1:9150"
 python run.py
 ```
-*(Note: Standard Tor service uses port 9050; Tor Browser usually uses 9150).*
+*(Standard Tor service uses port 9050; Tor Browser uses 9150.)*
+
+> **Note:** `SOCIAL_HUNT_PROXY` is exclusively for Tor/`.onion` routing and is not used for clearnet providers. For clearnet proxy support see `SOCIAL_HUNT_CLEARNET_PROXY` below.
+
+### Clearnet Proxy (optional)
+
+Some clearnet providers (e.g. BreachVIP) can optionally route through a proxy — useful if your server IP is blocked. Set `SOCIAL_HUNT_CLEARNET_PROXY` to a residential or HTTP proxy:
+
+```bash
+export SOCIAL_HUNT_CLEARNET_PROXY="http://user:pass@proxy.example.com:8080"
+python run.py
+```
+
+This is separate from Tor and has no effect on `.onion` routing. If unset, affected providers use your direct connection.
 
 ## Plugins
 

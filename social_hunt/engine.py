@@ -42,19 +42,30 @@ class SocialHuntEngine:
 
         sem = asyncio.Semaphore(self.max_concurrency)
 
-        # Allow optional proxy configuration (e.g. socks5://127.0.0.1:9050 for Tor)
-        # Note: SOCKS support requires 'pip install httpx-socks'
-        proxy_url = os.getenv("SOCIAL_HUNT_PROXY")
+        # SOCIAL_HUNT_PROXY      — Tor/darkweb proxy, used exclusively for .onion URLs
+        #                          e.g. socks5h://127.0.0.1:9050
+        # SOCIAL_HUNT_CLEARNET_PROXY — optional residential/HTTP proxy for clearnet
+        #                              providers that set use_proxy=True (e.g. BreachVIP)
+        #                          e.g. http://user:pass@proxy.example.com:8080
+        tor_proxy_url = os.getenv("SOCIAL_HUNT_PROXY")
+        clearnet_proxy_url = os.getenv("SOCIAL_HUNT_CLEARNET_PROXY")
 
         async with AsyncExitStack() as stack:
             # Default direct client
             client_direct = await stack.enter_async_context(httpx.AsyncClient())
 
-            # Optional proxy client for .onion addresses
-            client_proxy = None
-            if proxy_url:
-                client_proxy = await stack.enter_async_context(
-                    httpx.AsyncClient(proxy=proxy_url)
+            # Tor client — .onion URLs only
+            client_tor = None
+            if tor_proxy_url:
+                client_tor = await stack.enter_async_context(
+                    httpx.AsyncClient(proxy=tor_proxy_url)
+                )
+
+            # Clearnet proxy client — for providers that opt in via use_proxy=True
+            client_clearnet_proxy = None
+            if clearnet_proxy_url:
+                client_clearnet_proxy = await stack.enter_async_context(
+                    httpx.AsyncClient(proxy=clearnet_proxy_url)
                 )
 
             async def run_one(name: str) -> ProviderResult:
@@ -69,11 +80,16 @@ class SocialHuntEngine:
 
                 await self.limiter.wait(url)
 
-                # Select client: proxy for .onion URLs or providers that opt in
-                use_client = client_direct
-                wants_proxy = ".onion" in url or getattr(prov, "use_proxy", False)
-                if wants_proxy and client_proxy:
-                    use_client = client_proxy
+                # Client selection:
+                #   .onion URLs → Tor proxy (SOCIAL_HUNT_PROXY)
+                #   use_proxy providers → clearnet proxy (SOCIAL_HUNT_CLEARNET_PROXY)
+                #   fallback → direct
+                if ".onion" in url and client_tor:
+                    use_client = client_tor
+                elif getattr(prov, "use_proxy", False) and client_clearnet_proxy:
+                    use_client = client_clearnet_proxy
+                else:
+                    use_client = client_direct
 
                 async with sem:
                     provider_timeout = getattr(prov, "timeout", 15) + 5
