@@ -26,7 +26,7 @@ class BreachVIPProvider(BaseProvider):
     name = "breachvip"
     timeout = 15
     ua_profile = "desktop_chrome"
-    use_proxy = False
+    use_proxy = True
 
     def build_url(self, username: str) -> str:
         return "https://breach.vip/api/search"
