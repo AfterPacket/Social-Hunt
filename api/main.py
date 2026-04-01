@@ -1202,98 +1202,70 @@ def _sample_skin_tone(
     face_boxes: list,
 ) -> str:
     """
-    Sample pixels from multiple skin-likely regions to derive a rough tone
-    description for the inpainting prompt.
+    Scan the ENTIRE image for skin-like pixels and average them.
+    Works even when the face is fully covered — hands, arms, wrists,
+    and any exposed skin anywhere in the frame all contribute.
 
-    Strategy:
-     - Primary: narrow forehead strip (top 15 % of face box, centre 40 %)
-       — skips the balaclava/fabric region which starts at ~50 % of box.
-     - Secondary: neck/chin area just BELOW the face box
-     - Tertiary: lower-third of image sides (hands/arms often visible there)
-     - Filtering: skip near-white (>230,>230,>230) and near-black (<30,<30,<30)
-       pixels which are fabric, background, or shadow rather than skin.
+    Kovac skin heuristic + luminance gates:
+      R>95, G>40, B>20 AND R>G>B AND |R-G|>15
+      Excludes near-white (balaclava/walls) and near-black (shadow/hair).
     """
     from PIL import Image as PILImage
 
-    def _is_skin_like(r: int, g: int, b: int) -> bool:
-        """Rough skin-tone pixel filter — rejects fabric, shadow, background."""
-        # Skip near-white (balaclava/clothing) and near-black (shadow/hair)
-        if r > 230 and g > 230 and b > 230:
+    def _is_skin(r: int, g: int, b: int) -> bool:
+        if max(r, g, b) < 40:                    # near-black / shadow
             return False
-        if r < 30 and g < 30 and b < 30:
+        if r > 220 and g > 210 and b > 200:       # near-white / fabric
             return False
-        # Skin heuristic: R > G > B and red channel dominant
-        if r < 60:
+        if not (r > 95 and g > 40 and b > 20):    # too dark overall
+            return False
+        if not (r > g > b):                        # red must dominate
+            return False
+        if abs(r - g) < 15:                        # too grey / neutral
             return False
         return True
 
     try:
         pil = PILImage.open(BytesIO(image_bytes)).convert("RGB")
         w_img, h_img = pil.size
-        samples: list[tuple[int, int, int]] = []
 
-        for top, right, bottom, left in face_boxes:
-            fh = bottom - top
-            fw = right - left
+        # Downsample for speed — 128 px wide is enough for colour sampling
+        scale = 128.0 / max(w_img, 1)
+        thumb = pil.resize(
+            (max(1, int(w_img * scale)), max(1, int(h_img * scale)))
+        )
 
-            # ── A. Very top of face box (forehead / temple region above mask) ──
-            fore_top = top
-            fore_bot = top + max(1, int(fh * 0.15))
-            fore_left = left + int(fw * 0.30)
-            fore_right = right - int(fw * 0.30)
-            if fore_bot > fore_top and fore_right > fore_left:
-                crop = pil.crop((fore_left, fore_top, fore_right, fore_bot))
-                for px in crop.getdata():
-                    if _is_skin_like(*px):
-                        samples.append(px)
-
-            # ── B. Neck / chin — just BELOW the face box ─────────────────────
-            neck_top = bottom + int(fh * 0.02)
-            neck_bot = min(h_img, bottom + int(fh * 0.20))
-            if neck_bot > neck_top:
-                neck_crop = pil.crop((fore_left, neck_top, fore_right, neck_bot))
-                for px in neck_crop.getdata():
-                    if _is_skin_like(*px):
-                        samples.append(px)
-
-            # ── C. Sides of image lower third (hands / arms often visible) ────
-            lower_top = int(h_img * 0.65)
-            lower_bot = int(h_img * 0.90)
-            side_w = int(w_img * 0.15)
-            for sx, ex in [(0, side_w), (w_img - side_w, w_img)]:
-                side_crop = pil.crop((sx, lower_top, ex, lower_bot))
-                for px in side_crop.getdata():
-                    if _is_skin_like(*px):
-                        samples.append(px)
+        samples = [px for px in thumb.getdata() if _is_skin(*px)]
 
         if not samples:
-            print("[Demask] No reliable skin pixels found; using neutral hint.")
+            print("[Demask] No skin pixels in image; returning neutral hint.")
             return "natural skin tone"
 
         avg_r = sum(p[0] for p in samples) // len(samples)
         avg_g = sum(p[1] for p in samples) // len(samples)
         avg_b = sum(p[2] for p in samples) // len(samples)
 
-        print(f"[Demask] Skin sample avg RGB=({avg_r},{avg_g},{avg_b}) from {len(samples)} px")
+        print(
+            f"[Demask] Skin avg RGB=({avg_r},{avg_g},{avg_b}) ",
+            f"from {len(samples)} px",
+        )
 
-        # Rough ITA (Individual Typology Angle) approximation
-        if avg_r > 210 and avg_g > 180:
-            return "very fair caucasian skin, light complexion, pale skin"
-        elif avg_r > 185 and avg_g > 150:
-            return "fair caucasian skin, light skin tone"
-        elif avg_r > 160 and avg_g > 120:
+        if avg_r > 210 and avg_g > 170:
+            return "very fair caucasian skin, very light complexion, pale skin"
+        elif avg_r > 190 and avg_g > 145:
+            return "fair caucasian skin, light skin tone, fair complexion"
+        elif avg_r > 165 and avg_g > 115:
             return "medium skin tone, light-medium complexion"
-        elif avg_r > 130 and avg_g > 90:
+        elif avg_r > 135 and avg_g > 85:
             return "olive or tan skin tone, medium-dark complexion"
-        elif avg_r > 100:
-            return "dark skin tone, brown complexion"
+        elif avg_r > 105:
+            return "dark brown skin tone, brown complexion"
         else:
-            return "very dark skin tone, deep brown complexion"
+            return "very dark skin tone, deep brown or ebony complexion"
 
     except Exception as e:
-        print(f"[Demask] Skin tone sampling failed ({e}); using generic hint.")
+        print(f"[Demask] Skin tone sampling failed ({e}); neutral fallback.")
         return "natural skin tone"
-
 
 def _detect_facial_hair(
     image_bytes: bytes,
@@ -1917,7 +1889,7 @@ async def api_demask(
             "num_inference_steps": 60,
             # 7.5 balances prompt adherence (keeps correct ethnicity/skin tone)
             # with photorealism — below 6 the model ignores skin tone hints.
-            "guidance_scale": 7.5,
+            "guidance_scale": 9.0,
             # K_EULER_ANCESTRAL introduces stochastic noise at each step which
             # produces more organic, photographic skin compared to the fully
             # deterministic DPMSolverMultistep.
@@ -2009,13 +1981,21 @@ async def api_demask(
         # crop's original pixel dimensions (e.g. 320×400) — a much smaller
         # upscale than going straight to full-image size — then paste it back
         # using the mask so only the covered region changes.
+        # Download inpainted bytes ONCE so both the primary composite and any
+        # fallback composite path use the same data (Replicate URLs expire quickly).
+        print("[Demask] Downloading inpainted result…")
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as hc:
+                inp_resp = await hc.get(inpainted_url)
+            inpainted_bytes_cached = inp_resp.content
+        except Exception as dl_err:
+            print(f"[Demask] Download failed: {dl_err}")
+            raise HTTPException(status_code=500, detail=f"Could not download inpainted result: {dl_err}")
+
         print("[Demask] Compositing crop result onto original image…")
         try:
             from PIL import Image as PILImage
-
-            async with httpx.AsyncClient() as hc:
-                inp_resp = await hc.get(inpainted_url)
-            inpainted_pil = PILImage.open(BytesIO(inp_resp.content)).convert("RGB")
+            inpainted_pil = PILImage.open(BytesIO(inpainted_bytes_cached)).convert("RGB")
 
             original_pil = PILImage.open(BytesIO(content)).convert("RGB")
             orig_w, orig_h = original_pil.size
@@ -2049,9 +2029,7 @@ async def api_demask(
             # original at the correct position rather than returning raw 512x512.
             try:
                 from PIL import Image as PILImage
-                async with httpx.AsyncClient() as hc:
-                    img_res = await hc.get(inpainted_url)
-                inpainted_pil = PILImage.open(BytesIO(img_res.content)).convert("RGB")
+                inpainted_pil = PILImage.open(BytesIO(inpainted_bytes_cached)).convert("RGB")
                 original_pil = PILImage.open(BytesIO(content)).convert("RGB")
                 orig_w2, orig_h2 = original_pil.size
                 cl2, ct2, cr2, cb2 = crop_region
