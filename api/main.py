@@ -3436,79 +3436,51 @@ async def api_voter_records_search(
     note = ""
 
     # ── States where we attempt a live automated fetch ───────────────
-    _LIVE_SOURCES: Dict[str, str] = {
-        "NC": "NC State Board of Elections",
-        "FL": "Florida Division of Elections",
-        "VA": "Virginia Department of Elections",
-        "WI": "Wisconsin MyVote",
-    }
+    # ── All states: portal-redirect only ─────────────────────────────
+    # All major state voter portals (NC NCSBE, FL, VA, OH, WI MyVote,
+    # etc.) are JavaScript-rendered SPAs or sit behind Cloudflare bot
+    # challenges.  Server-side HTTP scraping returns 0 results or a
+    # CAPTCHA page — live in-app results are not feasible without a
+    # headless browser runtime.  We surface the official state portal
+    # link (pre-filled via URL params where the state supports it) so
+    # the user can complete the search in one click.
 
-    if state in _LIVE_SOURCES:
-        try:
-            if state == "NC":
-                results = await _try_nc_voter_lookup(first_name, last_name, county)
-            elif state == "FL":
-                results = await _try_fl_voter_lookup(first_name, last_name, county)
-            elif state == "VA":
-                results = await _try_va_voter_lookup(first_name, last_name)
-            elif state == "WI":
-                results = await _try_wi_voter_lookup(first_name, last_name)
+    # Determine whether the deep link is actually pre-filled with search terms
+    template = _VOTER_DEEPLINK_TEMPLATES.get(state, "")
+    prefilled = bool(template) and ("{first}" in template or "{last}" in template)
 
-            source = _LIVE_SOURCES[state]
-            if not results:
-                note = (
-                    f"No matching records found in the {state_name} voter database for "
-                    f'"{first_name} {last_name}". '
-                    f"Use the portal link below to verify manually."
-                )
-        except Exception as exc:
+    if state_portal:
+        if state == "TX":
             note = (
-                f"Live lookup failed ({type(exc).__name__}). "
-                f"Use the portal link below to search manually."
+                f"Texas voter registration is managed at the <strong>county level</strong> — "
+                f"there is no single statewide name-lookup portal. "
+                f"The link below opens the Texas SOS directory of all county election offices. "
+                f"Find <strong>{first_name} {last_name}</strong>'s county and contact that office directly, "
+                f"or visit the county's own voter registration website."
             )
-
-    # ── All other states: return portal info + deep link ─────────────
-    else:
-        # Determine whether the deep link is actually pre-filled with search terms
-        template = _VOTER_DEEPLINK_TEMPLATES.get(state, "")
-        prefilled = bool(template) and ("{first}" in template or "{last}" in template)
-
-        if state_portal:
-            if state == "TX":
-                note = (
-                    f"Texas voter registration is managed at the <strong>county level</strong> — "
-                    f"there is no single statewide name-lookup portal. "
-                    f"The link below opens the Texas SOS directory of all county election offices. "
-                    f"Find <strong>{first_name} {last_name}</strong>'s county and contact that office directly, "
-                    f"or visit the county's own voter registration website."
-                )
-            elif prefilled:
-                note = (
-                    f"The link below opens the {state_name} official voter portal "
-                    f"with <strong>{first_name} {last_name}</strong> already entered "
-                    f"in the search fields. Click it to go directly to the results."
-                )
-            else:
-                note = (
-                    f"{state_name} has a public voter registration lookup portal, "
-                    f"but it does not support pre-filled URL searches. "
-                    f"Click the link below and enter "
-                    f"<strong>{first_name} {last_name}</strong> manually."
-                )
-            source = f"{state_name} Secretary of State"
+        elif prefilled:
+            note = (
+                f"The link below opens the {state_name} official voter portal "
+                f"with <strong>{first_name} {last_name}</strong> already entered "
+                f"in the search fields. Click it to go directly to the results."
+            )
         else:
-            prefilled = False
             note = (
-                f"{state_name} does not currently have a public online voter "
-                f"registration lookup portal. You may be able to request voter "
-                f"registration data through a public records request to your "
-                f"county election office or the Secretary of State's office."
+                f"{state_name} has a public voter registration lookup portal, "
+                f"but it does not support pre-filled URL searches. "
+                f"Click the link below and enter "
+                f"<strong>{first_name} {last_name}</strong> manually."
             )
-            source = "Public Records Reference"
-
-    # For live-lookup states prefilled is not set in their branch — default to False
-    if state in ("NC", "FL", "VA", "WI"):
+        source = f"{state_name} Secretary of State"
+    else:
         prefilled = False
+        note = (
+            f"{state_name} does not currently have a public online voter "
+            f"registration lookup portal. You may be able to request voter "
+            f"registration data through a public records request to your "
+            f"county election office or the Secretary of State's office."
+        )
+        source = "Public Records Reference"
 
     elapsed_ms = (time.monotonic() - t_start) * 1000
 
@@ -3521,7 +3493,7 @@ async def api_voter_records_search(
         "source": source,
         "note": note,
         "has_portal": bool(state_portal),
-        "live_lookup": state in ("NC", "FL", "VA", "WI"),
+        "live_lookup": False,
         "prefilled": prefilled,
         "elapsed_ms": round(elapsed_ms, 1),
     }
