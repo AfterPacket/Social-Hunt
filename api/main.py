@@ -17,7 +17,16 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 import replicate
-from fastapi import Body, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
+from fastapi import (
+    Body,
+    FastAPI,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -175,8 +184,8 @@ class _LoginRateLimiter:
     @staticmethod
     def _limits():
         if _captcha_active():
-            return 5, 60, 300      # max_failures, window_sec, lockout_sec
-        return 20, 600, 60         # relaxed — human-friendly
+            return 5, 60, 300  # max_failures, window_sec, lockout_sec
+        return 20, 600, 60  # relaxed — human-friendly
 
     def _rec(self, ip: str) -> Dict:
         return self._records.setdefault(
@@ -2865,6 +2874,306 @@ async def api_deepmosaic_job_info(
 
 
 # ---------------------------
+# Voter Records
+# ---------------------------
+
+
+class VoterRecordsRequest(BaseModel):
+    first_name: str
+    last_name: str
+    state: str
+    county: Optional[str] = ""
+
+
+_VOTER_STATE_PORTALS: Dict[str, str] = {
+    "MI": "https://mvic.sos.state.mi.us/Voter/Index",
+    "GA": "https://mvp.sos.ga.gov/s/voter-registration-overview",
+    "NC": "https://vt.ncsbe.gov/RegLkup/",
+    "OH": "https://voterlookup.ohiosos.gov/voterlookup.aspx",
+    "FL": "https://registration.elections.myflorida.com/CheckVoterStatus",
+    "WI": "https://myvote.wi.gov/en-us/Find-My-Voter-Info",
+    "PA": "https://www.pavoterservices.pa.gov/pages/voterregistrationstatus.aspx",
+    "CO": "https://www.sos.state.co.us/voter/pages/pub/olvr/verifyNewVoter.xhtml",
+    "AZ": "https://my.arizona.vote/VoterView/RegistrantSearch.do",
+    "MN": "https://mnvotes.sos.state.mn.us/VoterStatus.aspx",
+    "TX": "https://teamrv-mvp.sos.state.tx.us/MVP/mvp.do",
+    "NV": "https://www.nvsos.gov/voterinfo/index.aspx",
+    "VA": "https://vote.elections.virginia.gov/VoterInformation",
+    "NY": "https://voterlookup.elections.ny.gov/",
+}
+
+_VOTER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
+
+def _parse_voterrecords_html(
+    html: str, first_name: str, last_name: str, state: str
+) -> List[Dict[str, Any]]:
+    """
+    Attempt a best-effort parse of VoterRecords.com HTML search results.
+    The site renders voter cards with name / address / party blocks.
+    Returns a (possibly empty) list of record dicts.
+    """
+    results: List[Dict[str, Any]] = []
+
+    # Each voter entry is wrapped in a container that includes the full name
+    # and address. We use a series of simple regex passes rather than an HTML
+    # parser to keep the dependency surface minimal.
+
+    # Normalise whitespace
+    html = re.sub(r"\s+", " ", html)
+
+    # Find blocks that contain the searched last name (case-insensitive) to
+    # avoid false positives from unrelated page content.
+    name_upper = last_name.upper()
+
+    # VoterRecords.com typically wraps each result in a <div class="voter-...">
+    # or similar container. We split on common boundary markers and inspect
+    # each chunk.
+    chunks = re.split(r'(?i)<(?:div|li|article)[^>]*class="[^"]*voter[^"]*"', html)
+
+    for chunk in chunks[1:]:  # first element is page preamble
+        if name_upper not in chunk.upper():
+            continue
+
+        rec: Dict[str, Any] = {}
+
+        # ── Full name ────────────────────────────────────────────────
+        m = re.search(
+            r"<h[1-4][^>]*>\s*([A-Z][A-Z\s\-\'\.]+)\s*</h[1-4]>", chunk, re.IGNORECASE
+        )
+        if m:
+            rec["name"] = m.group(1).strip().title()
+        else:
+            # fall back: grab first run of title-case words
+            m2 = re.search(r"([A-Z][a-z]+(?:\s+[A-Z][a-z\']+){1,4})", chunk)
+            if m2:
+                rec["name"] = m2.group(1).strip()
+
+        if not rec.get("name"):
+            continue
+
+        # ── Address ──────────────────────────────────────────────────
+        addr_m = re.search(
+            r"(\d+\s+[A-Za-z0-9\s\.\#\-]+(?:St|Ave|Blvd|Dr|Rd|Ln|Way|Ct|Pl|Cir|Hwy|Pkwy|Trail|Loop|Run)[a-z\.]*)",
+            chunk,
+            re.IGNORECASE,
+        )
+        if addr_m:
+            rec["address"] = addr_m.group(1).strip()
+
+        # ── City / State / ZIP ───────────────────────────────────────
+        city_m = re.search(
+            r"([A-Za-z\s]+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)",
+            chunk,
+        )
+        if city_m:
+            rec["city"] = city_m.group(1).strip().title()
+            rec["state"] = city_m.group(2).upper()
+            rec["zip"] = city_m.group(3)
+        else:
+            rec["state"] = state.upper()
+
+        # ── Party ────────────────────────────────────────────────────
+        party_m = re.search(
+            r"(?i)(?:party|affiliation)[^:]*:?\s*<[^>]*>\s*(Republican|Democrat(?:ic)?|Independent|Green|Libertarian|Nonpartisan|No\s+Party|NPA|REP|DEM|IND|LIB)\b",
+            chunk,
+            re.IGNORECASE,
+        )
+        if party_m:
+            rec["party"] = party_m.group(1).strip().title()
+        else:
+            party_inline = re.search(
+                r"\b(Republican|Democrat(?:ic)?|Independent|Libertarian|Green)\b",
+                chunk,
+                re.IGNORECASE,
+            )
+            if party_inline:
+                rec["party"] = party_inline.group(1).strip().title()
+
+        # ── Registration status ──────────────────────────────────────
+        status_m = re.search(
+            r"(?i)(?:status)[^:]*:?\s*<[^>]*>\s*(Active|Inactive|Cancelled|Purged)",
+            chunk,
+        )
+        if status_m:
+            rec["status"] = status_m.group(1).strip().title()
+
+        # ── Registration date ────────────────────────────────────────
+        date_m = re.search(
+            r"(?i)(?:registered?|reg\.?\s*date)[^:]*:?\s*(\d{1,2}/\d{1,2}/\d{2,4}|\d{4}-\d{2}-\d{2})",
+            chunk,
+        )
+        if date_m:
+            rec["registration_date"] = date_m.group(1).strip()
+
+        # ── County ───────────────────────────────────────────────────
+        county_m = re.search(r"(?i)county[^:]*:\s*([A-Za-z\s]+?)(?:<|,|\s{2})", chunk)
+        if county_m:
+            rec["county"] = county_m.group(1).strip().title()
+
+        # ── Precinct ─────────────────────────────────────────────────
+        prec_m = re.search(
+            r"(?i)precinct[^:]*:\s*([A-Za-z0-9\s\-]+?)(?:<|,|\s{2})", chunk
+        )
+        if prec_m:
+            rec["precinct"] = prec_m.group(1).strip()
+
+        results.append(rec)
+
+    # Deduplicate by name
+    seen: set = set()
+    unique: List[Dict[str, Any]] = []
+    for r in results:
+        key = r.get("name", "").lower()
+        if key not in seen:
+            seen.add(key)
+            unique.append(r)
+
+    return unique
+
+
+@app.post("/api/voter-records/search")
+async def api_voter_records_search(
+    req: VoterRecordsRequest,
+    x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
+):
+    """
+    Search publicly available US voter registration data.
+
+    Attempts to fetch results from VoterRecords.com (which aggregates public
+    state voter rolls). Falls back to returning the state's official portal URL
+    with a note when scraping is unavailable or blocked.
+    """
+    require_admin(x_plugin_token)
+
+    first_name = (req.first_name or "").strip()
+    last_name = (req.last_name or "").strip()
+    state = (req.state or "").strip().upper()
+    county = (req.county or "").strip()
+    county_suffix = f"/{county.lower()}" if county else ""
+
+    if not first_name or not last_name:
+        raise HTTPException(
+            status_code=400, detail="first_name and last_name are required"
+        )
+    if not state or len(state) != 2:
+        raise HTTPException(
+            status_code=400, detail="state must be a 2-letter US state abbreviation"
+        )
+
+    state_portal = _VOTER_STATE_PORTALS.get(state)
+
+    t_start = time.monotonic()
+    results: List[Dict[str, Any]] = []
+    source = "VoterRecords.com"
+    note = ""
+
+    try:
+        url = f"https://voterrecords.com/voters/{last_name.lower()}/{state.lower()}{county_suffix}/1"
+        headers = {
+            "User-Agent": _VOTER_UA,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://voterrecords.com/",
+            "Cache-Control": "no-cache",
+        }
+
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=httpx.Timeout(15.0),
+        ) as client:
+            response = await client.get(url, headers=headers)
+
+        if response.status_code == 200:
+            html_text = response.text
+
+            # Check for bot-block / CAPTCHA pages
+            if any(
+                marker in html_text.lower()
+                for marker in (
+                    "captcha",
+                    "robot",
+                    "cloudflare",
+                    "access denied",
+                    "blocked",
+                )
+            ):
+                source = "VoterRecords.com (blocked)"
+                note = (
+                    "The data source returned a bot-protection page. "
+                    "Use the official state portal link below to search manually."
+                )
+            else:
+                parsed = _parse_voterrecords_html(
+                    html_text, first_name, last_name, state
+                )
+
+                # Filter to records that at least loosely match the first name
+                first_lower = first_name.lower()
+                filtered = [
+                    r for r in parsed if first_lower in (r.get("name") or "").lower()
+                ]
+
+                results = filtered if filtered else parsed
+                source = "VoterRecords.com"
+
+                if not results:
+                    note = (
+                        "No records were parsed from the data source. "
+                        "The site may have changed its layout or rate-limited this request. "
+                        "Try the official state portal for a manual search."
+                    )
+        elif response.status_code in (403, 429):
+            source = "VoterRecords.com (rate-limited)"
+            note = (
+                f"The data source returned HTTP {response.status_code}. "
+                "Use the official state portal link below to search manually."
+            )
+        else:
+            source = f"VoterRecords.com (HTTP {response.status_code})"
+            note = (
+                "The data source returned an unexpected response. "
+                "Use the official state portal link below to search manually."
+            )
+
+    except httpx.TimeoutException:
+        source = "VoterRecords.com (timeout)"
+        note = (
+            "The request to the data source timed out. "
+            "Use the official state portal link below to search manually."
+        )
+    except Exception as exc:
+        source = "VoterRecords.com (error)"
+        note = (
+            f"An error occurred while contacting the data source: {type(exc).__name__}. "
+            "Use the official state portal link below to search manually."
+        )
+
+    # If no results and state has a known portal, surface a helpful note
+    if not results and state_portal and not note:
+        note = (
+            "No records were returned. "
+            "Search manually on the official state voter registration portal."
+        )
+
+    elapsed_ms = (time.monotonic() - t_start) * 1000
+
+    return {
+        "state": state,
+        "state_portal": state_portal,
+        "results": results,
+        "source": source,
+        "note": note,
+        "elapsed_ms": round(elapsed_ms, 1),
+    }
+
+
+# ---------------------------
 # UI
 # ---------------------------
 app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
@@ -2904,7 +3213,10 @@ async def api_auth_verify(
     if _login_limiter.is_locked(client_ip):
         _, _, lockout_sec = _LoginRateLimiter._limits()
         mins = lockout_sec // 60
-        raise HTTPException(status_code=429, detail=f"Too many failed attempts. Try again in {mins} minute(s).")
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many failed attempts. Try again in {mins} minute(s).",
+        )
 
     # Only check captcha for actual login form submissions, not session checks
     if is_login_submission and not await _verify_hcaptcha(hcaptcha_token):
@@ -2917,8 +3229,13 @@ async def api_auth_verify(
         if remaining == 0:
             _, _, lockout_sec = _LoginRateLimiter._limits()
             mins = lockout_sec // 60
-            raise HTTPException(status_code=429, detail=f"Too many failed attempts. Locked out for {mins} minute(s).")
-        raise HTTPException(status_code=401, detail=f"Invalid token. {remaining} attempt(s) remaining.")
+            raise HTTPException(
+                status_code=429,
+                detail=f"Too many failed attempts. Locked out for {mins} minute(s).",
+            )
+        raise HTTPException(
+            status_code=401, detail=f"Invalid token. {remaining} attempt(s) remaining."
+        )
 
     _login_limiter.record_success(client_ip)
     return {"ok": True}
