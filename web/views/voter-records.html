@@ -37,6 +37,33 @@
         grid-column: 1 / -1;
     }
 
+    .vr-form-field select {
+        background: #1a2233;
+        color: #e6edf3;
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        font-size: 14px;
+        width: 100%;
+        cursor: pointer;
+        appearance: auto;
+    }
+
+    .vr-form-field select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
+    }
+
+    .vr-form-field select option {
+        background: #1a2233;
+        color: #e6edf3;
+    }
+
+    .vr-form-field select option:disabled {
+        color: #9aa7b2;
+    }
+
     .vr-actions {
         display: flex;
         align-items: center;
