@@ -969,6 +969,31 @@ select {
     position: relative;
 }
 
+/* ── Select / dropdown native popup fix ──────────────────────────────────
+   CSS variables are ignored by the OS-level dropdown popup in all browsers.
+   We must use hard-coded hex values so <option> elements render with dark
+   background and light text regardless of theme.
+   ─────────────────────────────────────────────────────────────────────── */
+select {
+    background-color: #0f1620 !important;
+    color: #e6edf3 !important;
+}
+
+select option {
+    background-color: #0f1620 !important;
+    color: #e6edf3 !important;
+}
+
+select option:checked,
+select option:hover {
+    background-color: #1a2a3a !important;
+    color: #8cc8ff !important;
+}
+
+select option:disabled {
+    color: #7d8a95 !important;
+}
+
 .input:focus,
 input:focus,
 textarea:focus,
