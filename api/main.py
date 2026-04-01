@@ -1162,23 +1162,11 @@ def _prefill_mask_with_skin(
         mask_pil = PILImage.open(BytesIO(mask_bytes)).convert("L")
         w, h = original.size
 
-        # Sample forehead for skin colour
-        skin_r, skin_g, skin_b = 200, 170, 150  # neutral fallback
-        for top, right, bottom, left in face_boxes:
-            fh = bottom - top
-            fw = right - left
-            ft = top
-            fb = top + max(1, int(fh * 0.20))
-            fl = left + int(fw * 0.25)
-            fr = right - int(fw * 0.25)
-            if fb > ft and fr > fl:
-                crop = original.crop((fl, ft, fr, fb))
-                pixels = list(crop.getdata())
-                if pixels:
-                    skin_r = sum(p[0] for p in pixels) // len(pixels)
-                    skin_g = sum(p[1] for p in pixels) // len(pixels)
-                    skin_b = sum(p[2] for p in pixels) // len(pixels)
-                break
+        # Neutral warm-beige fallback — used directly.
+        # Sampling the heuristic forehead strip hits banners/caps/sky rather
+        # than skin, producing grey/dark pre-fills that confuse inpainting.
+        # A fixed neutral flesh tone is a safer anchor.
+        skin_r, skin_g, skin_b = 210, 175, 145
 
         # Fill mask region with skin colour
         skin_fill = PILImage.new("RGB", (w, h), (skin_r, skin_g, skin_b))
@@ -1457,12 +1445,13 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list, bool]
             "Applying head-region heuristic mask."
         )
         used_heuristic = True
-        # Tighter head-region band: 8-55 % height, centre 70 % of width
-        # Narrower than the old 10-72% — reduces the mask area so SD has less
-        # to fill and produces sharper, more plausible facial features.
-        pad_x = int(w_img * 0.15)
-        top_y = int(h_img * 0.08)
-        bot_y = int(h_img * 0.55)
+        # Head region in a typical protest/portrait/bust shot sits in the
+        # upper 30 % of the image.  Use a fixed band that targets just the
+        # head-and-neck area rather than spanning half the image.
+        # face_box format: (top, right, bottom, left)
+        pad_x = int(w_img * 0.20)
+        top_y  = int(h_img * 0.04)   # near top of frame
+        bot_y  = int(h_img * 0.40)   # chin / upper chest
         face_boxes = [(top_y, w_img - pad_x, bot_y, pad_x)]
 
     # ── Build mask ────────────────────────────────────────────────────────────
@@ -1477,9 +1466,10 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list, bool]
         # to just below the chin.  Starting at 50 % avoids masking the eyes and
         # upper nose, which are the strongest identity anchors — leaving them
         # visible constrains the model and reduces hallucinated features.
-        pad_x = int(fw * 0.10)
-        mask_top = top + int(fh * 0.50)
-        mask_bottom = min(h_img, bottom + int(fh * 0.06))
+        pad_x = int(fw * 0.08)
+        # 35 % into the face box = roughly nose-bridge level for a balaclava
+        mask_top = top + int(fh * 0.35)
+        mask_bottom = min(h_img, bottom + int(fh * 0.10))
         mask_left = max(0, left - pad_x)
         mask_right = min(w_img, right + pad_x)
 
