@@ -3977,36 +3977,44 @@ async function initVoterRecordsView() {
     const {
       results,
       state,
+      state_name,
       state_portal,
+      deep_link,
+      has_portal,
+      live_lookup,
       source,
       note,
       elapsed_ms,
       first_name,
       last_name,
     } = data;
-    const stateName = STATE_NAMES[state] || state || "";
+
+    // Prefer server-supplied state_name, fall back to local map
+    const stateName = state_name || STATE_NAMES[state] || state || "";
+    const portalUrl = deep_link || state_portal;
 
     let html = "";
 
-    // Results header
+    // ── Results header ────────────────────────────────────────────────
     const count = Array.isArray(results) ? results.length : 0;
+    const liveLabel = live_lookup
+      ? `<span class="vr-source-tag" style="background:rgba(var(--good-rgb,100,200,130),0.12);color:var(--good);">&#128994; Live Lookup</span>`
+      : `<span class="vr-source-tag">&#128279; Portal Redirect</span>`;
+
     html += `
       <div class="vr-results-header">
-        <div>
-          <span class="vr-results-count">
-            Found <strong>${count}</strong> record${count !== 1 ? "s" : ""}
-            ${stateName ? `in <strong>${escapeHtml(stateName)}</strong>` : ""}
-          </span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          ${liveLabel}
           ${source ? `<span class="vr-source-tag">${escapeHtml(source)}</span>` : ""}
         </div>
         ${
           elapsed_ms != null
-            ? `<span class="vr-elapsed">Completed in ${Number(elapsed_ms).toFixed(0)} ms</span>`
+            ? `<span class="vr-elapsed">${Number(elapsed_ms).toFixed(0)} ms</span>`
             : ""
         }
       </div>`;
 
-    // Note banner
+    // ── Note banner ───────────────────────────────────────────────────
     if (note) {
       html += `
         <div class="vr-portal-callout" style="margin-bottom:14px;">
@@ -4014,36 +4022,64 @@ async function initVoterRecordsView() {
         </div>`;
     }
 
-    // State portal button (top-level, always shown if available)
-    if (state_portal) {
+    // ── Portal action card (always shown when available) ──────────────
+    if (portalUrl) {
       html += `
-        <div style="margin-bottom:16px;">
-          <a href="${escapeHtml(state_portal)}" target="_blank"
-             rel="noopener noreferrer" class="vr-portal-btn">
-            Search on ${escapeHtml(stateName)} Official Portal &rarr;
-          </a>
+        <div class="card" style="margin-bottom:18px;border-left:3px solid var(--accent);">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;">
+            <div>
+              <div style="font-weight:700;margin-bottom:4px;">
+                &#127968; ${escapeHtml(stateName)} Official Voter Portal
+              </div>
+              <div class="muted" style="font-size:13px;">
+                ${
+                  live_lookup && count > 0
+                    ? `${count} record${count !== 1 ? "s" : ""} retrieved — verify details on the official portal.`
+                    : live_lookup
+                      ? `No records matched. Verify directly on the official portal.`
+                      : `This state requires a manual portal search. The link below is pre-filled with your search terms where supported.`
+                }
+              </div>
+            </div>
+            <a href="${escapeHtml(portalUrl)}" target="_blank"
+               rel="noopener noreferrer" class="vr-portal-btn">
+              Search ${escapeHtml(stateName)} Portal &rarr;
+            </a>
+          </div>
+        </div>`;
+    } else if (!has_portal) {
+      html += `
+        <div class="card" style="margin-bottom:18px;border-left:3px solid var(--warn);">
+          <div style="font-weight:700;margin-bottom:6px;">&#9888;&#65039; No Online Portal Available</div>
+          <div class="muted" style="font-size:13px;">
+            ${escapeHtml(stateName)} does not have a public online voter lookup portal.
+            Contact your county election office or the Secretary of State to request records.
+          </div>
         </div>`;
     }
 
+    // ── No live records — stop here for portal-redirect states ────────
     if (count === 0) {
-      html += `
-        <div class="vr-empty">
-          <span class="vr-empty-icon">&#128269;</span>
-          No voter records returned from the data source.
-          ${
-            state && STATE_PORTALS[state]
-              ? `<br/><br/>Try searching directly on the
-               <a href="${escapeHtml(STATE_PORTALS[state])}" target="_blank"
-                  rel="noopener noreferrer" style="color:var(--accent);">
-                 ${escapeHtml(stateName)} official voter portal</a>.`
-              : ""
-          }
-        </div>`;
+      if (live_lookup) {
+        html += `
+          <div class="vr-empty">
+            <span class="vr-empty-icon">&#128269;</span>
+            No records matched <strong>${escapeHtml(first_name)} ${escapeHtml(last_name)}</strong>
+            in the live lookup for <strong>${escapeHtml(stateName)}</strong>.
+            <br/><br/>Try the portal link above to run a manual search.
+          </div>`;
+      }
       resultsEl.innerHTML = html;
       return;
     }
 
-    // Individual record cards
+    // ── Individual record cards (live results only) ───────────────────
+    html += `<div style="margin-top:4px;">`;
+    html += `<div class="vr-results-count" style="margin-bottom:12px;">
+      Found <strong>${count}</strong> record${count !== 1 ? "s" : ""}
+      in <strong>${escapeHtml(stateName)}</strong>
+    </div>`;
+
     results.forEach((rec) => {
       const fullName =
         [rec.first_name, rec.middle_name, rec.last_name]
@@ -4089,14 +4125,10 @@ async function initVoterRecordsView() {
       html += fieldRow("Phone", rec.phone || "");
       html += `</div>`;
 
-      // Per-record portal link for the queried state
-      if (state && STATE_PORTALS[state]) {
-        html += renderPortalCallout(state, first_name || "", last_name || "");
-      }
-
       html += `</div>`;
     });
 
+    html += `</div>`;
     resultsEl.innerHTML = html;
   }
 
@@ -4156,10 +4188,16 @@ async function initVoterRecordsView() {
 
       const data = await res.json();
       const count = Array.isArray(data.results) ? data.results.length : 0;
-      statusEl.textContent =
-        count > 0
-          ? `Found ${count} record${count !== 1 ? "s" : ""}.`
-          : "No records found.";
+      if (data.live_lookup) {
+        statusEl.textContent =
+          count > 0
+            ? `Found ${count} record${count !== 1 ? "s" : ""}.`
+            : "No matching records in live lookup.";
+      } else {
+        statusEl.textContent = data.has_portal
+          ? `Portal link ready for ${data.state_name || data.state}.`
+          : "Search complete.";
+      }
 
       renderResults({ ...data, first_name: firstName, last_name: lastName });
     } catch (err) {
