@@ -17,7 +17,16 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 import replicate
-from fastapi import Body, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
+from fastapi import (
+    Body,
+    FastAPI,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -175,8 +184,8 @@ class _LoginRateLimiter:
     @staticmethod
     def _limits():
         if _captcha_active():
-            return 5, 60, 300      # max_failures, window_sec, lockout_sec
-        return 20, 600, 60         # relaxed — human-friendly
+            return 5, 60, 300  # max_failures, window_sec, lockout_sec
+        return 20, 600, 60  # relaxed — human-friendly
 
     def _rec(self, ip: str) -> Dict:
         return self._records.setdefault(
@@ -2865,6 +2874,613 @@ async def api_deepmosaic_job_info(
 
 
 # ---------------------------
+# Voter Records
+# ---------------------------
+
+
+class VoterRecordsRequest(BaseModel):
+    first_name: str
+    last_name: str
+    state: str
+    county: Optional[str] = ""
+
+
+# Maps state abbreviation -> base portal URL (displayed in UI)
+_VOTER_STATE_PORTALS: Dict[str, str] = {
+    "MI": "https://mvic.sos.state.mi.us/Voter/Index",
+    "GA": "https://mvp.sos.ga.gov/s/",
+    "NC": "https://vt.ncsbe.gov/RegLkup/",
+    "OH": "https://voterlookup.ohiosos.gov/voterlookup.aspx",
+    "FL": "https://registration.elections.myflorida.com/CheckVoterStatus",
+    "WI": "https://myvote.wi.gov/en-us/Find-My-Voter-Info",
+    "PA": "https://www.pavoterservices.pa.gov/pages/voterregistrationstatus.aspx",
+    "CO": "https://www.sos.state.co.us/voter/pages/pub/olvr/verifyNewVoter.xhtml",
+    "AZ": "https://my.arizona.vote/VoterView/RegistrantSearch.do",
+    "MN": "https://mnvotes.sos.state.mn.us/VoterStatus.aspx",
+    "TX": "https://www.sos.state.tx.us/elections/voter/votregduties.shtml",
+    "NV": "https://www.nvsos.gov/voterinfo/index.aspx",
+    "VA": "https://vote.elections.virginia.gov/VoterInformation",
+    "NY": "https://voterlookup.elections.ny.gov/",
+    "WA": "https://voter.votewa.gov/WhereToVote.aspx",
+    "OR": "https://sos.oregon.gov/voting/Pages/registration.aspx",
+    "IL": "https://www.elections.il.gov/votinginformation/registrationlookup.aspx",
+    "MD": "https://voterservices.elections.maryland.gov/VoterSearch",
+    "NJ": "https://voter.svrs.nj.gov/registration-check",
+    "KY": "https://vrsws.sos.ky.gov/VIC/",
+    "UT": "https://votesearch.utah.gov/voter-search/search/search-by-name/voter-info",
+    "SC": "https://vrems.scvotes.sc.gov/",
+    "KS": "https://myvoteinfo.voteks.org/voterview/",
+    "OK": "https://okvoterportal.okelections.us/",
+}
+
+# Maps state abbreviation -> deep-link URL template.
+# Placeholders: {first}, {last}, {county} (url-encoded by the builder).
+# If a state supports pre-filled name searches we use that URL directly;
+# otherwise we fall back to the base portal above.
+# NOTE: All modern state voter portals are JavaScript SPAs or ASP.NET WebForms
+# that do NOT honour query-string pre-filling from external links.  We keep the
+# base portal URLs here (no query params) so the button navigates the user to
+# the correct portal where they can enter the name themselves.
+# The dict is kept separate from _VOTER_STATE_PORTALS so we can extend it later
+# if any state adds a true REST/server-side search endpoint.
+_VOTER_DEEPLINK_TEMPLATES: Dict[str, str] = {}  # no states support URL pre-fill
+
+# Human-readable names for all 50 states + DC
+_STATE_NAMES: Dict[str, str] = {
+    "AL": "Alabama",
+    "AK": "Alaska",
+    "AZ": "Arizona",
+    "AR": "Arkansas",
+    "CA": "California",
+    "CO": "Colorado",
+    "CT": "Connecticut",
+    "DE": "Delaware",
+    "FL": "Florida",
+    "GA": "Georgia",
+    "HI": "Hawaii",
+    "ID": "Idaho",
+    "IL": "Illinois",
+    "IN": "Indiana",
+    "IA": "Iowa",
+    "KS": "Kansas",
+    "KY": "Kentucky",
+    "LA": "Louisiana",
+    "ME": "Maine",
+    "MD": "Maryland",
+    "MA": "Massachusetts",
+    "MI": "Michigan",
+    "MN": "Minnesota",
+    "MS": "Mississippi",
+    "MO": "Missouri",
+    "MT": "Montana",
+    "NE": "Nebraska",
+    "NV": "Nevada",
+    "NH": "New Hampshire",
+    "NJ": "New Jersey",
+    "NM": "New Mexico",
+    "NY": "New York",
+    "NC": "North Carolina",
+    "ND": "North Dakota",
+    "OH": "Ohio",
+    "OK": "Oklahoma",
+    "OR": "Oregon",
+    "PA": "Pennsylvania",
+    "RI": "Rhode Island",
+    "SC": "South Carolina",
+    "SD": "South Dakota",
+    "TN": "Tennessee",
+    "TX": "Texas",
+    "UT": "Utah",
+    "VT": "Vermont",
+    "VA": "Virginia",
+    "WA": "Washington",
+    "WV": "West Virginia",
+    "WI": "Wisconsin",
+    "WY": "Wyoming",
+    "DC": "District of Columbia",
+}
+
+_VOTER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
+
+def _build_voter_deeplink(
+    state: str, first_name: str, last_name: str, county: str
+) -> Optional[str]:
+    """
+    Build a pre-filled deep-link URL for the given state's voter portal.
+    Returns None if no template is available for this state.
+    """
+    import urllib.parse
+
+    template = _VOTER_DEEPLINK_TEMPLATES.get(state)
+    if not template:
+        return _VOTER_STATE_PORTALS.get(state)
+
+    try:
+        return template.format(
+            first=urllib.parse.quote_plus(first_name),
+            last=urllib.parse.quote_plus(last_name),
+            county=urllib.parse.quote_plus(county),
+        )
+    except Exception:
+        return template
+
+
+async def _try_nc_voter_lookup(
+    first_name: str, last_name: str, county: str
+) -> List[Dict[str, Any]]:
+    """
+    North Carolina State Board of Elections public voter lookup.
+    Actual table column order: County | Status | Full Name | City,State Zip
+    The Full Name cell contains a hyperlink: <a href="...">SMITH, JOHN</a>
+    City/State/Zip is a single combined cell: "HICKORY, NC 28601"
+    Party codes (from detail page): DEM, REP, LIB, GRE, UNA, CST
+    """
+    import urllib.parse
+
+    _NC_PARTY: Dict[str, str] = {
+        "DEM": "Democrat",
+        "REP": "Republican",
+        "LIB": "Libertarian",
+        "GRE": "Green",
+        "UNA": "Unaffiliated",
+        "CST": "Constitution",
+    }
+
+    params = {
+        "LastName": last_name,
+        "FirstName": first_name,
+        "MiddleName": "",
+        "County": county,
+        "RegStatus": "",
+    }
+    url = "https://vt.ncsbe.gov/RegLkup/?" + urllib.parse.urlencode(params)
+    req_headers = {
+        "User-Agent": _VOTER_UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://vt.ncsbe.gov/RegLkup/",
+    }
+
+    try:
+        async with httpx.AsyncClient(
+            follow_redirects=True, timeout=httpx.Timeout(15.0)
+        ) as client:
+            resp = await client.get(url, headers=req_headers)
+        if resp.status_code != 200:
+            return []
+
+        html = re.sub(r"\s+", " ", resp.text)
+
+        if any(
+            m in html.lower()
+            for m in ("no voters found", "no records found", "0 records")
+        ):
+            return []
+
+        # Isolate tbody so we never parse the header <tr>
+        tbody_m = re.search(
+            r"<tbody[^>]*>(.*?)</tbody>", html, re.IGNORECASE | re.DOTALL
+        )
+        search_area = tbody_m.group(1) if tbody_m else html
+
+        rows = re.findall(
+            r"<tr[^>]*>(.*?)</tr>", search_area, re.IGNORECASE | re.DOTALL
+        )
+
+        results: List[Dict[str, Any]] = []
+        for row in rows:
+            cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.IGNORECASE | re.DOTALL)
+            # Strip all inner HTML tags (hyperlinks, spans, etc.)
+            cells = [re.sub(r"<[^>]+>", "", c).strip() for c in cells]
+
+            # Actual NC table: County(0) | Status(1) | Full Name(2) | City,State Zip(3)
+            if len(cells) < 3:
+                continue
+
+            # Name is in column 2 — skip rows where it doesn't contain the last name
+            name_raw = cells[2].strip()
+            if last_name.upper() not in name_raw.upper():
+                continue
+
+            # Parse combined "CITY, NC 28601" field in column 3
+            city_val = zip_val = ""
+            if len(cells) > 3:
+                csz = cells[3].strip()
+                csz_m = re.match(
+                    r"^(.+),\s*NC\s+(\d{5}(?:-\d{4})?)$", csz, re.IGNORECASE
+                )
+                if csz_m:
+                    city_val = csz_m.group(1).strip().title()
+                    zip_val = csz_m.group(2).strip()
+                else:
+                    city_val = csz.title()
+
+            rec: Dict[str, Any] = {
+                "state": "NC",
+                "name": name_raw.title(),
+                "county": cells[0].title(),
+                "status": cells[1].title(),
+                "city": city_val,
+                "zip": zip_val,
+            }
+            # Drop empty strings but always keep state
+            rec = {k: v for k, v in rec.items() if v}
+            rec["state"] = "NC"
+            if rec.get("name"):
+                results.append(rec)
+
+        return results[:50]
+
+    except Exception:
+        return []
+
+
+async def _try_fl_voter_lookup(
+    first_name: str, last_name: str, county: str
+) -> List[Dict[str, Any]]:
+    """
+    Florida Division of Elections public voter status check.
+    https://registration.elections.myflorida.com/CheckVoterStatus
+    """
+    import urllib.parse
+
+    params: Dict[str, str] = {"FName": first_name, "LName": last_name}
+    if county:
+        params["County"] = county
+    url = (
+        "https://registration.elections.myflorida.com/CheckVoterStatus?"
+        + urllib.parse.urlencode(params)
+    )
+    req_headers = {
+        "User-Agent": _VOTER_UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://registration.elections.myflorida.com/CheckVoterStatus",
+    }
+
+    try:
+        async with httpx.AsyncClient(
+            follow_redirects=True, timeout=httpx.Timeout(15.0)
+        ) as client:
+            resp = await client.get(url, headers=req_headers)
+        if resp.status_code != 200:
+            return []
+
+        html = re.sub(r"\s+", " ", resp.text)
+
+        if any(
+            m in html.lower()
+            for m in ("no voter", "not found", "no record", "captcha", "robot")
+        ):
+            return []
+
+        results: List[Dict[str, Any]] = []
+
+        # Try a results table first
+        tbody_m = re.search(
+            r"<tbody[^>]*>(.*?)</tbody>", html, re.IGNORECASE | re.DOTALL
+        )
+        if tbody_m:
+            rows = re.findall(
+                r"<tr[^>]*>(.*?)</tr>", tbody_m.group(1), re.IGNORECASE | re.DOTALL
+            )
+            for row in rows:
+                cells = re.findall(
+                    r"<td[^>]*>(.*?)</td>", row, re.IGNORECASE | re.DOTALL
+                )
+                cells = [re.sub(r"<[^>]+>", "", c).strip() for c in cells]
+                if len(cells) < 3:
+                    continue
+                if last_name.upper() not in " ".join(cells).upper():
+                    continue
+                rec: Dict[str, Any] = {
+                    "state": "FL",
+                    "name": cells[0].title() if cells[0] else "",
+                }
+                if len(cells) > 1:
+                    rec["county"] = cells[1].title()
+                if len(cells) > 2:
+                    rec["party"] = cells[2].title()
+                if len(cells) > 3:
+                    rec["status"] = cells[3].title()
+                if len(cells) > 4:
+                    rec["registration_date"] = cells[4]
+                if rec.get("name"):
+                    results.append(rec)
+            if results:
+                return results[:50]
+
+        # Fall back: single-voter detail block using labelled fields
+        rec = {"state": "FL"}
+        for label, key in [
+            (r"name", "name"),
+            (r"county", "county"),
+            (r"party", "party"),
+            (r"status", "status"),
+            (r"address", "address"),
+            (r"registration\s*date", "registration_date"),
+        ]:
+            m = re.search(
+                rf"(?i){label}[^:]*:\s*(?:<[^>]*>)?([^<]{{3,80}}?)(?:<|\s{{2,}})",
+                html,
+            )
+            if m:
+                val = m.group(1).strip()
+                if val and last_name.upper() in val.upper() if key == "name" else val:
+                    rec[key] = val.title() if key != "registration_date" else val
+
+        return [rec] if rec.get("name") else []
+
+    except Exception:
+        return []
+
+
+async def _try_va_voter_lookup(first_name: str, last_name: str) -> List[Dict[str, Any]]:
+    """
+    Virginia Department of Elections public voter information lookup.
+    https://vote.elections.virginia.gov/VoterInformation/Lookup
+    """
+    import urllib.parse
+
+    url = (
+        "https://vote.elections.virginia.gov/VoterInformation/Lookup?"
+        + urllib.parse.urlencode({"firstName": first_name, "lastName": last_name})
+    )
+    req_headers = {
+        "User-Agent": _VOTER_UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://vote.elections.virginia.gov/VoterInformation",
+    }
+
+    try:
+        async with httpx.AsyncClient(
+            follow_redirects=True, timeout=httpx.Timeout(15.0)
+        ) as client:
+            resp = await client.get(url, headers=req_headers)
+        if resp.status_code != 200:
+            return []
+
+        html = re.sub(r"\s+", " ", resp.text)
+
+        if any(
+            m in html.lower()
+            for m in ("no voter", "not found", "captcha", "robot", "no record")
+        ):
+            return []
+
+        results: List[Dict[str, Any]] = []
+
+        # Try a results table
+        tbody_m = re.search(
+            r"<tbody[^>]*>(.*?)</tbody>", html, re.IGNORECASE | re.DOTALL
+        )
+        if tbody_m:
+            rows = re.findall(
+                r"<tr[^>]*>(.*?)</tr>", tbody_m.group(1), re.IGNORECASE | re.DOTALL
+            )
+            for row in rows:
+                cells = re.findall(
+                    r"<td[^>]*>(.*?)</td>", row, re.IGNORECASE | re.DOTALL
+                )
+                cells = [re.sub(r"<[^>]+>", "", c).strip() for c in cells]
+                if len(cells) < 2:
+                    continue
+                if last_name.upper() not in " ".join(cells).upper():
+                    continue
+                rec: Dict[str, Any] = {
+                    "state": "VA",
+                    "name": cells[0].title() if cells[0] else "",
+                }
+                if len(cells) > 1:
+                    rec["locality"] = cells[1].title()
+                if len(cells) > 2:
+                    rec["party"] = cells[2].title()
+                if len(cells) > 3:
+                    rec["status"] = cells[3].title()
+                if rec.get("name"):
+                    results.append(rec)
+            if results:
+                return results[:50]
+
+        # Single-record detail fallback
+        rec = {"state": "VA"}
+        for label, key in [
+            (r"name", "name"),
+            (r"locality", "locality"),
+            (r"party", "party"),
+            (r"status", "status"),
+            (r"address", "address"),
+            (r"precinct", "precinct"),
+        ]:
+            m = re.search(
+                rf"(?i){label}[^:]*:\s*(?:<[^>]*>)?([^<]{{3,80}}?)(?:<|\s{{2,}})",
+                html,
+            )
+            if m:
+                rec[key] = m.group(1).strip().title()
+
+        # Last-resort name grab
+        if not rec.get("name") and last_name.upper() in html.upper():
+            nm = re.search(
+                rf"(?i)({re.escape(first_name)}[^<]{{0,20}}{re.escape(last_name)})",
+                html,
+            )
+            if nm:
+                rec["name"] = nm.group(1).strip().title()
+
+        return [rec] if rec.get("name") else []
+
+    except Exception:
+        return []
+
+
+async def _try_wi_voter_lookup(first_name: str, last_name: str) -> List[Dict[str, Any]]:
+    """
+    Wisconsin MyVote public voter information page (name-based search).
+    """
+    import urllib.parse
+
+    url = "https://myvote.wi.gov/en-us/Find-My-Voter-Info?" + urllib.parse.urlencode(
+        {"FirstName": first_name, "LastName": last_name}
+    )
+    req_headers = {
+        "User-Agent": _VOTER_UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://myvote.wi.gov/",
+    }
+
+    try:
+        async with httpx.AsyncClient(
+            follow_redirects=True, timeout=httpx.Timeout(15.0)
+        ) as client:
+            resp = await client.get(url, headers=req_headers)
+        if resp.status_code != 200:
+            return []
+
+        html = re.sub(r"\s+", " ", resp.text)
+
+        if any(m in html.lower() for m in ("no voter", "not found", "no record")):
+            return []
+
+        rec: Dict[str, Any] = {"state": "WI"}
+
+        for label, key in [
+            (r"voter\s*name", "name"),
+            (r"address", "address"),
+            (r"municipality", "city"),
+            (r"county", "county"),
+            (r"ward", "precinct"),
+            (r"status", "status"),
+        ]:
+            m = re.search(
+                rf"(?i){label}[^:]*:?\s*(?:<[^>]*>)+\s*([^<]{{2,80}}?)(?:\s*<)",
+                html,
+            )
+            if m:
+                rec[key] = m.group(1).strip().title()
+
+        city_m = re.search(r"([A-Za-z\s]+),\s*WI\s+(\d{5})", html)
+        if city_m:
+            if not rec.get("city"):
+                rec["city"] = city_m.group(1).strip().title()
+            rec["zip"] = city_m.group(2)
+
+        return [rec] if rec.get("name") else []
+
+    except Exception:
+        return []
+
+
+@app.post("/sh-api/voter-records/search")
+async def api_voter_records_search(
+    req: VoterRecordsRequest,
+    x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
+):
+    """
+    Search publicly available US voter registration data.
+
+    For states with accessible public lookup portals (NC, WI) we attempt a
+    live data fetch. For all other states we return a pre-filled deep-link
+    to the official state portal plus structured metadata about what the
+    portal supports, so the user can complete the search in one click.
+    """
+    require_admin(x_plugin_token)
+
+    first_name = (req.first_name or "").strip()
+    last_name = (req.last_name or "").strip()
+    state = (req.state or "").strip().upper()
+    county = (req.county or "").strip()
+
+    if not first_name or not last_name:
+        raise HTTPException(
+            status_code=400, detail="first_name and last_name are required"
+        )
+    if not state or len(state) != 2:
+        raise HTTPException(
+            status_code=400, detail="state must be a 2-letter US state abbreviation"
+        )
+
+    state_portal = _VOTER_STATE_PORTALS.get(state)
+    deep_link = _build_voter_deeplink(state, first_name, last_name, county)
+    state_name = _STATE_NAMES.get(state, state)
+
+    t_start = time.monotonic()
+    results: List[Dict[str, Any]] = []
+    source = "Official State Portal"
+    note = ""
+
+    # ── States where we attempt a live automated fetch ───────────────
+    # ── All states: portal-redirect only ─────────────────────────────
+    # All major state voter portals (NC NCSBE, FL, VA, OH, WI MyVote,
+    # etc.) are JavaScript-rendered SPAs or sit behind Cloudflare bot
+    # challenges.  Server-side HTTP scraping returns 0 results or a
+    # CAPTCHA page — live in-app results are not feasible without a
+    # headless browser runtime.  We surface the official state portal
+    # link (pre-filled via URL params where the state supports it) so
+    # the user can complete the search in one click.
+
+    # Determine whether the deep link is actually pre-filled with search terms
+    template = _VOTER_DEEPLINK_TEMPLATES.get(state, "")
+    prefilled = bool(template) and ("{first}" in template or "{last}" in template)
+
+    if state_portal:
+        if state == "TX":
+            note = (
+                f"Texas voter registration is managed at the <strong>county level</strong> — "
+                f"there is no single statewide name-lookup portal. "
+                f"The link below opens the Texas SOS directory of all county election offices. "
+                f"Find <strong>{first_name} {last_name}</strong>'s county and contact that office directly, "
+                f"or visit the county's own voter registration website."
+            )
+        elif prefilled:
+            note = (
+                f"The link below opens the {state_name} official voter portal "
+                f"with <strong>{first_name} {last_name}</strong> already entered "
+                f"in the search fields. Click it to go directly to the results."
+            )
+        else:
+            note = (
+                f"{state_name} has a public voter registration lookup portal, "
+                f"but it does not support pre-filled URL searches. "
+                f"Click the link below and enter "
+                f"<strong>{first_name} {last_name}</strong> manually."
+            )
+        source = f"{state_name} Secretary of State"
+    else:
+        prefilled = False
+        note = (
+            f"{state_name} does not currently have a public online voter "
+            f"registration lookup portal. You may be able to request voter "
+            f"registration data through a public records request to your "
+            f"county election office or the Secretary of State's office."
+        )
+        source = "Public Records Reference"
+
+    elapsed_ms = (time.monotonic() - t_start) * 1000
+
+    return {
+        "state": state,
+        "state_name": state_name,
+        "state_portal": state_portal,
+        "deep_link": deep_link,
+        "results": results,
+        "source": source,
+        "note": note,
+        "has_portal": bool(state_portal),
+        "live_lookup": False,
+        "prefilled": prefilled,
+        "elapsed_ms": round(elapsed_ms, 1),
+    }
+
+
+# ---------------------------
 # UI
 # ---------------------------
 app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
@@ -2904,7 +3520,10 @@ async def api_auth_verify(
     if _login_limiter.is_locked(client_ip):
         _, _, lockout_sec = _LoginRateLimiter._limits()
         mins = lockout_sec // 60
-        raise HTTPException(status_code=429, detail=f"Too many failed attempts. Try again in {mins} minute(s).")
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many failed attempts. Try again in {mins} minute(s).",
+        )
 
     # Only check captcha for actual login form submissions, not session checks
     if is_login_submission and not await _verify_hcaptcha(hcaptcha_token):
@@ -2917,8 +3536,13 @@ async def api_auth_verify(
         if remaining == 0:
             _, _, lockout_sec = _LoginRateLimiter._limits()
             mins = lockout_sec // 60
-            raise HTTPException(status_code=429, detail=f"Too many failed attempts. Locked out for {mins} minute(s).")
-        raise HTTPException(status_code=401, detail=f"Invalid token. {remaining} attempt(s) remaining.")
+            raise HTTPException(
+                status_code=429,
+                detail=f"Too many failed attempts. Locked out for {mins} minute(s).",
+            )
+        raise HTTPException(
+            status_code=401, detail=f"Invalid token. {remaining} attempt(s) remaining."
+        )
 
     _login_limiter.record_success(client_ip)
     return {"ok": True}

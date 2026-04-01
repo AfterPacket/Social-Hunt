@@ -1,0 +1,540 @@
+<style>
+    /* ── Voter Records portal directory ─────────────────────────── */
+    .vr-header-sub {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+        line-height: 1.6;
+        max-width: 860px;
+    }
+
+    .vr-portals-section h3 {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 16px 0;
+    }
+
+    .vr-portals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px;
+        margin-bottom: 32px;
+    }
+
+    .vr-portal-entry {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        transition: var(--transition);
+    }
+
+    .vr-portal-entry:hover {
+        border-color: var(--border2);
+        background: var(--panel2);
+    }
+
+    .vr-portal-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+        margin-top: 5px;
+        opacity: 0.7;
+    }
+
+    .vr-portal-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+
+    .vr-portal-state-name {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text);
+    }
+
+    .vr-portal-url {
+        font-size: 11px;
+        color: var(--muted2);
+        font-family: ui-monospace, monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .vr-portal-link {
+        font-size: 12px;
+        color: var(--accent);
+        text-decoration: none;
+        margin-top: 4px;
+        font-weight: 600;
+    }
+
+    .vr-portal-link:hover {
+        text-decoration: underline;
+        opacity: 0.85;
+    }
+
+    .vr-portal-link::after {
+        content: " ↗";
+    }
+
+    .vr-disclaimer {
+        padding: 14px 18px;
+        background: rgba(var(--warn-rgb, 255, 215, 138), 0.07);
+        border: 1px solid rgba(var(--warn-rgb, 255, 215, 138), 0.2);
+        border-left: 3px solid var(--warn);
+        border-radius: var(--radius);
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+    }
+
+    .vr-disclaimer-title {
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .vr-note-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 16px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+        margin-bottom: 24px;
+    }
+
+    .vr-note-box-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    @media (max-width: 650px) {
+        .vr-portals-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<h2>Voter Records</h2>
+<p class="vr-header-sub">
+    Direct links to official US state government voter registration lookup
+    portals. These are publicly accessible tools provided by each state — use
+    them to search voter registration status, polling place, absentee ballot
+    info, and more.
+</p>
+
+<div class="vr-note-box">
+    <span class="vr-note-box-icon">&#128712;</span>
+    <span>
+        All state voter portals require you to enter details directly on their
+        website. Click <strong>Open Portal</strong> on any state below to go
+        straight to that state's official voter lookup tool.
+    </span>
+</div>
+
+<!-- ── State portals directory ───────────────────────────────────── -->
+<div class="vr-portals-section">
+    <h3>States with Public Voter Lookup Portals</h3>
+    <div class="vr-portals-grid">
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Arizona</div>
+                <div class="vr-portal-url">my.arizona.vote</div>
+                <a
+                    href="https://my.arizona.vote/VoterView/RegistrantSearch.do"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Colorado</div>
+                <div class="vr-portal-url">sos.state.co.us/voter</div>
+                <a
+                    href="https://www.sos.state.co.us/voter/pages/pub/olvr/verifyNewVoter.xhtml"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Florida</div>
+                <div class="vr-portal-url">
+                    registration.elections.myflorida.com
+                </div>
+                <a
+                    href="https://registration.elections.myflorida.com/CheckVoterStatus"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Georgia</div>
+                <div class="vr-portal-url">mvp.sos.ga.gov</div>
+                <a
+                    href="https://mvp.sos.ga.gov/s/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Illinois</div>
+                <div class="vr-portal-url">elections.il.gov</div>
+                <a
+                    href="https://www.elections.il.gov/votinginformation/registrationlookup.aspx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Kansas</div>
+                <div class="vr-portal-url">myvoteinfo.voteks.org</div>
+                <a
+                    href="https://myvoteinfo.voteks.org/voterview/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Kentucky</div>
+                <div class="vr-portal-url">vrsws.sos.ky.gov/VIC</div>
+                <a
+                    href="https://vrsws.sos.ky.gov/VIC/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Maryland</div>
+                <div class="vr-portal-url">
+                    voterservices.elections.maryland.gov
+                </div>
+                <a
+                    href="https://voterservices.elections.maryland.gov/VoterSearch"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Michigan</div>
+                <div class="vr-portal-url">mvic.sos.state.mi.us</div>
+                <a
+                    href="https://mvic.sos.state.mi.us/Voter/Index"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Minnesota</div>
+                <div class="vr-portal-url">mnvotes.sos.state.mn.us</div>
+                <a
+                    href="https://mnvotes.sos.state.mn.us/VoterStatus.aspx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Nevada</div>
+                <div class="vr-portal-url">nvsos.gov/voterinfo</div>
+                <a
+                    href="https://www.nvsos.gov/voterinfo/index.aspx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">New Jersey</div>
+                <div class="vr-portal-url">voter.svrs.nj.gov</div>
+                <a
+                    href="https://voter.svrs.nj.gov/registration-check"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">New York</div>
+                <div class="vr-portal-url">voterlookup.elections.ny.gov</div>
+                <a
+                    href="https://voterlookup.elections.ny.gov/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">North Carolina</div>
+                <div class="vr-portal-url">vt.ncsbe.gov</div>
+                <a
+                    href="https://vt.ncsbe.gov/RegLkup/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Ohio</div>
+                <div class="vr-portal-url">voterlookup.ohiosos.gov</div>
+                <a
+                    href="https://voterlookup.ohiosos.gov/voterlookup.aspx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Oklahoma</div>
+                <div class="vr-portal-url">okvoterportal.okelections.us</div>
+                <a
+                    href="https://okvoterportal.okelections.us/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Oregon</div>
+                <div class="vr-portal-url">sos.oregon.gov/voting</div>
+                <a
+                    href="https://sos.oregon.gov/voting/Pages/registration.aspx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Pennsylvania</div>
+                <div class="vr-portal-url">pavoterservices.pa.gov</div>
+                <a
+                    href="https://www.pavoterservices.pa.gov/pages/voterregistrationstatus.aspx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">South Carolina</div>
+                <div class="vr-portal-url">vrems.scvotes.sc.gov</div>
+                <a
+                    href="https://vrems.scvotes.sc.gov/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Texas</div>
+                <div class="vr-portal-url">sos.state.tx.us/elections</div>
+                <a
+                    href="https://www.sos.state.tx.us/elections/voter/votregduties.shtml"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >County Directory</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Utah</div>
+                <div class="vr-portal-url">votesearch.utah.gov</div>
+                <a
+                    href="https://votesearch.utah.gov/voter-search/search/search-by-name/voter-info"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Virginia</div>
+                <div class="vr-portal-url">vote.elections.virginia.gov</div>
+                <a
+                    href="https://vote.elections.virginia.gov/VoterInformation"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Washington</div>
+                <div class="vr-portal-url">voter.votewa.gov</div>
+                <a
+                    href="https://voter.votewa.gov/WhereToVote.aspx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+
+        <div class="vr-portal-entry">
+            <div class="vr-portal-dot"></div>
+            <div class="vr-portal-info">
+                <div class="vr-portal-state-name">Wisconsin</div>
+                <div class="vr-portal-url">myvote.wi.gov</div>
+                <a
+                    href="https://myvote.wi.gov/en-us/Find-My-Voter-Info"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="vr-portal-link"
+                    >Open Portal</a
+                >
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Legal disclaimer ───────────────────────────────────────────── -->
+<div class="vr-disclaimer">
+    <div class="vr-disclaimer-title">
+        <span>&#9888;</span>
+        Legal Disclaimer &amp; Responsible Use
+    </div>
+    These links point to official state government voter registration portals.
+    Voter registration data is provided by state governments as a matter of
+    public record. This information must only be used for lawful purposes —
+    including election administration, political activities, academic research,
+    and journalism. It must never be used for commercial solicitation,
+    harassment, or any purpose prohibited by applicable state or federal law.
+    Use responsibly.
+</div>

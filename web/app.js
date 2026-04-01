@@ -126,6 +126,7 @@ const viewTitles = {
   plugins: "Plugins",
   tokens: "Token",
   settings: "Settings",
+  "voter-records": "Voter Records",
 };
 
 // Optimized loadView function for better performance
@@ -195,10 +196,13 @@ async function loadView(name) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
       try {
-        const res = await fetch(`/static/views/${name}.html?v=${getCacheBust()}`, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
+        const res = await fetch(
+          `/static/views/${name}.html?v=${getCacheBust()}`,
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
         clearTimeout(timeoutId);
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         return res;
@@ -274,6 +278,7 @@ function initializeView(name) {
     demask: initDemaskView,
     iopaint: initIOPaintView,
     deepmosaic: initDeepMosaicView,
+    "voter-records": null,  // static portal directory — no JS init needed
   };
 
   const initializer = viewInitializers[name];
@@ -932,16 +937,16 @@ function initGoogleDorksView() {
   // Static dork template database. {target} is replaced at render time.
   const DORK_TEMPLATES = [
     // ── Site Info & Indexing ──────────────────────────────────────────
-    { category: "Site Info",    query: "site:{target}" },
-    { category: "Site Info",    query: "site:{target} -www" },
-    { category: "Site Info",    query: "related:{target}" },
-    { category: "Site Info",    query: "link:{target}" },
-    { category: "Site Info",    query: "info:{target}" },
-    { category: "Site Info",    query: "cache:{target}" },
-    { category: "Site Info",    query: "site:{target} inurl:sitemap" },
-    { category: "Site Info",    query: "site:{target} filetype:xml" },
-    { category: "Site Info",    query: "site:{target} inurl:robots.txt" },
-    { category: "Site Info",    query: '"intitle:index of" site:{target}' },
+    { category: "Site Info", query: "site:{target}" },
+    { category: "Site Info", query: "site:{target} -www" },
+    { category: "Site Info", query: "related:{target}" },
+    { category: "Site Info", query: "link:{target}" },
+    { category: "Site Info", query: "info:{target}" },
+    { category: "Site Info", query: "cache:{target}" },
+    { category: "Site Info", query: "site:{target} inurl:sitemap" },
+    { category: "Site Info", query: "site:{target} filetype:xml" },
+    { category: "Site Info", query: "site:{target} inurl:robots.txt" },
+    { category: "Site Info", query: '"intitle:index of" site:{target}' },
 
     // ── Login Panels ──────────────────────────────────────────────────
     { category: "Login Panels", query: "site:{target} inurl:login" },
@@ -955,32 +960,68 @@ function initGoogleDorksView() {
     { category: "Login Panels", query: "site:{target} inurl:phpmyadmin" },
     { category: "Login Panels", query: "site:{target} inurl:auth" },
     { category: "Login Panels", query: 'site:{target} intitle:"admin panel"' },
-    { category: "Login Panels", query: 'site:{target} intitle:"login" inurl:secure' },
+    {
+      category: "Login Panels",
+      query: 'site:{target} intitle:"login" inurl:secure',
+    },
 
     // ── Sensitive Files ───────────────────────────────────────────────
     { category: "Sensitive Files", query: "site:{target} filetype:pdf" },
-    { category: "Sensitive Files", query: "site:{target} filetype:xls OR filetype:xlsx" },
+    {
+      category: "Sensitive Files",
+      query: "site:{target} filetype:xls OR filetype:xlsx",
+    },
     { category: "Sensitive Files", query: "site:{target} filetype:csv" },
     { category: "Sensitive Files", query: "site:{target} filetype:sql" },
     { category: "Sensitive Files", query: "site:{target} filetype:xml" },
     { category: "Sensitive Files", query: "site:{target} filetype:json" },
     { category: "Sensitive Files", query: "site:{target} filetype:log" },
     { category: "Sensitive Files", query: "site:{target} filetype:bak" },
-    { category: "Sensitive Files", query: "site:{target} filetype:cfg OR filetype:conf OR filetype:config" },
+    {
+      category: "Sensitive Files",
+      query: "site:{target} filetype:cfg OR filetype:conf OR filetype:config",
+    },
     { category: "Sensitive Files", query: "site:{target} filetype:env" },
     { category: "Sensitive Files", query: 'site:{target} ext:txt "password"' },
-    { category: "Sensitive Files", query: "site:{target} ext:doc OR ext:docx confidential" },
-    { category: "Sensitive Files", query: "site:{target} filetype:pem OR filetype:key" },
+    {
+      category: "Sensitive Files",
+      query: "site:{target} ext:doc OR ext:docx confidential",
+    },
+    {
+      category: "Sensitive Files",
+      query: "site:{target} filetype:pem OR filetype:key",
+    },
 
     // ── Open Directories ──────────────────────────────────────────────
     { category: "Open Directories", query: 'site:{target} intitle:"index of"' },
-    { category: "Open Directories", query: 'site:{target} intitle:"index of /" "parent directory"' },
-    { category: "Open Directories", query: 'site:{target} intitle:"directory listing"' },
-    { category: "Open Directories", query: 'site:{target} inurl:/uploads/ intitle:"index of"' },
-    { category: "Open Directories", query: 'site:{target} inurl:/files/ intitle:"index of"' },
-    { category: "Open Directories", query: 'site:{target} inurl:/backup/ intitle:"index of"' },
-    { category: "Open Directories", query: 'site:{target} inurl:/temp/ intitle:"index of"' },
-    { category: "Open Directories", query: 'site:{target} inurl:/logs/ intitle:"index of"' },
+    {
+      category: "Open Directories",
+      query: 'site:{target} intitle:"index of /" "parent directory"',
+    },
+    {
+      category: "Open Directories",
+      query: 'site:{target} intitle:"directory listing"',
+    },
+    {
+      category: "Open Directories",
+      query: 'site:{target} inurl:/uploads/ intitle:"index of"',
+    },
+    {
+      category: "Open Directories",
+      query: 'site:{target} inurl:/files/ intitle:"index of"',
+    },
+    {
+      category: "Open Directories",
+      query: 'site:{target} inurl:/backup/ intitle:"index of"',
+    },
+    {
+      category: "Open Directories",
+      query: 'site:{target} inurl:/temp/ intitle:"index of"',
+    },
+    {
+      category: "Open Directories",
+      query: 'site:{target} inurl:/logs/ intitle:"index of"',
+    },
 
     // ── Subdomains ────────────────────────────────────────────────────
     { category: "Subdomains", query: "site:*.{target}" },
@@ -989,20 +1030,44 @@ function initGoogleDorksView() {
     { category: "Subdomains", query: "site:staging.{target}" },
     { category: "Subdomains", query: "site:test.{target}" },
     { category: "Subdomains", query: "site:api.{target}" },
-    { category: "Subdomains", query: "site:mail.{target} OR site:email.{target}" },
-    { category: "Subdomains", query: "site:vpn.{target} OR site:remote.{target}" },
-    { category: "Subdomains", query: "site:beta.{target} OR site:alpha.{target}" },
-    { category: "Subdomains", query: "site:git.{target} OR site:gitlab.{target}" },
-    { category: "Subdomains", query: "site:jira.{target} OR site:confluence.{target}" },
-    { category: "Subdomains", query: "site:cdn.{target} OR site:static.{target}" },
+    {
+      category: "Subdomains",
+      query: "site:mail.{target} OR site:email.{target}",
+    },
+    {
+      category: "Subdomains",
+      query: "site:vpn.{target} OR site:remote.{target}",
+    },
+    {
+      category: "Subdomains",
+      query: "site:beta.{target} OR site:alpha.{target}",
+    },
+    {
+      category: "Subdomains",
+      query: "site:git.{target} OR site:gitlab.{target}",
+    },
+    {
+      category: "Subdomains",
+      query: "site:jira.{target} OR site:confluence.{target}",
+    },
+    {
+      category: "Subdomains",
+      query: "site:cdn.{target} OR site:static.{target}",
+    },
 
     // ── Email Harvesting ──────────────────────────────────────────────
-    { category: "Email Harvesting", query: '"{target}" "@gmail.com" OR "@yahoo.com" OR "@hotmail.com"' },
+    {
+      category: "Email Harvesting",
+      query: '"{target}" "@gmail.com" OR "@yahoo.com" OR "@hotmail.com"',
+    },
     { category: "Email Harvesting", query: 'site:{target} intext:"@{target}"' },
     { category: "Email Harvesting", query: '"{target}" "email" filetype:csv' },
     { category: "Email Harvesting", query: '"{target}" "contact" "email"' },
     { category: "Email Harvesting", query: "site:{target} inurl:contact" },
-    { category: "Email Harvesting", query: "site:{target} inurl:staff OR inurl:team OR inurl:people" },
+    {
+      category: "Email Harvesting",
+      query: "site:{target} inurl:staff OR inurl:team OR inurl:people",
+    },
     { category: "Email Harvesting", query: "site:{target} inurl:about" },
     { category: "Email Harvesting", query: '"{target}" filetype:pdf "email"' },
     { category: "Email Harvesting", query: '"@{target}" site:linkedin.com' },
@@ -1024,62 +1089,155 @@ function initGoogleDorksView() {
 
     // ── Cached / Historical Pages ─────────────────────────────────────
     { category: "Cached / Historical", query: "cache:{target}" },
-    { category: "Cached / Historical", query: 'site:web.archive.org "{target}"' },
+    {
+      category: "Cached / Historical",
+      query: 'site:web.archive.org "{target}"',
+    },
     { category: "Cached / Historical", query: 'site:cachedview.nl "{target}"' },
     { category: "Cached / Historical", query: 'site:archive.ph "{target}"' },
-    { category: "Cached / Historical", query: '"{target}" site:webcache.googleusercontent.com' },
-    { category: "Cached / Historical", query: 'site:timetravel.mementoweb.org "{target}"' },
+    {
+      category: "Cached / Historical",
+      query: '"{target}" site:webcache.googleusercontent.com',
+    },
+    {
+      category: "Cached / Historical",
+      query: 'site:timetravel.mementoweb.org "{target}"',
+    },
 
     // ── Camera / IoT Exposure ─────────────────────────────────────────
     { category: "Camera / IoT", query: "site:{target} inurl:view/index.shtml" },
-    { category: "Camera / IoT", query: 'site:{target} intitle:"Live View / - AXIS"' },
+    {
+      category: "Camera / IoT",
+      query: 'site:{target} intitle:"Live View / - AXIS"',
+    },
     { category: "Camera / IoT", query: 'site:{target} intitle:"webcamXP"' },
-    { category: "Camera / IoT", query: "site:{target} inurl:CgiStart?page=Single" },
-    { category: "Camera / IoT", query: 'site:{target} intitle:"Network Camera" inurl:ViewerFrame' },
+    {
+      category: "Camera / IoT",
+      query: "site:{target} inurl:CgiStart?page=Single",
+    },
+    {
+      category: "Camera / IoT",
+      query: 'site:{target} intitle:"Network Camera" inurl:ViewerFrame',
+    },
     { category: "Camera / IoT", query: "site:{target} inurl:axis-cgi/mjpg" },
-    { category: "Camera / IoT", query: 'site:{target} intitle:"RouterOS" inurl:winbox' },
+    {
+      category: "Camera / IoT",
+      query: 'site:{target} intitle:"RouterOS" inurl:winbox',
+    },
     { category: "Camera / IoT", query: 'site:{target} intitle:"SCADA"' },
-    { category: "Camera / IoT", query: 'site:{target} inurl:8080 OR inurl:8443 intitle:"camera"' },
+    {
+      category: "Camera / IoT",
+      query: 'site:{target} inurl:8080 OR inurl:8443 intitle:"camera"',
+    },
 
     // ── Vulnerability Indicators ──────────────────────────────────────
-    { category: "Vulnerability Indicators", query: 'site:{target} "SQL syntax" OR "mysql_fetch" OR "ORA-"' },
-    { category: "Vulnerability Indicators", query: 'site:{target} "Warning: mysql_" OR "Warning: pg_"' },
-    { category: "Vulnerability Indicators", query: 'site:{target} "Fatal error" "stack trace"' },
-    { category: "Vulnerability Indicators", query: 'site:{target} intitle:"500 Internal Server Error"' },
-    { category: "Vulnerability Indicators", query: 'site:{target} intext:"phpinfo()"' },
-    { category: "Vulnerability Indicators", query: 'site:{target} intitle:"PHP Version"' },
-    { category: "Vulnerability Indicators", query: 'site:{target} "Exception in thread" "java.lang"' },
-    { category: "Vulnerability Indicators", query: 'site:{target} intitle:"test page for apache"' },
-    { category: "Vulnerability Indicators", query: "site:{target} inurl:debug" },
-    { category: "Vulnerability Indicators", query: 'site:{target} "error" filetype:log' },
-    { category: "Vulnerability Indicators", query: "site:{target} inurl:?id= OR inurl:?page= OR inurl:?cat=" },
+    {
+      category: "Vulnerability Indicators",
+      query: 'site:{target} "SQL syntax" OR "mysql_fetch" OR "ORA-"',
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: 'site:{target} "Warning: mysql_" OR "Warning: pg_"',
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: 'site:{target} "Fatal error" "stack trace"',
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: 'site:{target} intitle:"500 Internal Server Error"',
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: 'site:{target} intext:"phpinfo()"',
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: 'site:{target} intitle:"PHP Version"',
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: 'site:{target} "Exception in thread" "java.lang"',
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: 'site:{target} intitle:"test page for apache"',
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: "site:{target} inurl:debug",
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: 'site:{target} "error" filetype:log',
+    },
+    {
+      category: "Vulnerability Indicators",
+      query: "site:{target} inurl:?id= OR inurl:?page= OR inurl:?cat=",
+    },
 
     // ── Credentials / Secrets ─────────────────────────────────────────
-    { category: "Credentials / Secrets", query: 'site:{target} filetype:env "DB_PASSWORD"' },
-    { category: "Credentials / Secrets", query: 'site:{target} intext:"password" filetype:log' },
-    { category: "Credentials / Secrets", query: 'site:{target} intext:"password" filetype:txt' },
-    { category: "Credentials / Secrets", query: "site:{target} inurl:credentials" },
-    { category: "Credentials / Secrets", query: 'site:{target} intext:"api_key" OR intext:"api_secret"' },
-    { category: "Credentials / Secrets", query: 'site:{target} intext:"BEGIN RSA PRIVATE KEY"' },
-    { category: "Credentials / Secrets", query: 'site:{target} intext:"AWS_SECRET_ACCESS_KEY"' },
-    { category: "Credentials / Secrets", query: 'site:{target} inurl:.git intitle:"index of"' },
-    { category: "Credentials / Secrets", query: 'site:{target} filetype:json "client_secret"' },
-    { category: "Credentials / Secrets", query: 'site:{target} intext:"token" filetype:env' },
-    { category: "Credentials / Secrets", query: 'site:pastebin.com "{target}" password' },
-    { category: "Credentials / Secrets", query: 'site:github.com "{target}" password OR secret OR token' },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:{target} filetype:env "DB_PASSWORD"',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:{target} intext:"password" filetype:log',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:{target} intext:"password" filetype:txt',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: "site:{target} inurl:credentials",
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:{target} intext:"api_key" OR intext:"api_secret"',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:{target} intext:"BEGIN RSA PRIVATE KEY"',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:{target} intext:"AWS_SECRET_ACCESS_KEY"',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:{target} inurl:.git intitle:"index of"',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:{target} filetype:json "client_secret"',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:{target} intext:"token" filetype:env',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:pastebin.com "{target}" password',
+    },
+    {
+      category: "Credentials / Secrets",
+      query: 'site:github.com "{target}" password OR secret OR token',
+    },
   ];
 
   const ALL_CATEGORIES = [...new Set(DORK_TEMPLATES.map((d) => d.category))];
 
   // DOM refs
-  const targetEl   = document.getElementById("dorkTarget");
+  const targetEl = document.getElementById("dorkTarget");
   const categoryEl = document.getElementById("dorkCategory");
   const generateBtn = document.getElementById("dorkGenerate");
-  const resultsEl  = document.getElementById("dorkResults");
-  const exportBar  = document.getElementById("dorkExportBar");
+  const resultsEl = document.getElementById("dorkResults");
+  const exportBar = document.getElementById("dorkExportBar");
   const copyAllBtn = document.getElementById("dorkCopyAll");
   const downloadBtn = document.getElementById("dorkDownload");
-  const countEl    = document.getElementById("dorkCount");
+  const countEl = document.getElementById("dorkCount");
 
   if (!targetEl || !categoryEl || !generateBtn || !resultsEl) return;
 
@@ -1175,7 +1333,11 @@ function initGoogleDorksView() {
             }, 1500);
           })
           .catch(() => {
-            showToast("Clipboard unavailable — copy manually.", 3000, "warning");
+            showToast(
+              "Clipboard unavailable — copy manually.",
+              3000,
+              "warning",
+            );
           });
       });
     });
@@ -1793,7 +1955,8 @@ function renderBreachView(job, containerId) {
               <tbody>
                 ${displayRows
                   .map((row) => {
-                    const src = row._db || row.source || row.breach || "Unknown";
+                    const src =
+                      row._db || row.source || row.breach || "Unknown";
                     return `
                     <tr>
                       <td style="font-weight:bold; color: var(--accent);">${escapeHtml(src)}</td>
@@ -1804,7 +1967,8 @@ function renderBreachView(job, containerId) {
                             val && typeof val === "object"
                               ? JSON.stringify(val)
                               : String(val || "");
-                          if (display.length > 256) display = display.substring(0, 253) + "...";
+                          if (display.length > 256)
+                            display = display.substring(0, 253) + "...";
                           return `<td>${escapeHtml(display)}</td>`;
                         })
                         .join("")}
@@ -1867,9 +2031,12 @@ function renderBreachView(job, containerId) {
                 ${displayRows
                   .map((row) => {
                     const srcs = row.sources || [];
-                    const src = Array.isArray(srcs) && srcs.length > 0
-                      ? (typeof srcs[0] === "object" ? srcs[0].name : srcs[0])
-                      : "Unknown";
+                    const src =
+                      Array.isArray(srcs) && srcs.length > 0
+                        ? typeof srcs[0] === "object"
+                          ? srcs[0].name
+                          : srcs[0]
+                        : "Unknown";
                     return `
                     <tr>
                       <td style="font-weight:bold; color: var(--warn);">${escapeHtml(String(src))}</td>
@@ -1880,7 +2047,8 @@ function renderBreachView(job, containerId) {
                             val && typeof val === "object"
                               ? JSON.stringify(val)
                               : String(val || "");
-                          if (display.length > 256) display = display.substring(0, 253) + "...";
+                          if (display.length > 256)
+                            display = display.substring(0, 253) + "...";
                           return `<td>${escapeHtml(display)}</td>`;
                         })
                         .join("")}
@@ -2032,7 +2200,9 @@ async function initSearchView() {
   loadBtn.onclick = async () => {
     statusEl.textContent = "Loading providers...";
     let names = await fetchProviders();
-    names = names.filter((n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase");
+    names = names.filter(
+      (n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase",
+    );
     renderProviders(names);
     statusEl.textContent = `Loaded ${names.length} providers.`;
   };
@@ -2053,7 +2223,9 @@ async function initSearchView() {
 
   // auto-load
   let names = await fetchProviders();
-  names = names.filter((n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase");
+  names = names.filter(
+    (n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase",
+  );
   renderProviders(names);
 
   const who = await fetchWhoami();
@@ -3675,6 +3847,10 @@ Results saved with job ID: ${currentJobId}
 }
 
 // ----------------------
+// Voter Records
+// ----------------------
+
+// ----------------------
 // Init
 // Init
 // ----------------------
@@ -3720,7 +3896,9 @@ function downloadJob(job, format = "json") {
       if (snusRaw.length > 0) {
         csvContent += "--- Snusbase Records ---\n";
         const snusKeys = new Set();
-        snusRaw.forEach((row) => Object.keys(row).forEach((k) => snusKeys.add(k)));
+        snusRaw.forEach((row) =>
+          Object.keys(row).forEach((k) => snusKeys.add(k)),
+        );
         const snusCols = Array.from(snusKeys);
         csvContent += snusCols.join(",") + "\n";
         snusRaw.forEach((row) => {
