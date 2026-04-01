@@ -4039,9 +4039,7 @@ async function initVoterRecordsView() {
                     ? `${count} record${count !== 1 ? "s" : ""} retrieved — verify details on the official portal.`
                     : live_lookup
                       ? `No records matched. Verify directly on the official portal.`
-                      : prefilled
-                        ? `&#10003; Link pre-filled with <strong>${escapeHtml(first_name)} ${escapeHtml(last_name)}</strong> — click to go straight to the results.`
-                        : `This portal requires manual entry. Enter <strong>${escapeHtml(first_name)} ${escapeHtml(last_name)}</strong> in the search fields after opening.`
+                      : `Enter <strong>${escapeHtml(first_name)} ${escapeHtml(last_name)}</strong> in the search fields on the portal page.`
                 }
               </div>
             </div>

@@ -2917,32 +2917,13 @@ _VOTER_STATE_PORTALS: Dict[str, str] = {
 # Placeholders: {first}, {last}, {county} (url-encoded by the builder).
 # If a state supports pre-filled name searches we use that URL directly;
 # otherwise we fall back to the base portal above.
-_VOTER_DEEPLINK_TEMPLATES: Dict[str, str] = {
-    "NC": "https://vt.ncsbe.gov/RegLkup/?LastName={last}&FirstName={first}&MiddleName=&County={county}&RegStatus=",
-    "FL": "https://registration.elections.myflorida.com/CheckVoterStatus?FName={first}&LName={last}&County={county}",
-    "WI": "https://myvote.wi.gov/en-us/Find-My-Voter-Info?FirstName={first}&LastName={last}",
-    "PA": "https://www.pavoterservices.pa.gov/pages/voterregistrationstatus.aspx",
-    "AZ": "https://my.arizona.vote/VoterView/RegistrantSearch.do?firstName={first}&lastName={last}",
-    "MN": "https://mnvotes.sos.state.mn.us/VoterStatus.aspx",
-    "NY": "https://voterlookup.elections.ny.gov/",
-    "VA": "https://vote.elections.virginia.gov/VoterInformation/Lookup?firstName={first}&lastName={last}",
-    "MD": "https://voterservices.elections.maryland.gov/VoterSearch?firstName={first}&lastName={last}&county={county}",
-    "NJ": "https://voter.svrs.nj.gov/registration-check",
-    "SC": "https://vrems.scvotes.sc.gov/",
-    "KS": "https://myvoteinfo.voteks.org/voterview/",
-    "OK": "https://okvoterportal.okelections.us/",
-    "MI": "https://mvic.sos.state.mi.us/Voter/Index",
-    "GA": "https://mvp.sos.ga.gov/s/",
-    "OH": "https://voterlookup.ohiosos.gov/voterlookup.aspx",
-    "WA": "https://voter.votewa.gov/WhereToVote.aspx",
-    "TX": "https://www.sos.state.tx.us/elections/voter/votregduties.shtml",
-    "NV": "https://www.nvsos.gov/voterinfo/index.aspx",
-    "CO": "https://www.sos.state.co.us/voter/pages/pub/olvr/verifyNewVoter.xhtml",
-    "IL": "https://www.elections.il.gov/votinginformation/registrationlookup.aspx",
-    "KY": "https://vrsws.sos.ky.gov/VIC/",
-    "UT": "https://votesearch.utah.gov/voter-search/search/search-by-name/voter-info",
-    "OR": "https://sos.oregon.gov/voting/Pages/registration.aspx",
-}
+# NOTE: All modern state voter portals are JavaScript SPAs or ASP.NET WebForms
+# that do NOT honour query-string pre-filling from external links.  We keep the
+# base portal URLs here (no query params) so the button navigates the user to
+# the correct portal where they can enter the name themselves.
+# The dict is kept separate from _VOTER_STATE_PORTALS so we can extend it later
+# if any state adds a true REST/server-side search endpoint.
+_VOTER_DEEPLINK_TEMPLATES: Dict[str, str] = {}  # no states support URL pre-fill
 
 # Human-readable names for all 50 states + DC
 _STATE_NAMES: Dict[str, str] = {
