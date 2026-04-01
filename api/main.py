@@ -1611,20 +1611,19 @@ def _crop_for_inpainting(
             (orig_w, orig_h),
         )
 
-    # Build a bounding box that encompasses all detected faces + 60 % padding
-    tops = [b[0] for b in face_boxes]
-    rights = [b[1] for b in face_boxes]
-    bottoms = [b[2] for b in face_boxes]
-    lefts = [b[3] for b in face_boxes]
+    # Use the SINGLE largest face box — unioning all boxes in a crowd scene
+    # causes the crop to contain distractor faces and produce double-face outputs.
+    best_box = max(face_boxes, key=lambda b: (b[2] - b[0]) * (b[1] - b[3]))
+    top, right, bottom, left = best_box
+    fh = bottom - top
+    fw = right - left
+    # 30 % padding keeps the face centred without pulling in neighbouring heads
+    pad = int(max(fh, fw) * 0.30)
 
-    fh = min(bottoms) - max(tops)
-    fw = max(rights) - min(lefts)
-    pad = int(max(fh, fw) * 0.60)
-
-    cl = max(0, min(lefts) - pad)
-    ct = max(0, min(tops) - pad)
-    cr = min(orig_w, max(rights) + pad)
-    cb = min(orig_h, max(bottoms) + pad)
+    cl = max(0, left - pad)
+    ct = max(0, top - pad)
+    cr = min(orig_w, right + pad)
+    cb = min(orig_h, bottom + pad)
 
     # Enforce minimum 256 px on each axis
     if cr - cl < 256:
@@ -1804,6 +1803,10 @@ async def api_demask(
             "plastic skin, smooth skin, airbrushed, overly smooth, "
             "different gender, different ethnicity, wrong ethnicity, changed skin color, "
             "wrong skin tone, new person, extra faces, different person, "
+            "two faces, double face, duplicated face, face overlay, double exposure, "
+            "second head, extra head, cloned face, misaligned facial features, "
+            "warped face, stretched face, extreme closeup, zoomed face, "
+            "out-of-frame face, poorly placed eyes, asymmetrical eyes, "
             "mask, balaclava, face covering, surgical mask, sunglasses, "
             "distorted, blurry, deformed, bad anatomy, watermark, text, logo, "
             "nsfw, nude, naked, explicit"
@@ -1869,20 +1872,23 @@ async def api_demask(
             "image": crop_b64_img,
             "mask": crop_b64_mask,
             "prompt": (
-                f"candid press photo, photojournalism, RAW photo, DSLR, "
-                f"photo-realistic {gender_positive}human face, {skin_tone_hint}, "
-                + (f"exact same {skin_tone_hint}, " if skin_tone_hint != "human skin tone, natural complexion" else "")
+                f"candid documentary photo, photojournalism, RAW photo, DSLR, "
+                f"single {gender_positive}adult human face, {skin_tone_hint}, "
+                + (f"same {skin_tone_hint} complexion, " if skin_tone_hint != "human skin tone, natural complexion" else "")
                 + f"{hair_positive} "
-                + "natural skin texture, visible pores, film grain, realistic lighting, "
-                + "sharp focus, 8k, no face covering, no mask, "
-                + "no surgical mask, open face, revealed face"
+                + "same head pose and camera angle as input, "
+                + "same face size and framing as input, "
+                + "neutral expression, mouth closed, eyes aligned, "
+                + "realistic skin texture with visible pores, subtle film grain, "
+                + "natural lighting matching the scene, sharp focus, "
+                + "fill only the covered face region, no face covering, no mask"
             ),
             "negative_prompt": NEGATIVE,
             "num_outputs": 1,
             "num_inference_steps": 75,
-            # 7.5 balances prompt adherence (keeps correct ethnicity/skin tone)
-            # with photorealism — below 6 the model ignores skin tone hints.
-            "guidance_scale": 7.5,
+            # 5.5: photographic, follows prompt without over-constraining.
+            # The original code comment said 5.0; 7.5 produced overconfident distortions.
+            "guidance_scale": 5.5,
             # K_EULER_ANCESTRAL introduces stochastic noise at each step which
             # produces more organic, photographic skin compared to the fully
             # deterministic DPMSolverMultistep.
@@ -1944,14 +1950,16 @@ async def api_demask(
                     input={
                         "image": b64_full,
                         "prompt": (
-                            f"reveal the face beneath the covering, {skin_tone_hint}, "
-                            f"{hair_positive} "
-                            "keep gender, ethnicity, hair, clothing and background "
-                            "completely unchanged, realistic photo"
+                            "remove the face covering without changing framing, "
+                            "preserve original head pose and proportions, "
+                            "keep all background people unchanged, "
+                            "maintain original lighting and color, "
+                            "realistic candid documentary photo"
                         ),
                         "negative_prompt": NEGATIVE,
                         "num_inference_steps": 75,
                         "image_guidance_scale": 2.0,
+                               "image_guidance_scale": 2.0,
                         "guidance_scale": 8.0,
                     },
                 )
