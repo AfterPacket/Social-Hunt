@@ -3034,8 +3034,10 @@ async def _try_nc_voter_lookup(
 ) -> List[Dict[str, Any]]:
     """
     North Carolina State Board of Elections public voter lookup.
-    Columns returned: Name | Address | City | County | Zip | Party | Reg# | Status
-    Party codes: DEM, REP, LIB, GRE, UNA, CST
+    Actual table column order: County | Status | Full Name | City,State Zip
+    The Full Name cell contains a hyperlink: <a href="...">SMITH, JOHN</a>
+    City/State/Zip is a single combined cell: "HICKORY, NC 28601"
+    Party codes (from detail page): DEM, REP, LIB, GRE, UNA, CST
     """
     import urllib.parse
 
@@ -3092,29 +3094,40 @@ async def _try_nc_voter_lookup(
         results: List[Dict[str, Any]] = []
         for row in rows:
             cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.IGNORECASE | re.DOTALL)
-            # Strip all inner tags (links, badges, etc.)
+            # Strip all inner HTML tags (hyperlinks, spans, etc.)
             cells = [re.sub(r"<[^>]+>", "", c).strip() for c in cells]
-            # Need at least Name + Address
-            if len(cells) < 2:
-                continue
-            if last_name.upper() not in cells[0].upper():
+
+            # Actual NC table: County(0) | Status(1) | Full Name(2) | City,State Zip(3)
+            if len(cells) < 3:
                 continue
 
-            party_raw = cells[5].strip().upper() if len(cells) > 5 else ""
+            # Name is in column 2 — skip rows where it doesn't contain the last name
+            name_raw = cells[2].strip()
+            if last_name.upper() not in name_raw.upper():
+                continue
+
+            # Parse combined "CITY, NC 28601" field in column 3
+            city_val = zip_val = ""
+            if len(cells) > 3:
+                csz = cells[3].strip()
+                csz_m = re.match(
+                    r"^(.+),\s*NC\s+(\d{5}(?:-\d{4})?)$", csz, re.IGNORECASE
+                )
+                if csz_m:
+                    city_val = csz_m.group(1).strip().title()
+                    zip_val = csz_m.group(2).strip()
+                else:
+                    city_val = csz.title()
+
             rec: Dict[str, Any] = {
                 "state": "NC",
-                "name": cells[0].title(),
-                "address": cells[1].title() if len(cells) > 1 else "",
-                "city": cells[2].title() if len(cells) > 2 else "",
-                "county": cells[3].title() if len(cells) > 3 else "",
-                "zip": cells[4].strip() if len(cells) > 4 else "",
-                "party": _NC_PARTY.get(party_raw, cells[5].title())
-                if party_raw
-                else "",
-                "registration_number": cells[6].strip() if len(cells) > 6 else "",
-                "status": cells[7].title() if len(cells) > 7 else "",
+                "name": name_raw.title(),
+                "county": cells[0].title(),
+                "status": cells[1].title(),
+                "city": city_val,
+                "zip": zip_val,
             }
-            # Drop empty strings
+            # Drop empty strings but always keep state
             rec = {k: v for k, v in rec.items() if v}
             rec["state"] = "NC"
             if rec.get("name"):
