@@ -1457,10 +1457,12 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list, bool]
             "Applying head-region heuristic mask."
         )
         used_heuristic = True
-        # Upper-centre band: horizontally centred, spanning ~15 %–70 % of height
-        pad_x = int(w_img * 0.20)
-        top_y = int(h_img * 0.10)
-        bot_y = int(h_img * 0.72)
+        # Tighter head-region band: 8-55 % height, centre 70 % of width
+        # Narrower than the old 10-72% — reduces the mask area so SD has less
+        # to fill and produces sharper, more plausible facial features.
+        pad_x = int(w_img * 0.15)
+        top_y = int(h_img * 0.08)
+        bot_y = int(h_img * 0.55)
         face_boxes = [(top_y, w_img - pad_x, bot_y, pad_x)]
 
     # ── Build mask ────────────────────────────────────────────────────────────
@@ -1886,10 +1888,10 @@ async def api_demask(
             ),
             "negative_prompt": NEGATIVE,
             "num_outputs": 1,
-            "num_inference_steps": 60,
+            "num_inference_steps": 75,
             # 7.5 balances prompt adherence (keeps correct ethnicity/skin tone)
             # with photorealism — below 6 the model ignores skin tone hints.
-            "guidance_scale": 9.0,
+            "guidance_scale": 7.5,
             # K_EULER_ANCESTRAL introduces stochastic noise at each step which
             # produces more organic, photographic skin compared to the fully
             # deterministic DPMSolverMultistep.
@@ -1957,7 +1959,7 @@ async def api_demask(
                             "completely unchanged, realistic photo"
                         ),
                         "negative_prompt": NEGATIVE,
-                        "num_inference_steps": 60,
+                        "num_inference_steps": 75,
                         "image_guidance_scale": 2.0,
                         "guidance_scale": 8.0,
                     },
