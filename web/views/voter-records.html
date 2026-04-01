@@ -371,6 +371,41 @@
     }
 
     /* ── Responsive ──────────────────────────────────────────────── */
+    .vr-live-badge {
+        display: inline-block;
+        background: rgba(100, 220, 140, 0.15);
+        color: var(--good);
+        border: 1px solid rgba(100, 220, 140, 0.3);
+        border-radius: 10px;
+        padding: 1px 7px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        vertical-align: middle;
+        margin-left: 6px;
+        text-transform: uppercase;
+    }
+
+    .vr-live-callout {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        background: rgba(100, 220, 140, 0.07);
+        border: 1px solid rgba(100, 220, 140, 0.2);
+        border-radius: var(--radius);
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
+    .vr-live-callout-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
     @media (max-width: 650px) {
         .vr-form-grid {
             grid-template-columns: 1fr;
@@ -512,6 +547,15 @@
 <!-- ── State portals directory ───────────────────────────────────── -->
 <div class="vr-portals-section">
     <h3>States with Direct Public Voter Search Portals</h3>
+    <div class="vr-live-callout">
+        <span class="vr-live-callout-icon">⚡</span>
+        <span>
+            <strong>NC, FL, VA, and WI</strong> support live in-app results —
+            records are fetched directly from the state's voter database and
+            displayed here without leaving Social Hunt. All other states open
+            their official portal pre-filled with your search terms.
+        </span>
+    </div>
     <div class="vr-portals-grid">
         <div class="vr-portal-entry">
             <div class="vr-portal-dot"></div>
@@ -546,7 +590,9 @@
         <div class="vr-portal-entry">
             <div class="vr-portal-dot"></div>
             <div class="vr-portal-info">
-                <div class="vr-portal-state-name">North Carolina</div>
+                <div class="vr-portal-state-name">
+                    North Carolina <span class="vr-live-badge">⚡ Live</span>
+                </div>
                 <div class="vr-portal-url">vt.ncsbe.gov</div>
                 <a
                     href="https://vt.ncsbe.gov/RegLkup/"
@@ -576,7 +622,9 @@
         <div class="vr-portal-entry">
             <div class="vr-portal-dot"></div>
             <div class="vr-portal-info">
-                <div class="vr-portal-state-name">Florida</div>
+                <div class="vr-portal-state-name">
+                    Florida <span class="vr-live-badge">⚡ Live</span>
+                </div>
                 <div class="vr-portal-url">
                     registration.elections.myflorida.com
                 </div>
@@ -593,7 +641,9 @@
         <div class="vr-portal-entry">
             <div class="vr-portal-dot"></div>
             <div class="vr-portal-info">
-                <div class="vr-portal-state-name">Wisconsin</div>
+                <div class="vr-portal-state-name">
+                    Wisconsin <span class="vr-live-badge">⚡ Live</span>
+                </div>
                 <div class="vr-portal-url">myvote.wi.gov</div>
                 <a
                     href="https://myvote.wi.gov/en-us/Find-My-Voter-Info"
@@ -698,7 +748,9 @@
         <div class="vr-portal-entry">
             <div class="vr-portal-dot"></div>
             <div class="vr-portal-info">
-                <div class="vr-portal-state-name">Virginia</div>
+                <div class="vr-portal-state-name">
+                    Virginia <span class="vr-live-badge">⚡ Live</span>
+                </div>
                 <div class="vr-portal-url">vote.elections.virginia.gov</div>
                 <a
                     href="https://vote.elections.virginia.gov/VoterInformation"

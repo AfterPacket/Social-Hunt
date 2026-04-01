@@ -3033,10 +3033,20 @@ async def _try_nc_voter_lookup(
     first_name: str, last_name: str, county: str
 ) -> List[Dict[str, Any]]:
     """
-    North Carolina has a public voter lookup API (JSON) via the NCSBE.
-    Returns parsed voter records or an empty list on any failure.
+    North Carolina State Board of Elections public voter lookup.
+    Columns returned: Name | Address | City | County | Zip | Party | Reg# | Status
+    Party codes: DEM, REP, LIB, GRE, UNA, CST
     """
     import urllib.parse
+
+    _NC_PARTY: Dict[str, str] = {
+        "DEM": "Democrat",
+        "REP": "Republican",
+        "LIB": "Libertarian",
+        "GRE": "Green",
+        "UNA": "Unaffiliated",
+        "CST": "Constitution",
+    }
 
     params = {
         "LastName": last_name,
@@ -3046,58 +3056,271 @@ async def _try_nc_voter_lookup(
         "RegStatus": "",
     }
     url = "https://vt.ncsbe.gov/RegLkup/?" + urllib.parse.urlencode(params)
-    headers = {
+    req_headers = {
         "User-Agent": _VOTER_UA,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
         "Referer": "https://vt.ncsbe.gov/RegLkup/",
     }
 
     try:
         async with httpx.AsyncClient(
-            follow_redirects=True, timeout=httpx.Timeout(12.0)
+            follow_redirects=True, timeout=httpx.Timeout(15.0)
         ) as client:
-            resp = await client.get(url, headers=headers)
+            resp = await client.get(url, headers=req_headers)
         if resp.status_code != 200:
             return []
 
         html = re.sub(r"\s+", " ", resp.text)
 
-        # NC results are in a table. Each row looks like:
-        # <tr>...<td>SMITH, JOHN A</td><td>123 MAIN ST</td>...
+        if any(
+            m in html.lower()
+            for m in ("no voters found", "no records found", "0 records")
+        ):
+            return []
+
+        # Isolate tbody so we never parse the header <tr>
+        tbody_m = re.search(
+            r"<tbody[^>]*>(.*?)</tbody>", html, re.IGNORECASE | re.DOTALL
+        )
+        search_area = tbody_m.group(1) if tbody_m else html
+
         rows = re.findall(
-            r"<tr[^>]*>(.*?)</tr>",
-            html,
-            re.IGNORECASE | re.DOTALL,
+            r"<tr[^>]*>(.*?)</tr>", search_area, re.IGNORECASE | re.DOTALL
         )
 
         results: List[Dict[str, Any]] = []
         for row in rows:
             cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.IGNORECASE | re.DOTALL)
+            # Strip all inner tags (links, badges, etc.)
             cells = [re.sub(r"<[^>]+>", "", c).strip() for c in cells]
-            if len(cells) < 4:
-                continue
-            # Skip header rows
-            if cells[0].lower() in ("voter name", "name", ""):
+            # Need at least Name + Address
+            if len(cells) < 2:
                 continue
             if last_name.upper() not in cells[0].upper():
                 continue
 
-            rec: Dict[str, Any] = {"state": "NC"}
-            rec["name"] = cells[0].title() if cells[0] else ""
-            if len(cells) > 1:
-                rec["address"] = cells[1].title()
-            if len(cells) > 2:
-                rec["city"] = cells[2].title()
-            if len(cells) > 3:
-                rec["county"] = cells[3].title()
-            if len(cells) > 4:
-                rec["party"] = cells[4].title()
-            if len(cells) > 5:
-                rec["status"] = cells[5].title()
+            party_raw = cells[5].strip().upper() if len(cells) > 5 else ""
+            rec: Dict[str, Any] = {
+                "state": "NC",
+                "name": cells[0].title(),
+                "address": cells[1].title() if len(cells) > 1 else "",
+                "city": cells[2].title() if len(cells) > 2 else "",
+                "county": cells[3].title() if len(cells) > 3 else "",
+                "zip": cells[4].strip() if len(cells) > 4 else "",
+                "party": _NC_PARTY.get(party_raw, cells[5].title())
+                if party_raw
+                else "",
+                "registration_number": cells[6].strip() if len(cells) > 6 else "",
+                "status": cells[7].title() if len(cells) > 7 else "",
+            }
+            # Drop empty strings
+            rec = {k: v for k, v in rec.items() if v}
+            rec["state"] = "NC"
             if rec.get("name"):
                 results.append(rec)
 
-        return results
+        return results[:50]
+
+    except Exception:
+        return []
+
+
+async def _try_fl_voter_lookup(
+    first_name: str, last_name: str, county: str
+) -> List[Dict[str, Any]]:
+    """
+    Florida Division of Elections public voter status check.
+    https://registration.elections.myflorida.com/CheckVoterStatus
+    """
+    import urllib.parse
+
+    params: Dict[str, str] = {"FName": first_name, "LName": last_name}
+    if county:
+        params["County"] = county
+    url = (
+        "https://registration.elections.myflorida.com/CheckVoterStatus?"
+        + urllib.parse.urlencode(params)
+    )
+    req_headers = {
+        "User-Agent": _VOTER_UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://registration.elections.myflorida.com/CheckVoterStatus",
+    }
+
+    try:
+        async with httpx.AsyncClient(
+            follow_redirects=True, timeout=httpx.Timeout(15.0)
+        ) as client:
+            resp = await client.get(url, headers=req_headers)
+        if resp.status_code != 200:
+            return []
+
+        html = re.sub(r"\s+", " ", resp.text)
+
+        if any(
+            m in html.lower()
+            for m in ("no voter", "not found", "no record", "captcha", "robot")
+        ):
+            return []
+
+        results: List[Dict[str, Any]] = []
+
+        # Try a results table first
+        tbody_m = re.search(
+            r"<tbody[^>]*>(.*?)</tbody>", html, re.IGNORECASE | re.DOTALL
+        )
+        if tbody_m:
+            rows = re.findall(
+                r"<tr[^>]*>(.*?)</tr>", tbody_m.group(1), re.IGNORECASE | re.DOTALL
+            )
+            for row in rows:
+                cells = re.findall(
+                    r"<td[^>]*>(.*?)</td>", row, re.IGNORECASE | re.DOTALL
+                )
+                cells = [re.sub(r"<[^>]+>", "", c).strip() for c in cells]
+                if len(cells) < 3:
+                    continue
+                if last_name.upper() not in " ".join(cells).upper():
+                    continue
+                rec: Dict[str, Any] = {
+                    "state": "FL",
+                    "name": cells[0].title() if cells[0] else "",
+                }
+                if len(cells) > 1:
+                    rec["county"] = cells[1].title()
+                if len(cells) > 2:
+                    rec["party"] = cells[2].title()
+                if len(cells) > 3:
+                    rec["status"] = cells[3].title()
+                if len(cells) > 4:
+                    rec["registration_date"] = cells[4]
+                if rec.get("name"):
+                    results.append(rec)
+            if results:
+                return results[:50]
+
+        # Fall back: single-voter detail block using labelled fields
+        rec = {"state": "FL"}
+        for label, key in [
+            (r"name", "name"),
+            (r"county", "county"),
+            (r"party", "party"),
+            (r"status", "status"),
+            (r"address", "address"),
+            (r"registration\s*date", "registration_date"),
+        ]:
+            m = re.search(
+                rf"(?i){label}[^:]*:\s*(?:<[^>]*>)?([^<]{{3,80}}?)(?:<|\s{{2,}})",
+                html,
+            )
+            if m:
+                val = m.group(1).strip()
+                if val and last_name.upper() in val.upper() if key == "name" else val:
+                    rec[key] = val.title() if key != "registration_date" else val
+
+        return [rec] if rec.get("name") else []
+
+    except Exception:
+        return []
+
+
+async def _try_va_voter_lookup(first_name: str, last_name: str) -> List[Dict[str, Any]]:
+    """
+    Virginia Department of Elections public voter information lookup.
+    https://vote.elections.virginia.gov/VoterInformation/Lookup
+    """
+    import urllib.parse
+
+    url = (
+        "https://vote.elections.virginia.gov/VoterInformation/Lookup?"
+        + urllib.parse.urlencode({"firstName": first_name, "lastName": last_name})
+    )
+    req_headers = {
+        "User-Agent": _VOTER_UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://vote.elections.virginia.gov/VoterInformation",
+    }
+
+    try:
+        async with httpx.AsyncClient(
+            follow_redirects=True, timeout=httpx.Timeout(15.0)
+        ) as client:
+            resp = await client.get(url, headers=req_headers)
+        if resp.status_code != 200:
+            return []
+
+        html = re.sub(r"\s+", " ", resp.text)
+
+        if any(
+            m in html.lower()
+            for m in ("no voter", "not found", "captcha", "robot", "no record")
+        ):
+            return []
+
+        results: List[Dict[str, Any]] = []
+
+        # Try a results table
+        tbody_m = re.search(
+            r"<tbody[^>]*>(.*?)</tbody>", html, re.IGNORECASE | re.DOTALL
+        )
+        if tbody_m:
+            rows = re.findall(
+                r"<tr[^>]*>(.*?)</tr>", tbody_m.group(1), re.IGNORECASE | re.DOTALL
+            )
+            for row in rows:
+                cells = re.findall(
+                    r"<td[^>]*>(.*?)</td>", row, re.IGNORECASE | re.DOTALL
+                )
+                cells = [re.sub(r"<[^>]+>", "", c).strip() for c in cells]
+                if len(cells) < 2:
+                    continue
+                if last_name.upper() not in " ".join(cells).upper():
+                    continue
+                rec: Dict[str, Any] = {
+                    "state": "VA",
+                    "name": cells[0].title() if cells[0] else "",
+                }
+                if len(cells) > 1:
+                    rec["locality"] = cells[1].title()
+                if len(cells) > 2:
+                    rec["party"] = cells[2].title()
+                if len(cells) > 3:
+                    rec["status"] = cells[3].title()
+                if rec.get("name"):
+                    results.append(rec)
+            if results:
+                return results[:50]
+
+        # Single-record detail fallback
+        rec = {"state": "VA"}
+        for label, key in [
+            (r"name", "name"),
+            (r"locality", "locality"),
+            (r"party", "party"),
+            (r"status", "status"),
+            (r"address", "address"),
+            (r"precinct", "precinct"),
+        ]:
+            m = re.search(
+                rf"(?i){label}[^:]*:\s*(?:<[^>]*>)?([^<]{{3,80}}?)(?:<|\s{{2,}})",
+                html,
+            )
+            if m:
+                rec[key] = m.group(1).strip().title()
+
+        # Last-resort name grab
+        if not rec.get("name") and last_name.upper() in html.upper():
+            nm = re.search(
+                rf"(?i)({re.escape(first_name)}[^<]{{0,20}}{re.escape(last_name)})",
+                html,
+            )
+            if nm:
+                rec["name"] = nm.group(1).strip().title()
+
+        return [rec] if rec.get("name") else []
 
     except Exception:
         return []
@@ -3105,59 +3328,56 @@ async def _try_nc_voter_lookup(
 
 async def _try_wi_voter_lookup(first_name: str, last_name: str) -> List[Dict[str, Any]]:
     """
-    Wisconsin MyVote has a name-based voter lookup page.
+    Wisconsin MyVote public voter information page (name-based search).
     """
     import urllib.parse
 
-    url = (
-        "https://myvote.wi.gov/en-us/Find-My-Voter-Info"
-        f"?FirstName={urllib.parse.quote_plus(first_name)}"
-        f"&LastName={urllib.parse.quote_plus(last_name)}"
+    url = "https://myvote.wi.gov/en-us/Find-My-Voter-Info?" + urllib.parse.urlencode(
+        {"FirstName": first_name, "LastName": last_name}
     )
-    headers = {
+    req_headers = {
         "User-Agent": _VOTER_UA,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
         "Referer": "https://myvote.wi.gov/",
     }
 
     try:
         async with httpx.AsyncClient(
-            follow_redirects=True, timeout=httpx.Timeout(12.0)
+            follow_redirects=True, timeout=httpx.Timeout(15.0)
         ) as client:
-            resp = await client.get(url, headers=headers)
+            resp = await client.get(url, headers=req_headers)
         if resp.status_code != 200:
             return []
 
         html = re.sub(r"\s+", " ", resp.text)
 
-        # Check for a "no results" indicator
-        if "no voter" in html.lower() or "not found" in html.lower():
-            return []
-
-        # Look for name + address blocks in the response
-        name_m = re.search(
-            r"(?i)voter\s*name[^:]*:?\s*<[^>]*>([^<]+)<",
-            html,
-        )
-        addr_m = re.search(
-            r"(?i)address[^:]*:?\s*<[^>]*>([^<]+)<",
-            html,
-        )
-        city_m = re.search(
-            r"([A-Za-z\s]+),\s*WI\s+(\d{5})",
-            html,
-        )
-
-        if not name_m:
+        if any(m in html.lower() for m in ("no voter", "not found", "no record")):
             return []
 
         rec: Dict[str, Any] = {"state": "WI"}
-        rec["name"] = name_m.group(1).strip().title()
-        if addr_m:
-            rec["address"] = addr_m.group(1).strip().title()
+
+        for label, key in [
+            (r"voter\s*name", "name"),
+            (r"address", "address"),
+            (r"municipality", "city"),
+            (r"county", "county"),
+            (r"ward", "precinct"),
+            (r"status", "status"),
+        ]:
+            m = re.search(
+                rf"(?i){label}[^:]*:?\s*(?:<[^>]*>)+\s*([^<]{{2,80}}?)(?:\s*<)",
+                html,
+            )
+            if m:
+                rec[key] = m.group(1).strip().title()
+
+        city_m = re.search(r"([A-Za-z\s]+),\s*WI\s+(\d{5})", html)
         if city_m:
-            rec["city"] = city_m.group(1).strip().title()
+            if not rec.get("city"):
+                rec["city"] = city_m.group(1).strip().title()
             rec["zip"] = city_m.group(2)
+
         return [rec] if rec.get("name") else []
 
     except Exception:
@@ -3203,32 +3423,35 @@ async def api_voter_records_search(
     note = ""
 
     # ── States where we attempt a live automated fetch ───────────────
-    if state == "NC":
-        try:
-            results = await _try_nc_voter_lookup(first_name, last_name, county)
-            source = "NC State Board of Elections"
-            if not results:
-                note = (
-                    f"No matching records found in the NC voter database for "
-                    f'"{first_name} {last_name}". Use the portal link to verify.'
-                )
-        except Exception as exc:
-            note = (
-                f"Live lookup failed ({type(exc).__name__}). Use the portal link below."
-            )
+    _LIVE_SOURCES: Dict[str, str] = {
+        "NC": "NC State Board of Elections",
+        "FL": "Florida Division of Elections",
+        "VA": "Virginia Department of Elections",
+        "WI": "Wisconsin MyVote",
+    }
 
-    elif state == "WI":
+    if state in _LIVE_SOURCES:
         try:
-            results = await _try_wi_voter_lookup(first_name, last_name)
-            source = "Wisconsin MyVote"
+            if state == "NC":
+                results = await _try_nc_voter_lookup(first_name, last_name, county)
+            elif state == "FL":
+                results = await _try_fl_voter_lookup(first_name, last_name, county)
+            elif state == "VA":
+                results = await _try_va_voter_lookup(first_name, last_name)
+            elif state == "WI":
+                results = await _try_wi_voter_lookup(first_name, last_name)
+
+            source = _LIVE_SOURCES[state]
             if not results:
                 note = (
-                    f"No matching records found in the WI voter database for "
-                    f'"{first_name} {last_name}". Use the portal link to verify.'
+                    f"No matching records found in the {state_name} voter database for "
+                    f'"{first_name} {last_name}". '
+                    f"Use the portal link below to verify manually."
                 )
         except Exception as exc:
             note = (
-                f"Live lookup failed ({type(exc).__name__}). Use the portal link below."
+                f"Live lookup failed ({type(exc).__name__}). "
+                f"Use the portal link below to search manually."
             )
 
     # ── All other states: return portal info + deep link ─────────────
@@ -3270,8 +3493,8 @@ async def api_voter_records_search(
             )
             source = "Public Records Reference"
 
-    # For live-lookup states (NC, WI) prefilled is not set above — default to False
-    if state in ("NC", "WI"):
+    # For live-lookup states prefilled is not set in their branch — default to False
+    if state in ("NC", "FL", "VA", "WI"):
         prefilled = False
 
     elapsed_ms = (time.monotonic() - t_start) * 1000
@@ -3285,7 +3508,7 @@ async def api_voter_records_search(
         "source": source,
         "note": note,
         "has_portal": bool(state_portal),
-        "live_lookup": state in ("NC", "WI"),
+        "live_lookup": state in ("NC", "FL", "VA", "WI"),
         "prefilled": prefilled,
         "elapsed_ms": round(elapsed_ms, 1),
     }
