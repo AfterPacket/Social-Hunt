@@ -3036,7 +3036,7 @@ def _parse_voterrecords_html(
     return unique
 
 
-@app.post("/api/voter-records/search")
+@app.post("/sh-api/voter-records/search")
 async def api_voter_records_search(
     req: VoterRecordsRequest,
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),

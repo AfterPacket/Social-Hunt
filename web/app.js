@@ -4132,7 +4132,7 @@ async function initVoterRecordsView() {
     resultsEl.innerHTML = "";
 
     try {
-      const res = await fetch("/api/voter-records/search", {
+      const res = await fetch("/sh-api/voter-records/search", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
