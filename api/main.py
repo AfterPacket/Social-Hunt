@@ -3233,14 +3233,27 @@ async def api_voter_records_search(
 
     # ── All other states: return portal info + deep link ─────────────
     else:
+        # Determine whether the deep link is actually pre-filled with search terms
+        template = _VOTER_DEEPLINK_TEMPLATES.get(state, "")
+        prefilled = bool(template) and ("{first}" in template or "{last}" in template)
+
         if state_portal:
-            note = (
-                f"{state_name} provides a public voter registration lookup portal. "
-                f"Click the portal link below — it has been pre-filled with the "
-                f"search name where supported."
-            )
+            if prefilled:
+                note = (
+                    f"The link below opens the {state_name} official voter portal "
+                    f"with <strong>{first_name} {last_name}</strong> already entered "
+                    f"in the search fields. Click it to go directly to the results."
+                )
+            else:
+                note = (
+                    f"{state_name} has a public voter registration lookup portal, "
+                    f"but it does not support pre-filled URL searches. "
+                    f"Click the link below and enter "
+                    f"<strong>{first_name} {last_name}</strong> manually."
+                )
             source = f"{state_name} Secretary of State"
         else:
+            prefilled = False
             note = (
                 f"{state_name} does not currently have a public online voter "
                 f"registration lookup portal. You may be able to request voter "
@@ -3248,6 +3261,10 @@ async def api_voter_records_search(
                 f"county election office or the Secretary of State's office."
             )
             source = "Public Records Reference"
+
+    # For live-lookup states (NC, WI) prefilled is not set above — default to False
+    if state in ("NC", "WI"):
+        prefilled = False
 
     elapsed_ms = (time.monotonic() - t_start) * 1000
 
@@ -3261,6 +3278,7 @@ async def api_voter_records_search(
         "note": note,
         "has_portal": bool(state_portal),
         "live_lookup": state in ("NC", "WI"),
+        "prefilled": prefilled,
         "elapsed_ms": round(elapsed_ms, 1),
     }
 

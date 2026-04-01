@@ -3982,6 +3982,7 @@ async function initVoterRecordsView() {
       deep_link,
       has_portal,
       live_lookup,
+      prefilled,
       source,
       note,
       elapsed_ms,
@@ -4014,11 +4015,12 @@ async function initVoterRecordsView() {
         }
       </div>`;
 
-    // ── Note banner ───────────────────────────────────────────────────
-    if (note) {
+    // ── Note banner — only shown for live-lookup states (NC/WI) ──────
+    // Portal-redirect states already surface the note inside the portal card.
+    if (note && live_lookup) {
       html += `
         <div class="vr-portal-callout" style="margin-bottom:14px;">
-          ${escapeHtml(note)}
+          ${note}
         </div>`;
     }
 
@@ -4037,7 +4039,9 @@ async function initVoterRecordsView() {
                     ? `${count} record${count !== 1 ? "s" : ""} retrieved — verify details on the official portal.`
                     : live_lookup
                       ? `No records matched. Verify directly on the official portal.`
-                      : `This state requires a manual portal search. The link below is pre-filled with your search terms where supported.`
+                      : prefilled
+                        ? `&#10003; Link pre-filled with <strong>${escapeHtml(first_name)} ${escapeHtml(last_name)}</strong> — click to go straight to the results.`
+                        : `This portal requires manual entry. Enter <strong>${escapeHtml(first_name)} ${escapeHtml(last_name)}</strong> in the search fields after opening.`
                 }
               </div>
             </div>
