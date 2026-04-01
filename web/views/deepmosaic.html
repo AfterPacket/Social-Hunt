@@ -1,873 +1,162 @@
-<style>
-    /* ── DeepMosaic view ─────────────────────────────────────────── */
-    .dm-grid {
-        display: grid;
-        grid-template-columns: 1fr 340px;
-        gap: 16px;
-        align-items: start;
-    }
-
-    .dm-section-label {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin: 0 0 10px 0;
-    }
-
-    .dm-upload-zone {
-        border: 2px dashed var(--border2);
-        border-radius: var(--radius);
-        padding: 32px 20px;
-        text-align: center;
-        cursor: pointer;
-        transition: var(--transition);
-        background: var(--panel2);
-        position: relative;
-        margin-bottom: 16px;
-    }
-
-    .dm-upload-zone:hover,
-    .dm-upload-zone.drag-over {
-        border-color: var(--accent);
-        background: rgba(var(--accent-rgb), 0.04);
-    }
-
-    .dm-upload-zone input[type="file"] {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        cursor: pointer;
-        width: 100%;
-        max-width: 100%;
-        padding: 0;
-        border: none;
-        background: transparent;
-    }
-
-    .dm-upload-icon {
-        font-size: 32px;
-        margin-bottom: 8px;
-        opacity: 0.5;
-    }
-
-    .dm-upload-label {
-        font-weight: 600;
-        color: var(--text);
-        margin-bottom: 4px;
-    }
-
-    .dm-upload-hint {
-        font-size: 12px;
-        color: var(--muted);
-    }
-
-    .dm-preview-wrap {
-        display: none;
-        margin-bottom: 16px;
-        background: var(--panel2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 12px;
-        text-align: center;
-    }
-
-    .dm-preview-wrap img,
-    .dm-preview-wrap video {
-        max-width: 100%;
-        max-height: 220px;
-        border-radius: 8px;
-        display: block;
-        margin: 0 auto 8px;
-    }
-
-    .dm-preview-name {
-        font-size: 12px;
-        color: var(--muted);
-    }
-
-    /* Mode radio buttons */
-    .dm-mode-group {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 16px;
-    }
-
-    .dm-mode-label {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        padding: 12px 8px 10px;
-        background: var(--panel2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        cursor: pointer;
-        transition: var(--transition);
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--muted);
-        text-align: center;
-        user-select: none;
-    }
-
-    .dm-mode-label:hover {
-        border-color: var(--border2);
-        color: var(--text);
-    }
-
-    .dm-mode-label input[type="radio"] {
-        display: none;
-    }
-
-    .dm-mode-label.selected {
-        border-color: var(--accent);
-        background: rgba(var(--accent-rgb), 0.08);
-        color: var(--accent);
-    }
-
-    .dm-mode-icon {
-        font-size: 20px;
-    }
-
-    /* Selects with hardcoded dark colors so native popup is readable */
-    .dm-select {
-        width: 100%;
-        max-width: 100%;
-        padding: 10px 12px;
-        border-radius: var(--radius);
-        border: 1px solid var(--border2);
-        background-color: #0f1620 !important;
-        color: #e6edf3 !important;
-        font-size: 13px;
-        cursor: pointer;
-        appearance: auto;
-        transition: var(--transition);
-        margin-bottom: 14px;
-    }
-
-    .dm-select:focus {
-        outline: none;
-        border-color: var(--accent);
-        box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
-    }
-
-    .dm-select option {
-        background-color: #0f1620 !important;
-        color: #e6edf3 !important;
-    }
-
-    .dm-select option:disabled {
-        color: #7d8a95 !important;
-    }
-
-    .dm-field {
-        margin-bottom: 14px;
-    }
-
-    .dm-field-label {
-        display: block;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--muted);
-        margin-bottom: 6px;
-    }
-
-    /* Status card */
-    .dm-status-card {
-        background: var(--panel2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 14px 16px;
-        margin-bottom: 16px;
-    }
-
-    .dm-status-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-    }
-
-    .dm-status-indicator {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .dm-status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--muted);
-        flex-shrink: 0;
-    }
-
-    .dm-status-dot.good {
-        background: var(--good);
-        box-shadow: 0 0 6px var(--good);
-    }
-    .dm-status-dot.bad {
-        background: var(--danger);
-    }
-    .dm-status-dot.spin {
-        background: var(--accent);
-        animation: dm-pulse 1s ease-in-out infinite;
-    }
-
-    @keyframes dm-pulse {
-        0%,
-        100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.3;
-        }
-    }
-
-    .dm-status-msg {
-        font-size: 12px;
-        color: var(--muted);
-        margin-top: 4px;
-    }
-
-    /* Progress / result area */
-    .dm-progress-area {
-        display: none;
-        padding: 14px 16px;
-        background: var(--panel2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        margin-bottom: 14px;
-    }
-
-    .dm-progress-text {
-        font-size: 13px;
-        color: var(--muted);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .dm-result-area {
-        display: none;
-        margin-top: 4px;
-    }
-
-    .dm-result-img-wrap {
-        background: var(--panel2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 14px;
-        text-align: center;
-        margin-bottom: 12px;
-    }
-
-    .dm-result-img-wrap img,
-    .dm-result-img-wrap video {
-        max-width: 100%;
-        max-height: 340px;
-        border-radius: 8px;
-        display: block;
-        margin: 0 auto;
-    }
-
-    .dm-action-row {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    /* Side panel */
-    .dm-side-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-
-    .dm-tip-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .dm-tip-list li {
-        font-size: 12px;
-        color: var(--muted);
-        padding: 8px 12px;
-        background: var(--panel2);
-        border-radius: 8px;
-        border-left: 3px solid var(--border2);
-        line-height: 1.5;
-    }
-
-    .dm-tip-list li strong {
-        color: var(--text);
-    }
-
-    .dm-model-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-    }
-
-    .dm-model-table th {
-        text-align: left;
-        padding: 6px 8px;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--muted);
-        border-bottom: 1px solid var(--border);
-    }
-
-    .dm-model-table td {
-        padding: 7px 8px;
-        color: var(--muted);
-        border-bottom: 1px solid var(--border);
-        vertical-align: top;
-    }
-
-    .dm-model-table td:first-child {
-        font-family: ui-monospace, monospace;
-        font-size: 11px;
-        color: var(--accent);
-        white-space: nowrap;
-    }
-
-    .dm-model-table tr:last-child td {
-        border-bottom: none;
-    }
-
-    @media (max-width: 900px) {
-        .dm-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 500px) {
-        .dm-mode-group {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-
-<h2>DeepMosaic</h2>
-<p class="muted" style="margin-bottom: 20px">
-    AI-powered mosaic detection, removal, and addition using the DeepMosaic
-    engine. Supports images and video. Place pretrained models in
-    <code>DeepMosaics/pretrained_models/</code>.
-</p>
-
-<div class="dm-grid">
-    <!-- ── Left: upload + controls ── -->
-    <div>
-        <!-- Status -->
-        <p class="dm-section-label">Engine Status</p>
-        <div class="dm-status-card">
-            <div class="dm-status-row">
-                <div>
-                    <div class="dm-status-indicator" id="dmStatusIndicator">
-                        <span
-                            class="dm-status-dot spin"
-                            id="dmStatusDot"
-                        ></span>
-                        <span id="dmStatusLabel">Checking…</span>
-                    </div>
-                    <div class="dm-status-msg" id="dmStatusMsg"></div>
+<div class="grid">
+    <div class="card">
+        <h2>DeepMosaic Integration</h2>
+        <p class="muted">AI-powered mosaic detection, removal, and application using DeepMosaic.</p>
+        
+        <div class="row" style="gap: 15px; margin-top: 20px;">
+            <div style="flex: 1; min-width: 200px;">
+                <h3>Upload Image/Video</h3>
+                <input type="file" id="dmUpload" accept="image/*,video/*" style="margin-bottom: 12px;">
+                <div id="dmPreview" style="margin: 10px 0; text-align: center;"></div>
+            </div>
+            
+            <div id="dmStatusInfo" class="card" style="margin-top: 20px; background: var(--panel3);">
+                <h4>System Status</h4>
+                <div id="dmStatusContent">
+                    <div class="spinner"></div> Loading DeepMosaic status...
                 </div>
-                <button
-                    class="btn"
-                    id="dmRefreshStatus"
-                    style="flex-shrink: 0; padding: 6px 12px; font-size: 12px"
-                >
-                    ↻ Refresh
+                <button class="btn small" id="dmRefreshStatus" style="margin-top: 10px;">Refresh Status</button>
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <h3>Processing Mode</h3>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px;">
+                        <input type="radio" name="dmMode" value="clean" checked> Clean (Remove Mosaic)
+                    </label>
+                    <label style="display: block; margin-bottom: 8px;">
+                        <input type="radio" name="dmMode" value="add"> Add Mosaic
+                    </label>
+                    <label style="display: block; margin-bottom: 8px;">
+                        <input type="radio" name="dmMode" value="style"> Style Transfer
+                    </label>
+<!--                     <label style="display: block; margin-bottom: 8px;">
+                        <input type="radio" name="dmMode" value="traditional"> Traditional (Non-AI)
+                    </label> -->
+                </div>
+                
+                <!-- Show mosaic type options only for "add" mode -->
+                <div id="dmMosaicTypeContainer" style="margin-bottom: 12px; display: none;">
+                    <label style="display: block; margin-bottom: 4px;">Mosaic Type:</label>
+                    <select id="dmMosaicType" style="width: 100%;">
+                        <option value="squa_avg">Square Average</option>
+                        <option value="squa_random">Square Random</option>
+                        <option value="squa_avg_circle_edge">Square with Circle Edge</option>
+                        <option value="rect_avg">Rectangle Average</option>
+                        <option value="random">Random</option>
+                    </select>
+                </div>
+                
+                <!-- Show quality options for non-traditional modes -->
+                <div id="dmQualityContainer" style="margin-bottom: 12px;">
+                    <label style="display: block; margin-bottom: 4px;">Quality/Intensity:</label>
+                    <select id="dmQuality" style="width: 100%;">
+                        <option value="high">High (Slow)</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="low">Low (Fast)</option>
+                    </select>
+                </div>
+                
+                <!-- Show traditional options only for "traditional" mode -->
+                <div id="dmTraditionalOptions" style="margin-bottom: 12px; display: none;">
+                    <label style="display: block; margin-bottom: 4px;">Blur Intensity:</label>
+                    <select id="dmTrBlur" style="width: 100%;">
+                        <option value="5">Very Light</option>
+                        <option value="10" selected>Light</option>
+                        <option value="15">Medium</option>
+                        <option value="20">Strong</option>
+                        <option value="25">Very Strong</option>
+                    </select>
+                    
+                    <label style="display: block; margin-bottom: 4px; margin-top: 8px;">Downsample Factor:</label>
+                    <select id="dmTrDown" style="width: 100%;">
+                        <option value="5">Minimal</option>
+                        <option value="10" selected>Normal</option>
+                        <option value="15">Aggressive</option>
+                        <option value="20">Maximum</option>
+                    </select>
+                </div>
+                
+                <button class="btn good" id="dmProcessBtn" style="width: 100%; margin-top: 15px;">
+                    Start Processing
                 </button>
             </div>
-            <!-- legacy target used by JS -->
-            <div id="dmStatusContent" style="display: none"></div>
         </div>
-
-        <!-- Upload -->
-        <p class="dm-section-label">Upload File</p>
-        <div class="dm-upload-zone" id="dmDropZone">
-            <input type="file" id="dmUpload" accept="image/*,video/*" />
-            <div class="dm-upload-icon">📁</div>
-            <div class="dm-upload-label">Drop image or video here</div>
-            <div class="dm-upload-hint">
-                JPG · PNG · MP4 · AVI · MOV — max 200 MB
+        
+        <div id="dmStatus" style="margin-top: 20px; padding: 12px; border-radius: 8px; background: var(--panel3); display: none;">
+            <div id="dmStatusText"></div>
+            <div id="dmProgress" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div id="dmResults" style="margin-top: 20px; display: none;">
+            <h3>Results</h3>
+            <div id="dmResultPreview" style="text-align: center; margin: 20px 0;">
+                <!-- Results will appear here -->
             </div>
-        </div>
-
-        <div class="dm-preview-wrap" id="dmPreview"></div>
-
-        <!-- Mode -->
-        <p class="dm-section-label">Processing Mode</p>
-        <div class="dm-mode-group">
-            <label class="dm-mode-label selected" id="dmModeClean">
-                <input type="radio" name="dmMode" value="clean" checked />
-                <span class="dm-mode-icon">✨</span>
-                Clean
-                <span
-                    style="
-                        font-size: 10px;
-                        font-weight: 400;
-                        color: inherit;
-                        opacity: 0.7;
-                    "
-                    >Remove mosaic</span
-                >
-            </label>
-            <label class="dm-mode-label" id="dmModeAdd">
-                <input type="radio" name="dmMode" value="add" />
-                <span class="dm-mode-icon">🔲</span>
-                Add
-                <span
-                    style="
-                        font-size: 10px;
-                        font-weight: 400;
-                        color: inherit;
-                        opacity: 0.7;
-                    "
-                    >Apply mosaic</span
-                >
-            </label>
-            <label class="dm-mode-label" id="dmModeStyle">
-                <input type="radio" name="dmMode" value="style" />
-                <span class="dm-mode-icon">🎨</span>
-                Style
-                <span
-                    style="
-                        font-size: 10px;
-                        font-weight: 400;
-                        color: inherit;
-                        opacity: 0.7;
-                    "
-                    >Style transfer</span
-                >
-            </label>
-        </div>
-
-        <!-- Mosaic type (add mode only) -->
-        <div id="dmMosaicTypeContainer" style="display: none">
-            <label class="dm-field-label">Mosaic Type</label>
-            <select id="dmMosaicType" class="dm-select">
-                <option value="squa_avg">Square Average</option>
-                <option value="squa_random">Square Random</option>
-                <option value="squa_avg_circle_edge">
-                    Square + Circle Edge
-                </option>
-                <option value="rect_avg">Rectangle Average</option>
-                <option value="random">Random</option>
-            </select>
-        </div>
-
-        <!-- Quality -->
-        <div id="dmQualityContainer">
-            <label class="dm-field-label">Quality / Intensity</label>
-            <select id="dmQuality" class="dm-select">
-                <option value="high">High — best result, slower</option>
-                <option value="medium" selected>Medium — balanced</option>
-                <option value="low">Low — fastest</option>
-            </select>
-        </div>
-
-        <!-- Process -->
-        <button
-            class="btn good"
-            id="dmProcessBtn"
-            style="
-                width: 100%;
-                padding: 14px;
-                font-size: 15px;
-                font-weight: 700;
-            "
-            disabled
-        >
-            ▶ Start Processing
-        </button>
-
-        <!-- Progress -->
-        <div class="dm-progress-area" id="dmStatus">
-            <div class="dm-progress-text" id="dmStatusText">
-                <span class="spinner"></span>
-                <span>Processing…</span>
-            </div>
-            <div
-                id="dmProgress"
-                style="margin-top: 8px; font-size: 12px; color: var(--muted)"
-            ></div>
-        </div>
-
-        <!-- Results -->
-        <div class="dm-result-area" id="dmResults">
-            <p class="dm-section-label" style="margin-top: 4px">Result</p>
-            <div class="dm-result-img-wrap" id="dmResultPreview"></div>
-            <div class="dm-action-row">
-                <button class="btn good" id="dmDownloadBtn">⬇ Download</button>
-                <button class="btn" id="dmSaveNotesBtn">
-                    📝 Save to Notes
-                </button>
-                <button class="btn" id="dmClearBtn">✕ Clear</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" id="dmDownloadBtn">Download Result</button>
+                <button class="btn" id="dmSaveNotesBtn">Save to Notes</button>
+                <button class="btn" id="dmClearBtn">Clear</button>
             </div>
         </div>
     </div>
-
-    <!-- ── Right: info panel ── -->
-    <div class="dm-side-panel">
-        <div class="card" style="padding: 16px 18px">
-            <p class="dm-section-label">Required Models</p>
-            <table class="dm-model-table">
-                <thead>
-                    <tr>
-                        <th>File</th>
-                        <th>Used for</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>clean_face_HD.pth</td>
-                        <td>Face mosaic removal (HD)</td>
-                    </tr>
-                    <tr>
-                        <td>clean_youknow_v1.pth</td>
-                        <td>General mosaic removal</td>
-                    </tr>
-                    <tr>
-                        <td>add_face.pth</td>
-                        <td>Add mosaic to faces</td>
-                    </tr>
-                    <tr>
-                        <td>BiSeNet_add.pth</td>
-                        <td>Segmentation (add mode)</td>
-                    </tr>
-                    <tr>
-                        <td>candy.pth</td>
-                        <td>Style transfer</td>
-                    </tr>
-                </tbody>
-            </table>
-            <p
-                style="
-                    font-size: 11px;
-                    color: var(--muted);
-                    margin-top: 10px;
-                    line-height: 1.5;
-                "
-            >
-                Place models in
-                <code style="font-size: 11px"
-                    >DeepMosaics/pretrained_models/</code
-                ><br />
-                or run
-                <code style="font-size: 11px"
-                    >python download_deepmosaic_models.py</code
-                >
-            </p>
-        </div>
-
-        <div class="card" style="padding: 16px 18px">
-            <p class="dm-section-label">Tips</p>
-            <ul class="dm-tip-list">
-                <li>
-                    <strong>Clean mode</strong> — works best on faces in
-                    well-lit, clear images.
-                </li>
-                <li>
-                    <strong>Add mode</strong> — useful for anonymising before
-                    sharing screenshots or video.
-                </li>
-                <li>
-                    <strong>Style mode</strong> — artistic filter; results vary
-                    by model.
-                </li>
-                <li>
-                    <strong>Video</strong> — processing time depends on length
-                    and quality setting. Long videos can take several minutes.
-                </li>
-                <li>
-                    <strong>No models?</strong> Run the download script or grab
-                    them from the DeepMosaics Google Drive link in the README.
-                </li>
-            </ul>
-        </div>
+    
+    <div class="card">
+        <h3>About DeepMosaic</h3>
+        <p>DeepMosaic is an AI tool for:</p>
+        <ul style="padding-left: 20px; line-height: 1.6;">
+            <li><strong>Mosaic Removal:</strong> Intelligently reconstruct faces and objects under mosaic/blur</li>
+            <li><strong>Mosaic Addition:</strong> Apply mosaic to specific regions (e.g., face anonymization)</li>
+            <li><strong>Style Transfer:</strong> Apply artistic styles to images/videos</li>
+            <li><strong>Traditional Processing:</strong> Non-AI mosaic removal using image processing</li>
+        </ul>
+        
+        <h4 style="margin-top: 15px;">Mode Details:</h4>
+        <ul style="padding-left: 20px; font-size: 13px; color: var(--muted);">
+            <li><strong>Clean:</strong> AI-based mosaic removal (requires clean_face_HD.pth or clean_youknow_v1.pth)</li>
+            <li><strong>Add:</strong> Add mosaic to images (requires add_face.pth)</li>
+            <li><strong>Style:</strong> Apply artistic style (requires candy.pth or other style models)</li>
+            <li><strong>Traditional:</strong> Non-AI method using blur/downsample - works without models</li>
+        </ul>
+        
+        <h4 style="margin-top: 15px;">Tips:</h4>
+        <ul style="padding-left: 20px; font-size: 13px; color: var(--muted);">
+            <li>For best results, use clear, well-lit images</li>
+            <li>Video processing may take several minutes depending on length</li>
+            <li>Download models from DeepMosaic repository and place in pretrained_models/</li>
+            <li>Traditional mode works without AI models</li>
+            <li>Results are saved in the History section</li>
+        </ul>
     </div>
 </div>
 
 <script>
-    (function () {
-        // ── Element refs ───────────────────────────────────────────────
-        const upload = document.getElementById("dmUpload");
-        const dropZone = document.getElementById("dmDropZone");
-        const preview = document.getElementById("dmPreview");
-        const processBtn = document.getElementById("dmProcessBtn");
-        const statusArea = document.getElementById("dmStatus");
-        const statusText = document.getElementById("dmStatusText");
-        const progressEl = document.getElementById("dmProgress");
-        const resultsArea = document.getElementById("dmResults");
-        const resultPrev = document.getElementById("dmResultPreview");
-        const downloadBtn = document.getElementById("dmDownloadBtn");
-        const saveBtn = document.getElementById("dmSaveNotesBtn");
-        const clearBtn = document.getElementById("dmClearBtn");
-        const refreshBtn = document.getElementById("dmRefreshStatus");
-
-        // Status UI elements
-        const statusDot = document.getElementById("dmStatusDot");
-        const statusLabel = document.getElementById("dmStatusLabel");
-        const statusMsg = document.getElementById("dmStatusMsg");
-
-        // Mode labels for highlight
-        const modeLabels = {
-            clean: document.getElementById("dmModeClean"),
-            add: document.getElementById("dmModeAdd"),
-            style: document.getElementById("dmModeStyle"),
-        };
-
-        let currentFile = null;
-        let currentFileType = null;
-        let resultObjectURL = null;
-
-        // ── Status check ───────────────────────────────────────────────
-        async function checkStatus() {
-            statusDot.className = "dm-status-dot spin";
-            statusLabel.textContent = "Checking…";
-            statusMsg.textContent = "";
-            processBtn.disabled = true;
-
-            try {
-                const res = await fetch("/sh-api/deepmosaic/status");
-                const data = await res.json();
-
-                if (data.available) {
-                    statusDot.className = "dm-status-dot good";
-                    statusLabel.textContent = "DeepMosaic Ready";
-                    statusMsg.textContent = data.message || "AI models loaded.";
-                    processBtn.disabled = currentFile === null;
-                } else {
-                    statusDot.className = "dm-status-dot bad";
-                    statusLabel.textContent = "Not Available";
-                    statusMsg.textContent =
-                        data.message ||
-                        "Models not found in pretrained_models/.";
-                    processBtn.disabled = true;
-                }
-            } catch (err) {
-                statusDot.className = "dm-status-dot bad";
-                statusLabel.textContent = "Connection Error";
-                statusMsg.textContent = "Could not reach the backend.";
-                processBtn.disabled = true;
-            }
-        }
-
-        refreshBtn.addEventListener("click", checkStatus);
-
-        // ── Mode toggle ────────────────────────────────────────────────
-        function updateMode() {
-            const mode = document.querySelector(
-                'input[name="dmMode"]:checked',
-            ).value;
-
-            // Highlight selected label
-            Object.entries(modeLabels).forEach(([k, el]) => {
-                el.classList.toggle("selected", k === mode);
-            });
-
-            // Show/hide option containers
-            const mosaicCont = document.getElementById("dmMosaicTypeContainer");
-            const qualCont = document.getElementById("dmQualityContainer");
-            if (mosaicCont)
-                mosaicCont.style.display = mode === "add" ? "block" : "none";
-            if (qualCont)
-                qualCont.style.display =
-                    mode !== "traditional" ? "block" : "none";
-        }
-
-        document.querySelectorAll('input[name="dmMode"]').forEach((r) => {
-            r.addEventListener("change", updateMode);
-        });
-
-        // ── File upload ────────────────────────────────────────────────
-        function handleFile(file) {
-            if (!file) return;
-            currentFile = file;
-            currentFileType = file.type.startsWith("video/")
-                ? "video"
-                : "image";
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                preview.style.display = "block";
-                if (currentFileType === "video") {
-                    preview.innerHTML = `
-                    <video controls>
-                        <source src="${e.target.result}" type="${file.type}">
-                    </video>
-                    <div class="dm-preview-name">${file.name} &nbsp;·&nbsp; ${(file.size / 1024).toFixed(0)} KB</div>`;
-                } else {
-                    preview.innerHTML = `
-                    <img src="${e.target.result}" alt="preview">
-                    <div class="dm-preview-name">${file.name} &nbsp;·&nbsp; ${(file.size / 1024).toFixed(0)} KB</div>`;
-                }
-            };
-            reader.readAsDataURL(file);
-
-            // Enable process if engine is ready
-            if (statusDot.classList.contains("good")) {
-                processBtn.disabled = false;
-            }
-        }
-
-        upload.addEventListener("change", (e) => handleFile(e.target.files[0]));
-
-        // Drag-and-drop
-        dropZone.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            dropZone.classList.add("drag-over");
-        });
-        dropZone.addEventListener("dragleave", () =>
-            dropZone.classList.remove("drag-over"),
-        );
-        dropZone.addEventListener("drop", (e) => {
-            e.preventDefault();
-            dropZone.classList.remove("drag-over");
-            handleFile(e.dataTransfer.files[0]);
-        });
-
-        // ── Process ────────────────────────────────────────────────────
-        processBtn.addEventListener("click", async () => {
-            if (!currentFile) {
-                showToast("Please select a file first.", 3000, "warning");
-                return;
-            }
-
-            const mode = document.querySelector(
-                'input[name="dmMode"]:checked',
-            ).value;
-            const mosaicType = document.getElementById("dmMosaicType").value;
-            const quality = document.getElementById("dmQuality").value;
-
-            // UI state — processing
-            processBtn.disabled = true;
-            processBtn.textContent = "⏳ Processing…";
-            statusArea.style.display = "block";
-            resultsArea.style.display = "none";
-
-            statusText.innerHTML =
-                '<span class="spinner"></span><span>Uploading file…</span>';
-            progressEl.textContent = "";
-
-            if (resultObjectURL) {
-                URL.revokeObjectURL(resultObjectURL);
-                resultObjectURL = null;
-            }
-
-            const formData = new FormData();
-            formData.append("file", currentFile);
-            formData.append("mode", mode);
-            formData.append("mosaic_type", mosaicType);
-            formData.append("quality", quality);
-
-            try {
-                statusText.innerHTML =
-                    '<span class="spinner"></span><span>Processing with DeepMosaic…</span>';
-
-                const headers = {};
-                const token =
-                    typeof getToken === "function" ? getToken() : null;
-                if (token) headers["X-Plugin-Token"] = token;
-
-                const res = await fetch("/sh-api/deepmosaic/process", {
-                    method: "POST",
-                    headers,
-                    body: formData,
-                });
-
-                if (!res.ok) {
-                    let errMsg = `Server error ${res.status}`;
-                    try {
-                        const j = await res.json();
-                        errMsg = j.detail || errMsg;
-                    } catch (_) {}
-                    throw new Error(errMsg);
-                }
-
-                const blob = await res.blob();
-                resultObjectURL = URL.createObjectURL(blob);
-
-                // Results
-                resultsArea.style.display = "block";
-                if (blob.type.startsWith("video/")) {
-                    resultPrev.innerHTML = `<video controls><source src="${resultObjectURL}" type="${blob.type}"></video>`;
-                } else {
-                    resultPrev.innerHTML = `<img src="${resultObjectURL}" alt="result">`;
-                }
-
-                statusText.innerHTML = `<span style="color:var(--good);font-weight:700;">✓ Processing complete</span>`;
-                progressEl.textContent = `Mode: ${mode} · Quality: ${quality}`;
-
-                // Download
-                downloadBtn.onclick = () => {
-                    const a = document.createElement("a");
-                    a.href = resultObjectURL;
-                    a.download = `deepmosaic_${mode}_${currentFile.name}`;
-                    a.click();
-                };
-
-                // Save to notes
-                saveBtn.onclick = () => {
-                    const content = `DeepMosaic result\n\nFile: ${currentFile.name}\nMode: ${mode}\nQuality: ${quality}\nMosaic type: ${mode === "add" ? mosaicType : "n/a"}\nProcessed: ${new Date().toLocaleString()}`;
-                    if (typeof window.addNoteDirectly === "function") {
-                        window.addNoteDirectly(
-                            `DeepMosaic — ${currentFile.name}`,
-                            content,
-                        );
-                        showToast("Saved to Secure Notes.", 2500);
-                    } else {
-                        showToast(
-                            "Open Secure Notes and unlock it first.",
-                            3000,
-                            "warning",
-                        );
-                    }
-                };
-            } catch (err) {
-                statusText.innerHTML = `<span style="color:var(--danger);">✗ Error: ${err.message}</span>`;
-                progressEl.textContent = "";
-                showToast(`DeepMosaic error: ${err.message}`, 5000, "error");
-            } finally {
-                processBtn.disabled = false;
-                processBtn.textContent = "▶ Start Processing";
-            }
-        });
-
-        // ── Clear ──────────────────────────────────────────────────────
-        clearBtn.addEventListener("click", () => {
-            currentFile = null;
-            currentFileType = null;
-            upload.value = "";
-            preview.style.display = "none";
-            preview.innerHTML = "";
-            statusArea.style.display = "none";
-            resultsArea.style.display = "none";
-            resultPrev.innerHTML = "";
-            progressEl.textContent = "";
-            if (resultObjectURL) {
-                URL.revokeObjectURL(resultObjectURL);
-                resultObjectURL = null;
-            }
-            processBtn.disabled = true;
-        });
-
-        // ── Init ───────────────────────────────────────────────────────
-        updateMode();
-        checkStatus();
-    })();
+// JavaScript for DeepMosaic - updated to handle different modes
+document.addEventListener('DOMContentLoaded', function() {
+    const modeRadios = document.querySelectorAll('input[name="dmMode"]');
+    const mosaicTypeContainer = document.getElementById('dmMosaicTypeContainer');
+    const qualityContainer = document.getElementById('dmQualityContainer');
+    const traditionalOptions = document.getElementById('dmTraditionalOptions');
+    
+    // Show/hide options based on selected mode
+    function updateModeOptions() {
+        const selectedMode = document.querySelector('input[name="dmMode"]:checked').value;
+        
+        // Show mosaic type only for "add" mode
+        mosaicTypeContainer.style.display = selectedMode === 'add' ? 'block' : 'none';
+        
+        // Show quality for all except "traditional"
+        qualityContainer.style.display = selectedMode !== 'traditional' ? 'block' : 'none';
+        
+        // Show traditional options only for "traditional" mode
+        traditionalOptions.style.display = selectedMode === 'traditional' ? 'block' : 'none';
+    }
+    
+    // Add event listeners to mode radios
+    modeRadios.forEach(radio => {
+        radio.addEventListener('change', updateModeOptions);
+    });
+    
+    // Initialize
+    updateModeOptions();
+});
 </script>
