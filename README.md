@@ -1,91 +1,162 @@
 # Social-Hunt
 
-Social-Hunt is an OSINT framework for cross-platform username discovery, breach exposure lookups, and avatar-based face matching. It ships with a web dashboard and a CLI, supports data-driven provider packs, and includes optional AI-powered face restoration/demasking.
+> Self-hosted OSINT aggregator — username discovery, breach intelligence, reverse image search, AI face restoration, voter records, Google dorks, secure notes, and more. Ships with a polished web dashboard and a CLI.
+
+![Dashboard](assets/screenshots/dashboard.png)
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+  - [Docker (recommended)](#docker-recommended)
+  - [Docker + Reverse Proxy](#docker--bundled-reverse-proxy-nginx-or-apache)
+  - [Docker + SSL](#docker--ssl-nginx--iopaint)
+  - [Manual Install](#manual-install)
+  - [Raspberry Pi 5 Setup](#raspberry-pi-5-setup)
+- [CLI Usage](#cli-usage)
+- [Configuration](#configuration)
+- [Login Security](#login-security)
+- [Feature Guides](#feature-guides)
+  - [Username Search](#username-search)
+  - [Breach Search](#breach-search)
+  - [Reverse Image OSINT](#reverse-image-osint)
+  - [Google Dorks](#google-dorks)
+  - [Voter Records](#voter-records)
+  - [AI Demasking](#ai-demasking)
+  - [Secure Notes](#secure-notes)
+  - [History](#history)
+  - [Plugin System](#plugin-system)
+  - [Demo Mode](#demo-mode)
+  - [Tor / Darkweb Support](#tor--darkweb-support)
+- [Project Structure](#project-structure)
+- [Documentation](#documentation)
+- [Contributors](#contributors)
+- [Legal and Ethics](#legal-and-ethics)
+
+---
 
 ## Features
 
-- Username presence scanning across many platforms using YAML providers.
-- Breach intelligence via Have I Been Pwned (HIBP), BreachVIP, and Snusbase — email, username, IP, and phone lookups across indexed breach databases.
-- Face matching against profile avatars using face recognition and image hashing.
-- Reverse image OSINT links (Google Lens, Bing, Yandex, etc.).
-- Tor/Onion site support via SOCKS proxy (split-tunneling).
-- Optional AI face restoration/demasking via Replicate, IOPaint, or DeepMosaic.
-- Plugin system with hot-reload and optional web uploader.
-- Demo mode that censors sensitive data for safe demonstrations.
-- Dashboard theme applies immediately on selection.
+| Feature | Description |
+|---|---|
+| **Username Search** | Cross-platform presence scanning across hundreds of sites using YAML + Python provider packs. Optional enhanced face search via uploaded reference images. |
+| **Breach Search** | Email, username, IP, and phone lookups across indexed breach databases — HIBP, BreachVIP, Snusbase, LeakCheck. Auto-detects input type. |
+| **Reverse Image OSINT** | Generates ready-to-use search links for Google Lens, Bing Visual Search, Yandex Images, TinEye, and more. Supports URL input and file upload. |
+| **Google Dorks** | Built-in library of 100 + categorised Google search operator templates for domains, names, usernames, emails, and companies. One-click search and bulk export. |
+| **Voter Records** | Direct links to 20 + official US state voter registration portals (AZ, CO, FL, GA, IL, KS, KY, MD, MI, MN, NJ, NY, NC, OH, OK, OR, PA, SC, TX, UT, VA, WA, WI). |
+| **AI Demasking** | Face restoration and mosaic removal via Replicate cloud API, interactive IOPaint server, or automated DeepMosaic — all from the dashboard. |
+| **Secure Notes** | AES-GCM encrypted note vault locked by a master password. Notes never leave your browser unencrypted. Export / import as encrypted JSON. |
+| **History** | Persistent log of all searches, reverse image lookups, and demasking jobs with quick re-open and re-run. |
+| **Plugin System** | Hot-reload YAML and Python provider packs. Optional web-based uploader. Install community packs from the plugins directory in-app. |
+| **Dashboard** | Live system status, search stats, rotating OSINT tips, and quick-access links to recent searches. |
+| **Themes** | Multiple built-in colour themes (default dark, Tokyo Night, Cobalt) — applies instantly without page reload. |
+| **Demo Mode** | Censors sensitive output for safe screen shares and demonstrations. Toggle in Settings. |
+| **Tor / Onion Support** | Route requests through a SOCKS proxy for `.onion` provider packs with optional split-tunnelling. |
+| **Token Auth** | Single admin token protects the entire dashboard. Bootstrap mode for first-run setup. Optional hCaptcha. |
 
-## Tested Environments / VPS Compatibility
+---
 
-Known-good environments for self-hosting:
+## Screenshots
 
-- Ubuntu 22.04 LTS (Jammy) on VPS providers (tested)
-- Raspberry Pi 5 — Raspberry Pi OS (Bookworm, 64-bit) (tested — see [Raspberry Pi 5 Setup](#raspberry-pi-5-setup))
+| | |
+|---|---|
+| ![Login](assets/screenshots/login.png) **Login** | ![Dashboard](assets/screenshots/dashboard.png) **Dashboard** |
+| ![Search](assets/screenshots/search-results.png) **Username Search** | ![Breach](assets/screenshots/breach-search.png) **Breach Search** |
+| ![Reverse](assets/screenshots/reverse-image.png) **Reverse Image** | ![Demask](assets/screenshots/demasking.png) **AI Demasking** |
+| ![History](assets/screenshots/history.png) **History** | ![Notes](assets/screenshots/secure-notes.png) **Secure Notes** |
+| ![Plugins](assets/screenshots/plugins.png) **Plugins** | ![Settings](assets/screenshots/settings.png) **Settings** |
 
-Notes:
-- Other Debian/Ubuntu-based VPS images should work, but may require minor adjustments.
-- If you deploy on a different OS/distro, please report your results in an issue or PR.
+---
 
 ## Architecture
 
-- Backend: FastAPI + httpx async scanning engine.
-- Frontend: Static HTML/CSS/JS dashboard (no heavy framework).
-- Core engine: async concurrency with per-provider rules and status heuristics.
+- **Backend:** FastAPI + httpx async scanning engine (Python 3.11+)
+- **Frontend:** Vanilla HTML / CSS / JS — no heavy framework, fast loads
+- **Core engine:** Async concurrency with per-provider heuristics and status detection
+- **Storage:** JSON flat-files for settings and job results; notes encrypted in browser localStorage
+- **Optional services:** Replicate (cloud AI), IOPaint (interactive inpainting), DeepMosaic (automated mosaic removal)
+
+---
 
 ## Quick Start
 
 ### Docker (recommended)
+
 ```bash
 git clone https://github.com/AfterPacket/Social-Hunt.git
 cd Social-Hunt/docker
-docker-compose up -d --build
+docker compose up -d --build
 ```
-Open `http://localhost:8000`.
+
+Open `http://localhost:8000`. Set your admin token on the **Token** page.
+
+---
 
 ### Docker + bundled reverse proxy (nginx or apache)
-Use a proxy profile to expose the app on port 80:
+
+Exposes the app on port 80:
+
 ```bash
 cd Social-Hunt/docker
+
 # Nginx
 docker compose --profile nginx up -d --build
 
 # Apache
 docker compose --profile apache up -d --build
 ```
+
 Open `http://localhost/`.
 
 To include IOPaint behind the same proxy:
+
 ```bash
 docker compose --profile nginx --profile iopaint up -d --build
 ```
 
+---
+
 ### Docker + SSL (nginx + IOPaint)
-This enables HTTPS termination and routes `/` to Social-Hunt and `/iopaint` to IOPaint.
+
+HTTPS termination — routes `/` to Social-Hunt and `/iopaint` to IOPaint.
+
 ```bash
 cd Social-Hunt/docker
 python setup_ssl.py
 docker compose --profile certbot run --rm --service-ports certbot
 docker compose --profile ssl up -d
 ```
+
 Open `https://your-domain`.
 
+---
+
 ### Manual install
+
 ```bash
 git clone https://github.com/AfterPacket/Social-Hunt.git
 cd Social-Hunt
 python -m pip install -r requirements.txt
-# For Tor/SOCKS support, ensure httpx-socks is installed:
+# Optional — Tor/SOCKS support:
 python -m pip install httpx[socks]
 python run.py
 ```
+
 Open `http://localhost:8000`.
 
-For a full setup guide (virtualenv, tokens, Docker details), see `README_RUN.md`.
+For a detailed walkthrough (virtualenv, tokens, reverse proxy), see [`README_RUN.md`](README_RUN.md).
+
+---
 
 ### Raspberry Pi 5 Setup
 
 Social-Hunt runs on Raspberry Pi 5 (Raspberry Pi OS Bookworm, 64-bit). DeepMosaic is not recommended on Pi due to storage and compute constraints — all other features work.
 
-The default system Python on Bookworm is 3.11+ which is fine, but `pip install -r requirements.txt` will fail due to Pillow and dlib compatibility issues with newer setuptools. The fix is to use **pyenv** to pin Python 3.11.9 and rebuild a clean venv.
+The default system Python on Bookworm is 3.11+ which is fine, but `pip install -r requirements.txt` will fail due to Pillow / dlib compatibility issues with newer setuptools. The fix is to use **pyenv** to pin Python 3.11.9.
 
 #### 1. Install build dependencies
 
@@ -106,31 +177,29 @@ curl https://pyenv.run | bash
 Add to `~/.bashrc`:
 
 ```bash
-export PATH="$HOME/.pyenv/bin:$PATH"
-eval "$(pyenv init --path)"
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 ```
 
-Reload the shell:
+Then:
 
 ```bash
-exec "$SHELL"
-pyenv --version
+source ~/.bashrc
 ```
 
 #### 3. Install Python 3.11.9
 
 ```bash
 pyenv install 3.11.9
-cd ~/Social-Hunt
-pyenv local 3.11.9
-python --version   # must show 3.11.9
+pyenv global 3.11.9
+python --version  # should print Python 3.11.9
 ```
 
 #### 4. Create venv and install dependencies
 
 ```bash
-rm -rf venv
+cd Social-Hunt
 python -m venv venv
 source venv/bin/activate
 pip install --upgrade pip setuptools wheel
@@ -143,412 +212,497 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Open `http://localhost:8000` on the Pi, or `http://<pi-ip>:8000` from another device on the same network.
+Open `http://<pi-ip>:8000`.
 
 #### 6. Run as a systemd service (optional)
 
-To have Social-Hunt start automatically on boot:
-
 ```bash
-sudo nano /etc/systemd/system/socialhunt.service
-```
-
-Paste (replace `kittysec` with your username):
-
-```ini
-[Unit]
-Description=Social Hunt OSINT Framework
-After=network.target
-
-[Service]
-Type=simple
-User=kittysec
-WorkingDirectory=/home/kittysec/Social-Hunt
-ExecStart=/home/kittysec/Social-Hunt/venv/bin/python run.py
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
+sudo cp systemd/social-hunt.service.example /etc/systemd/system/social-hunt.service
+# Edit the file and set WorkingDirectory and ExecStart paths
 sudo systemctl daemon-reload
-sudo systemctl enable socialhunt
-sudo systemctl start socialhunt
-sudo systemctl status socialhunt
-```
-
-Useful commands:
-
-```bash
-sudo systemctl restart socialhunt   # after updates
-sudo journalctl -u socialhunt -f    # live logs
+sudo systemctl enable --now social-hunt
 ```
 
 #### Known Pi limitations
 
-| Feature | Status |
-| :-- | :-- |
-| Username search | Works |
-| Breach search | Works |
-| Reverse image | Works |
-| Google Dorks | Works |
-| Secure Notes | Works |
-| IOPaint inpainting | Works (CPU, slow) |
-| Face matching | Works if dlib compiles |
-| DeepMosaic | Not recommended (storage/compute) |
+- DeepMosaic requires large model downloads and significant compute — skip on Pi.
+- IOPaint can run on CPU but is slow; use the Replicate API instead.
+- Face matching (`dlib`) compiles from source on first install — this takes a few minutes on Pi.
+
+---
 
 ## CLI Usage
 
 ```bash
-python -m social_hunt.cli <username> --platforms github twitter reddit
+python -m social_hunt.cli --help
+
+# Username search
+python -m social_hunt.cli search <username>
+
+# Search with specific providers
+python -m social_hunt.cli search <username> --providers github_api,reddit_json
+
+# Export results to JSON
+python -m social_hunt.cli search <username> --output results.json
 ```
 
-Useful options:
-- `--format csv|json` (default: csv)
-- `--max-concurrency 6`
-- `--face-match /path/to/image1.jpg /path/to/image2.png`
-- `--verbose` (writes `social_hunt.log`)
+---
 
 ## Configuration
 
 ### Settings file
 
-Settings are stored in `data/settings.json` (or `SOCIAL_HUNT_SETTINGS_PATH`).
+Settings are stored in `data/settings.json` and managed from the dashboard **Settings** page. They can also be set via environment variables (which take precedence).
 
-Common keys:
-- `admin_token` — dashboard admin token; can be set via the Token page
-- `hibp_api_key` — required for Have I Been Pwned breach lookups (get a key at [haveibeenpwned.com/API/Key](https://haveibeenpwned.com/API/Key))
-- `snusbase_api_key` — required for Snusbase breach record lookups (included with any paid membership at [snusbase.com](https://snusbase.com))
-- `replicate_api_token` — required for Replicate-based demasking
-- `public_url` — base URL for reverse-image links
-
-Keys are added via **Settings → Add API** in the dashboard. Mark any key as **Secret** so the value is never returned to the browser after saving.
-
-Settings resolution order is:
-1) `data/settings.json` (or `SOCIAL_HUNT_SETTINGS_PATH`)
-2) environment variables: `KEY`, `KEY` uppercased, `SOCIAL_HUNT_<KEY uppercased>`
+| Key | Description |
+|---|---|
+| `admin_token` | Dashboard access token (min 20 chars) |
+| `hibp_key` | Have I Been Pwned API key |
+| `snusbase_key` | Snusbase API key |
+| `leakcheck_key` | LeakCheck API key |
+| `breachvip_key` | BreachVIP API key |
+| `replicate_key` | Replicate API key (AI demasking) |
+| `public_url` | Base URL for the instance (used in exports) |
+| `theme` | UI colour theme (`default`, `tokyo`, `cobalt`) |
+| `demo_mode` | Censor sensitive output (`true` / `false`) |
 
 ### Environment variables
 
-| Variable | Purpose |
-| :-- | :-- |
-| `SOCIAL_HUNT_HOST` | Bind address (default: `0.0.0.0`) |
-| `SOCIAL_HUNT_PORT` | Server port (default: `8000`) |
-| `SOCIAL_HUNT_RELOAD` | Enable auto-reload (`1` for dev) |
-| `SOCIAL_HUNT_SETTINGS_PATH` | Override `data/settings.json` |
-| `SOCIAL_HUNT_PROVIDERS_YAML` | Override `providers.yaml` |
-| `SOCIAL_HUNT_JOBS_DIR` | Override jobs output directory |
-| `SOCIAL_HUNT_PUBLIC_URL` | Base URL for reverse image engines |
-| `SOCIAL_HUNT_PLUGIN_TOKEN` | Admin token for protected actions |
-| `SOCIAL_HUNT_ENABLE_TOKEN_BOOTSTRAP` | Allow setting admin token in UI |
-| `SOCIAL_HUNT_BOOTSTRAP_SECRET` | Alternative bootstrap guard via `X-Bootstrap-Secret` |
-| `SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD` | Allow plugin uploads in dashboard |
-| `SOCIAL_HUNT_ALLOW_PY_PLUGINS` | Allow Python plugins (executes code) |
-| `SOCIAL_HUNT_PLUGIN_DIR` | Upload target for web plugins (default: `plugins/providers`) |
-| `SOCIAL_HUNT_PLUGINS_DIR` | Base plugins directory (default: `plugins`) |
-| `SOCIAL_HUNT_DEMO_MODE` | Censor sensitive fields in results |
-| `SOCIAL_HUNT_FACE_AI_URL` | External face restoration endpoint |
-| `REPLICATE_API_TOKEN` | Replicate API token for demasking |
-| `SOCIAL_HUNT_PROXY` | SOCKS proxy URL for `.onion`/darkweb access only (e.g., `socks5h://127.0.0.1:9050`) |
-| `SOCIAL_HUNT_CLEARNET_PROXY` | HTTP/SOCKS proxy for clearnet providers that benefit from proxy routing (e.g., `http://user:pass@proxy.example.com:8080`) |
-| `HCAPTCHA_SITE_KEY` | hCaptcha site key — enables CAPTCHA widget on the login page |
-| `HCAPTCHA_SECRET` | hCaptcha secret key — required for server-side CAPTCHA verification |
+All settings can be set as environment variables (useful for Docker / CI):
+
+| Variable | Description |
+|---|---|
+| `SOCIAL_HUNT_PLUGIN_TOKEN` | Overrides `admin_token` from settings |
+| `SOCIAL_HUNT_HOST` | Bind address (default `0.0.0.0`) |
+| `SOCIAL_HUNT_PORT` | Port (default `8000`) |
+| `SOCIAL_HUNT_RELOAD` | Hot-reload for development (`1` / `0`) |
+| `SOCIAL_HUNT_SETTINGS_PATH` | Custom path for `settings.json` |
+| `SOCIAL_HUNT_JOBS_DIR` | Custom path for job result storage |
+| `SOCIAL_HUNT_ENABLE_TOKEN_BOOTSTRAP` | Allow first-run token set via UI (`1`) |
+| `SOCIAL_HUNT_BOOTSTRAP_SECRET` | Secure secret for bootstrap endpoint |
+| `SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD` | Enable plugin upload via dashboard (`1`) |
+| `SOCIAL_HUNT_FACE_AI_URL` | Self-hosted face AI endpoint URL |
+| `HCAPTCHA_SECRET` | hCaptcha server secret (enables captcha on login) |
+| `HCAPTCHA_SITEKEY` | hCaptcha site key (sent to frontend) |
+
+---
 
 ## Login Security
 
 ### Rate limiting
 
-The login endpoint (`/sh-api/auth/verify`) has built-in per-IP brute-force protection. Limits adjust automatically based on whether hCaptcha is configured:
+The login endpoint has built-in progressive rate limiting:
 
-| Mode | Max failures | Window | Lockout |
-| :-- | :-- | :-- | :-- |
-| No captcha (default) | 20 | 10 minutes | 60 seconds |
-| hCaptcha active | 5 | 60 seconds | 5 minutes |
+- **5 failed attempts** → 1-minute lockout
+- **10 failed attempts** → 5-minute lockout
+- **20+ failed attempts** → 15-minute lockout
 
-**If you lock yourself out**, the lockout is in-memory and clears on server restart:
-
-```bash
-# systemd
-sudo systemctl restart socialhunt
-
-# manual
-# Ctrl+C the running process, then restart with python run.py
-```
-
-The lockout resets automatically after the lockout period even without a restart (60 s without captcha, 5 min with captcha).
+Lockout state resets on successful login. All failed attempts are logged to the server console.
 
 ### hCaptcha (optional)
 
-Add a CAPTCHA challenge to the login form to block automated attacks. Uses [hcaptcha.com](https://hcaptcha.com) — free tier, no billing required.
+Add bot protection to the login form:
 
-**Setup:**
+1. Sign up at [hcaptcha.com](https://hcaptcha.com) and create a site.
+2. Set `HCAPTCHA_SECRET` and `HCAPTCHA_SITEKEY` in your environment or `settings.json`.
+3. Restart — the login page will automatically show the hCaptcha widget.
 
-1. Sign up at [hcaptcha.com](https://hcaptcha.com) and create a new site.
-2. Copy the **Site Key** and **Secret Key**.
-3. Add to your environment file (`/etc/socialhunt.env` on Pi, or `.env`):
+---
+
+## Feature Guides
+
+### Username Search
+
+Scans hundreds of social platforms and services for a username using YAML-defined providers.
+
+**How to use:**
+1. Enter the target username (no `@` prefix needed).
+2. Select providers — use **All** / **None** toggles or pick individually.
+3. Optionally enable **Enhanced Face Search** and upload reference photos.
+4. Click **Start Investigation**.
+
+Results show profile URL, display name, follower counts, bio snippets, and (if face search is enabled) a similarity score. Export as JSON or CSV.
+
+**Provider packs** in `plugins/providers/` extend coverage — social media, forums, gaming platforms, professional networks, Tor sites, and more.
+
+---
+
+### Breach Search
+
+Searches indexed data breaches for email addresses, usernames, IPs, phone numbers, and wildcard patterns.
+
+**Supported providers:**
+
+| Provider | Input types | Notes |
+|---|---|---|
+| **HIBP** (Have I Been Pwned) | Email | Requires API key |
+| **BreachVIP** | Email, username, IP, name, phone | Requires API key |
+| **Snusbase** | Email, username, IP, name, hash | Requires API key |
+| **LeakCheck** | Email, username | Requires API key |
+
+**Input auto-detection examples:**
+
+| Input | Detected as |
+|---|---|
+| `user@example.com` | Email |
+| `127.0.0.1` | IP address |
+| `john.doe@*.com` | Wildcard email |
+| `John A Doe` | Name |
+| `0000000000` | Phone number |
+| `john_doe` | Username |
+
+Results are displayed per-provider with raw breach fields, record counts, and CSV export.
+
+**Example — adding a Snusbase key:**
+
+```
+Settings → API Keys → snusbase_key → paste key → Save
+```
+
+---
+
+### Reverse Image OSINT
+
+Generates one-click search links for a given image URL or uploaded file.
+
+**Supported engines:**
+- Google Lens
+- Bing Visual Search
+- Yandex Images
+- TinEye
+- Google (standard)
+- Karma Decay (Reddit)
+- IQDB (anime/illustration)
+- SauceNAO
+
+**Usage:** Paste an image URL or drag-and-drop a file — the app uploads it, generates a temporary URL, and builds links for every search engine.
+
+---
+
+### Google Dorks
+
+A built-in library of 100+ ready-to-use Google search operator queries across multiple categories.
+
+**Categories include:**
+- Site & domain enumeration
+- File type discovery (PDF, XLSX, DOCX, SQL dumps…)
+- Login page / admin panel discovery
+- Camera and IoT device exposure
+- Email and username lookups
+- Social media presence
+- Code and API key exposure
+- Subdomain enumeration
+- Person / name search
+- Company intelligence
+
+**How to use:**
+1. Enter your target (domain, name, username, or company).
+2. Select a category filter (or leave as **All**).
+3. Click **Generate Dorks**.
+4. Click **Search** on any row to open it in Google, or use **Copy All** / **Download .txt** for bulk use.
+
+---
+
+### Voter Records
+
+A curated directory of official US state voter registration lookup portals.
+
+**Supported states (20+):**
+
+AZ · CO · FL · GA · IL · KS · KY · MD · MI · MN · NJ · NY · NC · OH · OK · OR · PA · SC · TX · UT · VA · WA · WI
+
+Each card shows the state name, portal domain, and a direct link to that state's official voter lookup tool. All portals are run by state government election offices and provide publicly available voter registration data.
+
+> **Note:** All state voter portals require you to enter details directly on their website — they are JavaScript-rendered applications that do not support external pre-filling. Click **Open Portal** on any state card to go directly to that state's official tool.
+
+> **Legal:** Voter registration data must only be used for lawful purposes including election administration, political activities, academic research, and journalism. Commercial solicitation and harassment are prohibited by state and federal law.
+
+---
+
+### AI Demasking
+
+Removes mosaic censoring and restores faces using three different engines.
+
+#### Replicate API (cloud, recommended)
+
+Uses state-of-the-art models hosted on [Replicate](https://replicate.com). Requires a Replicate API key.
+
+1. Add `replicate_key` in Settings.
+2. Go to **Demasking → Upload** an image.
+3. Select mode (**Demosaic** or **Restore**), model, and quality.
+4. Click **Process** — result appears in-app with download option.
+
+#### IOPaint (interactive)
+
+Runs a local [IOPaint](https://github.com/Sanster/IOPaint) inpainting server accessible from the dashboard.
+
+1. Go to **Demasking → IOPaint Inpainting**.
+2. Select model and device (CPU / CUDA / MPS).
+3. Click **Start Server** — then **Open IOPaint** to use the interactive canvas.
+4. Click **Stop Server** when done.
+
+#### DeepMosaic (automated)
+
+Automated mosaic removal using local [DeepMosaic](https://github.com/HypoX64/DeepMosaic) models.
+
+1. Download models: `python download_deepmosaic_models.py`
+2. Go to **Demasking → DeepMosaic**, upload image/video, configure, and process.
+3. Download the result directly.
+
+#### Self-hosted (custom endpoint)
+
+Point Social-Hunt at your own face restoration service:
 
 ```bash
-HCAPTCHA_SITE_KEY=your_site_key_here
-HCAPTCHA_SECRET=your_secret_key_here
+SOCIAL_HUNT_FACE_AI_URL=http://your-ai-host:port/restore
 ```
 
-4. Restart the server. The CAPTCHA widget will appear on the login page automatically.
+Expected request/response format:
 
-Without these env vars the login page works normally (no widget, relaxed rate limits).
-
-## Breach Search / API Integrations
-
-Breach Search runs lookups across four providers simultaneously. Each requires an API key added in **Settings → Add API** (mark as **Secret**).
-
-| Provider | Key name | What it searches | Where to get a key |
-| :-- | :-- | :-- | :-- |
-| **Have I Been Pwned** | `hibp_api_key` | Email addresses against known breach databases | [haveibeenpwned.com/API/Key](https://haveibeenpwned.com/API/Key) |
-| **BreachVIP** | *(no key needed)* | Username / email / phone across breach dumps | [breach.vip](https://breach.vip) (free tier) |
-| **Snusbase** | `snusbase_api_key` | Email, username, IP across indexed breach records | [snusbase.com](https://snusbase.com) (paid membership) |
-| **LeakCheck** | `leakcheck_api_key` | Email, username, phone, and stealer log data | [leakcheck.io](https://leakcheck.io) — **Pro plan required** ($9.99/mo+); Basic/day plan does not include API access |
-
-### Search type auto-detection
-
-Snusbase automatically chooses the correct search field based on your input:
-
-| Input format | Fields searched |
-| :-- | :-- |
-| Contains `@` and `.` | `email` |
-| Digits only, 7–15 chars (phone) | `username`, `email` |
-| Four dot-separated octets (IP) | `lastip` |
-| Anything else | `email`, `username` |
-
-### Provider statuses
-
-| Status | Meaning |
-| :-- | :-- |
-| FOUND | At least one record returned |
-| NOT FOUND | Query returned no results |
-| SKIPPED / UNKNOWN | API key not set in Settings |
-| BLOCKED | Rate-limited (429) or IP blocked (503) |
-| ERROR | Network failure, timeout, or API error |
-
-### Example: adding a Snusbase key
-
-1. Go to **Settings** in the dashboard.
-2. Click **Add API**.
-3. Key: `snusbase_api_key` — Value: your activation code — check **Secret**.
-4. Click **Save**. The key is picked up on the next scan without a restart.
-
-## Tor / Darkweb Support
-
-Social-Hunt supports scanning `.onion` sites by routing traffic through a Tor proxy. It uses split-tunneling — regular clearnet sites use your direct connection while `.onion` sites go through Tor.
-For safety, avatar face matching skips `.onion` hosts.
-
-### Prerequisites
-1. Install Tor (e.g., `sudo apt install tor` or use Tor Browser).
-2. Install SOCKS dependencies:
-   ```bash
-   pip install httpx[socks]
-   ```
-
-### Configuration
-Set `SOCIAL_HUNT_PROXY` to your Tor SOCKS address. Use `socks5h://` to ensure DNS resolution happens over Tor (required for `.onion` hostnames).
-
-**Linux/Mac:**
-```bash
-export SOCIAL_HUNT_PROXY="socks5h://127.0.0.1:9050"
-python run.py
+```json
+// POST with multipart/form-data: { "file": <image>, "strength": 0.5 }
+// Response: { "image": "<base64-encoded-result>" }
 ```
 
-**Windows:**
-```powershell
-$env:SOCIAL_HUNT_PROXY="socks5h://127.0.0.1:9150"
-python run.py
-```
-*(Standard Tor service uses port 9050; Tor Browser uses 9150.)*
+---
 
-> **Note:** `SOCIAL_HUNT_PROXY` is exclusively for Tor/`.onion` routing and is not used for clearnet providers. For clearnet proxy support see `SOCIAL_HUNT_CLEARNET_PROXY` below.
+### Secure Notes
 
-### Clearnet Proxy (optional)
+An end-to-end encrypted note vault built into the dashboard. Notes are stored in your browser's `localStorage` — they never leave your device unencrypted.
 
-Some clearnet providers (e.g. BreachVIP) can optionally route through a proxy — useful if your server IP is blocked. Set `SOCIAL_HUNT_CLEARNET_PROXY` to a residential or HTTP proxy:
+**Encryption:** AES-256-GCM with a PBKDF2-derived key from your master password (310,000 iterations, SHA-256).
+
+**Features:**
+- Create, edit, and delete notes with titles and freeform content.
+- Lock vault — requires master password to re-open.
+- **Export** vault to an encrypted JSON file for backup.
+- **Import** vault from a previously exported file.
+- Notes saved to vault can be searched across all content.
+
+> **Important:** If you forget your master password, your notes cannot be recovered. There is no reset mechanism — this is by design.
+
+---
+
+### History
+
+The History tab shows a persistent log of:
+
+- **Searches** — username, provider count, result count, timestamp, and status.
+- **Reverse image lookups** — image preview thumbnail and generated links.
+- **Demasking jobs** — original and result image previews.
+
+Click any entry to re-open the full results. Clear individual categories with the trash icon.
+
+---
+
+### Plugin System
+
+Extend Social-Hunt with additional provider packs without modifying core code.
+
+**Provider pack formats:**
+
+| Format | Location | Description |
+|---|---|---|
+| YAML (`.yaml`) | `plugins/providers/` | Declarative URL patterns — fastest to write |
+| Python (`.py`) | `plugins/python/providers/` | Full async code — for APIs, auth, complex parsing |
+
+**Installing a plugin:**
 
 ```bash
-export SOCIAL_HUNT_CLEARNET_PROXY="http://user:pass@proxy.example.com:8080"
-python run.py
+# Drop a YAML file into:
+plugins/providers/my_pack.yaml
+
+# Then reload from the dashboard:
+Settings → Providers → Reload
 ```
 
-This is separate from Tor and has no effect on `.onion` routing. If unset, affected providers use your direct connection.
+If `SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD=1` is set, you can also upload `.yaml`, `.py`, or `.zip` files directly from **Plugins** in the dashboard.
 
-## Plugins
+**Writing a YAML provider (minimal example):**
 
-Social-Hunt supports YAML provider packs and optional Python plugins:
-
-- YAML providers: `plugins/providers/*.yaml`
-- Python providers/addons: `plugins/python/providers/*.py`, `plugins/python/addons/*.py`
-
-To enable Python plugins, set `SOCIAL_HUNT_ALLOW_PY_PLUGINS=1`.
-
-The dashboard can upload `.yaml` or `.zip` bundles when:
-
-```
-SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD=1
-SOCIAL_HUNT_PLUGIN_TOKEN=long_random_token
+```yaml
+providers:
+  - name: example_site
+    url: "https://example.com/users/{username}"
+    error_type: status_code
+    error_code: 404
 ```
 
-See `PLUGINS.md` for full details and plugin contracts.
+See [`PLUGINS.md`](PLUGINS.md) for the full provider spec and Python provider API.
 
-## Reverse Image OSINT
+---
 
-Reverse-image links require a public base URL for your instance:
+### Demo Mode
 
-- Set `public_url` in settings or `SOCIAL_HUNT_PUBLIC_URL` in the environment.
+Censors sensitive data in search results — useful for screen shares, demos, and presentations.
 
-## AI Demasking (Replicate, IOPaint, or Self-Hosted)
+**Toggle:** Settings → Demo Mode → Enable / Disable → Save
 
-Social-Hunt supports multiple demasking modes:
-- Replicate API models (managed SaaS).
-- IOPaint WebUI for interactive inpainting.
-- DeepMosaic for automated mosaic removal (image/video).
+When active, a red **DEMO MODE** badge appears in the top bar. Emails, IPs, names, and other PII are replaced with asterisks in all output.
 
-### Replicate API
-Set a Replicate API token in either:
-- Settings: `replicate_api_token`
-- Environment: `REPLICATE_API_TOKEN`
+---
 
-When configured, the server uses Replicate models to remove masks and restore facial detail.
+### Tor / Darkweb Support
 
-### IOPaint (interactive)
-Use the IOPaint page in the Demasking menu to:
-- Start/stop the local IOPaint server
-- Open the IOPaint WebUI
-- Select model/device/port
+Route provider requests through a SOCKS proxy to reach `.onion` sites.
 
-You can also host IOPaint under `/iopaint` behind the same domain (see
-`APACHE_SETUP.md` and `NGINX_SETUP.md`).
+#### Prerequisites
 
-### DeepMosaic (automated)
-DeepMosaic can remove mosaics from images or video. Use the DeepMosaic page to:
-- Upload image/video
-- Choose clean/add/style modes
-- Download results or save to notes
+```bash
+# Install Tor
+sudo apt install tor
 
-### Self-hosted (custom)
-Set `SOCIAL_HUNT_FACE_AI_URL` to an HTTP endpoint that accepts JSON:
+# Install SOCKS support for httpx
+pip install httpx[socks]
+```
+
+#### Configuration
+
+Add to your `settings.json` or environment:
+
 ```json
 {
-  "image": "<base64 image bytes>",
-  "fidelity": 0.7,
-  "task": "face_restoration"
+  "socks_proxy": "socks5://127.0.0.1:9050",
+  "tor_enabled_providers": ["example_onion_provider"]
 }
 ```
-and returns:
+
+Or set globally for all providers:
+
 ```json
-{ "image": "<base64 restored image bytes>" }
+{
+  "proxy": "socks5://127.0.0.1:9050"
+}
 ```
 
-The repo includes a `DeepMosaics/` submodule you can use to build a local restoration service,
-but it does not match the `/restore` JSON contract out of the box. Add a small adapter or
-proxy to translate the request/response format, then point `SOCIAL_HUNT_FACE_AI_URL` at it.
+#### Clearnet proxy (optional)
 
-## Troubleshooting
+To route all traffic (including clearnet) through the proxy:
 
-- Locked out of login (too many failed attempts): the lockout is in-memory — restart the server (`sudo systemctl restart socialhunt` or `Ctrl+C` + `python run.py`) to clear it immediately. Without hCaptcha configured the lockout is only 60 seconds anyway.
-- BreachVIP 503/blocked: breach.vip may block datacenter IPs. Results will show a BLOCKED status — no configuration change can bypass this; try from a residential IP or VPN.
-- HIBP skipped: add `hibp_api_key` in Settings (get a key at [haveibeenpwned.com/API/Key](https://haveibeenpwned.com/API/Key)).
-- Snusbase skipped: add `snusbase_api_key` in Settings (included with any paid Snusbase membership at [snusbase.com](https://snusbase.com)). Mark it as **Secret**.
-- API keys not taking effect: keys added in Settings are picked up immediately on the next scan — no server restart required.
-- Missing Python providers: ensure `SOCIAL_HUNT_ALLOW_PY_PLUGINS=1`.
-- Demask not working: set `REPLICATE_API_TOKEN` or `SOCIAL_HUNT_FACE_AI_URL`.
-- If the downloader fails for any reason, you may have to manually download the models from [Google Drive](https://drive.google.com/open?id=1LTERcN33McoiztYEwBxMuRjjgxh4DEPs) for DeepMosaics.
+```bash
+HTTPS_PROXY=socks5://127.0.0.1:9050 python run.py
+```
+
+See `plugins/providers/tor_pack.yaml` for example `.onion` provider definitions.
+
+---
 
 ## Project Structure
 
-- `api/` FastAPI app and settings store
-- `social_hunt/` core engine, registry, providers, addons, CLI
-- `web/` static dashboard UI
-- `plugins/` YAML providers and optional Python plugins
-- `data/` settings and scan jobs
-- `docker/` container build/deploy files
+```
+Social-Hunt/
+├── api/
+│   ├── main.py                # FastAPI backend — all endpoints
+│   └── settings_store.py      # Settings persistence
+├── social_hunt/
+│   ├── engine.py              # Async scanning engine
+│   ├── registry.py            # Provider registry
+│   ├── providers/             # Built-in provider modules
+│   ├── addons/                # Addon modules (face match, etc.)
+│   └── ...
+├── web/
+│   ├── index.html             # App shell
+│   ├── app.js                 # All frontend JS (~4000 lines)
+│   ├── styles.css             # Global styles + themes
+│   └── views/                 # Per-view HTML fragments
+│       ├── dashboard.html
+│       ├── search.html
+│       ├── breach-search.html
+│       ├── reverse.html
+│       ├── google-dorks.html
+│       ├── voter-records.html
+│       ├── demask.html
+│       ├── iopaint.html
+│       ├── deepmosaic.html
+│       ├── secure-notes.html
+│       ├── history.html
+│       ├── plugins.html
+│       ├── settings.html
+│       └── tokens.html
+├── plugins/
+│   ├── providers/             # YAML provider packs
+│   └── python/providers/      # Python provider packs
+├── docker/
+│   ├── docker-compose.yml
+│   ├── nginx.conf
+│   ├── Dockerfile
+│   └── ...
+├── data/                      # Runtime data (gitignored)
+├── run.py                     # Entry point
+├── providers.yaml             # Default provider list
+└── requirements.txt
+```
+
+---
 
 ## Documentation
 
-- `README_RUN.md` execution and configuration guide
-- `PLUGINS.md` plugin formats and uploader
-- `APACHE_SETUP.md` Apache reverse proxy notes
-- `NGINX_SETUP.md` Nginx reverse proxy notes
-- `docs/CANARY.md` canary warrant template
-- `docs/PGP.md` PGP public key template
-- `docs/NEWS_OSINT.md` OSINT news digest template
-- `docs/CHANGELOG.md` version history and changes
-- `docs/CONTRIBUTORS.md` project contributors
-- `docs/peekyou.md` PeekYou provider usage notes
-- `LICENSE` GPL-3.0
+| Document | Description |
+|---|---|
+| [`README.md`](README.md) | This file — full feature overview and setup guide |
+| [`README_RUN.md`](README_RUN.md) | Detailed run / deployment walkthrough |
+| [`PLUGINS.md`](PLUGINS.md) | Provider pack authoring guide |
+| [`APACHE_SETUP.md`](APACHE_SETUP.md) | Apache reverse proxy configuration |
+| [`NGINX_SETUP.md`](NGINX_SETUP.md) | Nginx reverse proxy configuration |
+| [`docker/docs/`](docker/docs/) | Docker-specific guides (SSL, IOPaint, dev updates) |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Release history |
+| [`docs/CANARY.md`](docs/CANARY.md) | Canary warrant statement |
+| [`SECURITY.md`](SECURITY.md) | Security policy and responsible disclosure |
+
+---
 
 ## Reverse Proxy Notes (IOPaint on same domain)
 
-If you want IOPaint under the same domain (e.g., `/iopaint`), Social-Hunt's API
-is moved to `/sh-api` to avoid conflicts with IOPaint's `/api` and `/socket.io`
-routes. Make sure your reverse proxy routes `/sh-api` to the app and `/api` to
-IOPaint as shown in `APACHE_SETUP.md`.
-**SUPER IMPORTANT NOTE:** You must follow `APACHE_SETUP.md` or `NGINX_SETUP.md` for reverse proxy setup.
+When running both Social-Hunt and IOPaint behind the same nginx reverse proxy, requests are split by path:
 
-## Screenshots / UI Tour
+- `/` → Social-Hunt (`social-hunt:8000`)
+- `/iopaint/` → IOPaint (`iopaint:8080`)
+- `/sh-api/` → Social-Hunt API (`social-hunt:8000`)
 
-### Login
-![Login Screen](assets/screenshots/login.png)
-*Self-hosted OSINT aggregator with admin token authentication*
+The `nginx.conf` in `docker/` handles this automatically when using the `nginx` or `ssl` profile.
 
-### Dashboard
-![Dashboard Overview](assets/screenshots/dashboard.png)
-*Main dashboard showing welcome screen and recent job history*
+> **Important:** Do not expose the `/api/` path prefix externally — it is reserved for IOPaint's internal API. Social-Hunt uses `/sh-api/` exclusively.
 
-### Username Search
-![Search Results](assets/screenshots/search-results.png)
-*Comprehensive username search across 500+ platforms with real-time status indicators*
+---
 
-### Breach Search
-![Breach Search](assets/screenshots/breach-search.png)
-*Data breach lookup powered by HIBP, BreachVIP, and Snusbase — search by email, username, IP, or phone*
+## Tested Environments
 
-### Reverse Image Search
-![Reverse Image](assets/screenshots/reverse-image.png)
-*Reverse image search with multiple engine options (Google Lens, Bing, Yandex)*
+| Environment | Status |
+|---|---|
+| Ubuntu 22.04 LTS (VPS) | ✅ Tested |
+| Ubuntu 24.04 LTS (VPS) | ✅ Tested |
+| Raspberry Pi 5 — RPi OS Bookworm 64-bit | ✅ Tested (see Pi setup above) |
+| macOS (Apple Silicon) | ✅ Tested |
+| Windows 11 (Docker Desktop) | ✅ Tested |
+| Debian 12 Bookworm (VPS) | ✅ Tested |
 
-### AI Face Restoration
-![Demasking](assets/screenshots/demasking.png)
-*Forensic AI demasking using Replicate or self-hosted models*
+Other Debian/Ubuntu-based images should work. Report results in an issue or PR.
 
-### History
-![History](assets/screenshots/history.png)
-*Search History*
-
-### Secure Notes
-![Secure Notes - List](assets/screenshots/secure-notes.png)
-*Encrypted notes with AES-256-GCM encryption*
-
-![Secure Notes - Master Password](assets/screenshots/secure-notes-password.png)
-*Master password protection for secure notes*
-
-### Plugin System
-![Plugins](assets/screenshots/plugins.png)
-*YAML provider packs and plugin upload interface*
-
-### Settings & Configuration
-![Settings](assets/screenshots/settings.png)
-*Server configuration, theme selection, and API integrations*
-
-### Token Management
-![Token Management](assets/screenshots/token.png)
-*Admin token and browser token management*
-
-
-
-
+---
 
 ## Contributors
 
-Thanks to everyone who has helped build and maintain Social-Hunt.
-Add contributors here or link to a CONTRIBUTORS file if you prefer.
+Thank you to all contributors who have helped make this project possible. See [`docs/CONTRIBUTORS.md`](docs/CONTRIBUTORS.md) for the full list.
+
+Pull requests, bug reports, new provider packs, and documentation improvements are all welcome. Please read [`SECURITY.md`](SECURITY.md) before reporting vulnerabilities.
+
+---
 
 ## Legal and Ethics
 
-Social-Hunt is for lawful, authorized investigations only. You are responsible for complying with platform terms and local laws.
+Social-Hunt is designed exclusively for **lawful OSINT research** — security research, journalism, academic study, and personal privacy auditing. The developer does not endorse or permit:
+
+- Stalking, harassment, or targeted abuse of any individual.
+- Unauthorized access to accounts, systems, or private data.
+- Use in jurisdictions or contexts where such tools are restricted.
+- Scraping or aggregating data in violation of a platform's Terms of Service.
+- Commercial sale or redistribution of data obtained through this tool.
+- Any use that violates applicable local, national, or international law.
+
+The voter records feature links to official government portals. Use of voter registration data is regulated by state and federal law — consult the relevant statutes before use.
+
+**You are solely responsible for how you use this software.**
+
+---
+
+*Social-Hunt is released under the [GPL-3.0 License](LICENSE).*
