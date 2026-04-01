@@ -1202,47 +1202,81 @@ def _sample_skin_tone(
     face_boxes: list,
 ) -> str:
     """
-    Sample pixels from the forehead region (above the covered area) to derive
-    a rough skin-tone description that can be injected into the inpainting
-    prompt. This anchors the model to the subject's actual complexion so it
-    does not generate a face with the wrong ethnicity.
+    Sample pixels from multiple skin-likely regions to derive a rough tone
+    description for the inpainting prompt.
+
+    Strategy:
+     - Primary: narrow forehead strip (top 15 % of face box, centre 40 %)
+       — skips the balaclava/fabric region which starts at ~50 % of box.
+     - Secondary: neck/chin area just BELOW the face box
+     - Tertiary: lower-third of image sides (hands/arms often visible there)
+     - Filtering: skip near-white (>230,>230,>230) and near-black (<30,<30,<30)
+       pixels which are fabric, background, or shadow rather than skin.
     """
     from PIL import Image as PILImage
+
+    def _is_skin_like(r: int, g: int, b: int) -> bool:
+        """Rough skin-tone pixel filter — rejects fabric, shadow, background."""
+        # Skip near-white (balaclava/clothing) and near-black (shadow/hair)
+        if r > 230 and g > 230 and b > 230:
+            return False
+        if r < 30 and g < 30 and b < 30:
+            return False
+        # Skin heuristic: R > G > B and red channel dominant
+        if r < 60:
+            return False
+        return True
 
     try:
         pil = PILImage.open(BytesIO(image_bytes)).convert("RGB")
         w_img, h_img = pil.size
-
         samples: list[tuple[int, int, int]] = []
 
         for top, right, bottom, left in face_boxes:
             fh = bottom - top
             fw = right - left
-            # Forehead strip: top 20 % of the face box, centre 50 % horizontally
-            fore_top = top
-            fore_bot = top + max(1, int(fh * 0.20))
-            fore_left = left + int(fw * 0.25)
-            fore_right = right - int(fw * 0.25)
-            if fore_bot <= fore_top or fore_right <= fore_left:
-                continue
-            crop = pil.crop((fore_left, fore_top, fore_right, fore_bot))
-            samples.extend(list(crop.getdata()))
 
-            # Also sample neck region just below the face box
-            neck_top = bottom + int(fh * 0.05)
-            neck_bot = min(h_img, bottom + int(fh * 0.25))
+            # ── A. Very top of face box (forehead / temple region above mask) ──
+            fore_top = top
+            fore_bot = top + max(1, int(fh * 0.15))
+            fore_left = left + int(fw * 0.30)
+            fore_right = right - int(fw * 0.30)
+            if fore_bot > fore_top and fore_right > fore_left:
+                crop = pil.crop((fore_left, fore_top, fore_right, fore_bot))
+                for px in crop.getdata():
+                    if _is_skin_like(*px):
+                        samples.append(px)
+
+            # ── B. Neck / chin — just BELOW the face box ─────────────────────
+            neck_top = bottom + int(fh * 0.02)
+            neck_bot = min(h_img, bottom + int(fh * 0.20))
             if neck_bot > neck_top:
                 neck_crop = pil.crop((fore_left, neck_top, fore_right, neck_bot))
-                samples.extend(list(neck_crop.getdata()))
+                for px in neck_crop.getdata():
+                    if _is_skin_like(*px):
+                        samples.append(px)
+
+            # ── C. Sides of image lower third (hands / arms often visible) ────
+            lower_top = int(h_img * 0.65)
+            lower_bot = int(h_img * 0.90)
+            side_w = int(w_img * 0.15)
+            for sx, ex in [(0, side_w), (w_img - side_w, w_img)]:
+                side_crop = pil.crop((sx, lower_top, ex, lower_bot))
+                for px in side_crop.getdata():
+                    if _is_skin_like(*px):
+                        samples.append(px)
 
         if not samples:
+            print("[Demask] No reliable skin pixels found; using neutral hint.")
             return "natural skin tone"
 
         avg_r = sum(p[0] for p in samples) // len(samples)
         avg_g = sum(p[1] for p in samples) // len(samples)
         avg_b = sum(p[2] for p in samples) // len(samples)
 
-        # Rough ITA (Individual Typology Angle) approximation to classify tone
+        print(f"[Demask] Skin sample avg RGB=({avg_r},{avg_g},{avg_b}) from {len(samples)} px")
+
+        # Rough ITA (Individual Typology Angle) approximation
         if avg_r > 210 and avg_g > 180:
             return "very fair caucasian skin, light complexion, pale skin"
         elif avg_r > 185 and avg_g > 150:
@@ -1802,9 +1836,11 @@ async def api_demask(
         NEGATIVE_BASE = (
             "cartoon, 3d render, cgi, anime, illustration, painting, drawing, "
             "plastic skin, smooth skin, airbrushed, overly smooth, "
-            "different gender, different ethnicity, new person, extra faces, "
+            "different gender, different ethnicity, wrong ethnicity, changed skin color, "
+            "wrong skin tone, new person, extra faces, different person, "
             "mask, balaclava, face covering, surgical mask, sunglasses, "
-            "distorted, blurry, deformed, bad anatomy, watermark, text, logo"
+            "distorted, blurry, deformed, bad anatomy, watermark, text, logo, "
+            "nsfw, nude, naked, explicit"
         )
 
         if facial_hair_result == "clean_shaven":
@@ -1869,17 +1905,19 @@ async def api_demask(
             "prompt": (
                 f"candid press photo, photojournalism, RAW photo, DSLR, "
                 f"photo-realistic {gender_positive}human face, {skin_tone_hint}, "
+                f"exact same {skin_tone_hint}, matching complexion, "
                 f"{hair_positive} "
                 "natural skin texture, visible pores, film grain, realistic lighting, "
-                "sharp focus, 8k, same ethnicity, no face covering, no mask, "
+                "sharp focus, 8k, same person, same ethnicity, same skin color, "
+                "consistent complexion, no face covering, no mask, "
                 "no surgical mask, open face, revealed face"
             ),
             "negative_prompt": NEGATIVE,
             "num_outputs": 1,
             "num_inference_steps": 60,
-            # Lower guidance keeps skin texture natural and prevents the
-            # over-stylised / plastic-skin look that 5.0+ causes.
-            "guidance_scale": 4.0,
+            # 7.5 balances prompt adherence (keeps correct ethnicity/skin tone)
+            # with photorealism — below 6 the model ignores skin tone hints.
+            "guidance_scale": 7.5,
             # K_EULER_ANCESTRAL introduces stochastic noise at each step which
             # produces more organic, photographic skin compared to the fully
             # deterministic DPMSolverMultistep.
@@ -2006,10 +2044,35 @@ async def api_demask(
             return StreamingResponse(out_buf, media_type="image/png")
 
         except Exception as comp_err:
-            print(f"[Demask] Composite failed ({comp_err}); returning raw inpaint.")
-            async with httpx.AsyncClient() as hc:
-                img_res = await hc.get(inpainted_url)
-            return StreamingResponse(BytesIO(img_res.content), media_type="image/png")
+            print(f"[Demask] Composite error: {comp_err}. Attempting full-image fallback composite.")
+            # Even in the error path, try to paste the inpainted result onto the
+            # original at the correct position rather than returning raw 512x512.
+            try:
+                from PIL import Image as PILImage
+                async with httpx.AsyncClient() as hc:
+                    img_res = await hc.get(inpainted_url)
+                inpainted_pil = PILImage.open(BytesIO(img_res.content)).convert("RGB")
+                original_pil = PILImage.open(BytesIO(content)).convert("RGB")
+                orig_w2, orig_h2 = original_pil.size
+                cl2, ct2, cr2, cb2 = crop_region
+                cw2, ch2 = cr2 - cl2, cb2 - ct2
+                inpainted_resized = inpainted_pil.resize((cw2, ch2), PILImage.LANCZOS)
+                mask_full2 = PILImage.open(BytesIO(mask_bytes)).convert("L")
+                mask_crop2 = mask_full2.crop((cl2, ct2, cr2, cb2))
+                orig_crop2 = original_pil.crop((cl2, ct2, cr2, cb2))
+                merged2 = PILImage.composite(inpainted_resized, orig_crop2, mask_crop2)
+                result2 = original_pil.copy()
+                result2.paste(merged2, (cl2, ct2))
+                buf2 = BytesIO()
+                result2.save(buf2, format="PNG")
+                buf2.seek(0)
+                print("[Demask] Fallback composite succeeded.")
+                return StreamingResponse(buf2, media_type="image/png")
+            except Exception as fb_err:
+                print(f"[Demask] Fallback composite also failed ({fb_err}); returning raw.")
+                async with httpx.AsyncClient() as hc2:
+                    img_res2 = await hc2.get(inpainted_url)
+                return StreamingResponse(BytesIO(img_res2.content), media_type="image/png")
 
     except HTTPException:
         raise
