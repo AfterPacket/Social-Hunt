@@ -2888,7 +2888,7 @@ class VoterRecordsRequest(BaseModel):
 # Maps state abbreviation -> base portal URL (displayed in UI)
 _VOTER_STATE_PORTALS: Dict[str, str] = {
     "MI": "https://mvic.sos.state.mi.us/Voter/Index",
-    "GA": "https://mvp.sos.ga.gov/s/voter-registration-overview",
+    "GA": "https://mvp.sos.ga.gov/s/",
     "NC": "https://vt.ncsbe.gov/RegLkup/",
     "OH": "https://voterlookup.ohiosos.gov/voterlookup.aspx",
     "FL": "https://registration.elections.myflorida.com/CheckVoterStatus",
@@ -2897,7 +2897,7 @@ _VOTER_STATE_PORTALS: Dict[str, str] = {
     "CO": "https://www.sos.state.co.us/voter/pages/pub/olvr/verifyNewVoter.xhtml",
     "AZ": "https://my.arizona.vote/VoterView/RegistrantSearch.do",
     "MN": "https://mnvotes.sos.state.mn.us/VoterStatus.aspx",
-    "TX": "https://teamrv-mvp.sos.state.tx.us/MVP/mvp.do",
+    "TX": "https://www.sos.state.tx.us/elections/voter/votregduties.shtml",
     "NV": "https://www.nvsos.gov/voterinfo/index.aspx",
     "VA": "https://vote.elections.virginia.gov/VoterInformation",
     "NY": "https://voterlookup.elections.ny.gov/",
@@ -2908,7 +2908,7 @@ _VOTER_STATE_PORTALS: Dict[str, str] = {
     "NJ": "https://voter.svrs.nj.gov/registration-check",
     "KY": "https://vrsws.sos.ky.gov/VIC/",
     "UT": "https://votesearch.utah.gov/voter-search/search/search-by-name/voter-info",
-    "SC": "https://info.scvotes.sc.gov/eng/voterinquiry/VoterInformationRequest.aspx",
+    "SC": "https://vrems.scvotes.sc.gov/",
     "KS": "https://myvoteinfo.voteks.org/voterview/",
     "OK": "https://okvoterportal.okelections.us/",
 }
@@ -2923,19 +2923,19 @@ _VOTER_DEEPLINK_TEMPLATES: Dict[str, str] = {
     "WI": "https://myvote.wi.gov/en-us/Find-My-Voter-Info?FirstName={first}&LastName={last}",
     "PA": "https://www.pavoterservices.pa.gov/pages/voterregistrationstatus.aspx",
     "AZ": "https://my.arizona.vote/VoterView/RegistrantSearch.do?firstName={first}&lastName={last}",
-    "MN": "https://mnvotes.sos.state.mn.us/VoterStatus.aspx?FName={first}&LName={last}&County={county}",
+    "MN": "https://mnvotes.sos.state.mn.us/VoterStatus.aspx",
     "NY": "https://voterlookup.elections.ny.gov/",
     "VA": "https://vote.elections.virginia.gov/VoterInformation/Lookup?firstName={first}&lastName={last}",
     "MD": "https://voterservices.elections.maryland.gov/VoterSearch?firstName={first}&lastName={last}&county={county}",
     "NJ": "https://voter.svrs.nj.gov/registration-check",
-    "SC": "https://info.scvotes.sc.gov/eng/voterinquiry/VoterInformationRequest.aspx?LastName={last}&FirstName={first}",
-    "KS": "https://myvoteinfo.voteks.org/voterview/?lName={last}&fName={first}",
+    "SC": "https://vrems.scvotes.sc.gov/",
+    "KS": "https://myvoteinfo.voteks.org/voterview/",
     "OK": "https://okvoterportal.okelections.us/",
     "MI": "https://mvic.sos.state.mi.us/Voter/Index",
-    "GA": "https://mvp.sos.ga.gov/s/voter-registration-overview",
+    "GA": "https://mvp.sos.ga.gov/s/",
     "OH": "https://voterlookup.ohiosos.gov/voterlookup.aspx",
     "WA": "https://voter.votewa.gov/WhereToVote.aspx",
-    "TX": "https://teamrv-mvp.sos.state.tx.us/MVP/mvp.do",
+    "TX": "https://www.sos.state.tx.us/elections/voter/votregduties.shtml",
     "NV": "https://www.nvsos.gov/voterinfo/index.aspx",
     "CO": "https://www.sos.state.co.us/voter/pages/pub/olvr/verifyNewVoter.xhtml",
     "IL": "https://www.elections.il.gov/votinginformation/registrationlookup.aspx",
@@ -3238,7 +3238,15 @@ async def api_voter_records_search(
         prefilled = bool(template) and ("{first}" in template or "{last}" in template)
 
         if state_portal:
-            if prefilled:
+            if state == "TX":
+                note = (
+                    f"Texas voter registration is managed at the <strong>county level</strong> — "
+                    f"there is no single statewide name-lookup portal. "
+                    f"The link below opens the Texas SOS directory of all county election offices. "
+                    f"Find <strong>{first_name} {last_name}</strong>'s county and contact that office directly, "
+                    f"or visit the county's own voter registration website."
+                )
+            elif prefilled:
                 note = (
                     f"The link below opens the {state_name} official voter portal "
                     f"with <strong>{first_name} {last_name}</strong> already entered "
