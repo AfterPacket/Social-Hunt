@@ -1732,18 +1732,20 @@ async def api_demask(
         print(f"[Demask] Mask generated. used_heuristic={used_heuristic}")
 
         # ── 4. Sample visible skin tone, detect gender and facial hair ────────
-        skin_tone_hint = await asyncio.to_thread(_sample_skin_tone, content, face_boxes)
-        print(f"[Demask] Skin tone sampled: {skin_tone_hint}")
-
         if used_heuristic:
-            # The heuristic face-box spans a huge region (10–72 % of height) that
-            # does NOT correspond to real facial regions — the eyebrow-darkness
-            # approach produces garbage results (often falsely "woman") when the
-            # cap brim makes forehead + brow strip equally dark.  Fall back to
-            # body-shape analysis instead.
+            # Face fully covered — the whole-image skin scanner will pick up
+            # bystanders / crowd members with DIFFERENT skin tones and mislead the
+            # model.  Use a neutral hint so SD fills based on surrounding context
+            # rather than an actively wrong colour anchor.
+            skin_tone_hint = "human skin tone, natural complexion"
+            print("[Demask] Heuristic mode — using neutral skin hint to avoid crowd contamination.")
             gender_hint = await asyncio.to_thread(_detect_gender_from_body, content)
-            print(f"[Demask] Gender hint (body-based, heuristic mode): {gender_hint}")
+            print(f"[Demask] Gender hint (body-based): {gender_hint}")
         else:
+            # Face partially visible — sample only from the detected face region
+            # (forehead/temple/neck), which is reliable when a real box exists.
+            skin_tone_hint = await asyncio.to_thread(_sample_skin_tone, content, face_boxes)
+            print(f"[Demask] Skin tone sampled: {skin_tone_hint}")
             gender_hint = await asyncio.to_thread(
                 _detect_gender_hint, content, face_boxes
             )
@@ -1879,12 +1881,11 @@ async def api_demask(
             "prompt": (
                 f"candid press photo, photojournalism, RAW photo, DSLR, "
                 f"photo-realistic {gender_positive}human face, {skin_tone_hint}, "
-                f"exact same {skin_tone_hint}, matching complexion, "
-                f"{hair_positive} "
-                "natural skin texture, visible pores, film grain, realistic lighting, "
-                "sharp focus, 8k, same person, same ethnicity, same skin color, "
-                "consistent complexion, no face covering, no mask, "
-                "no surgical mask, open face, revealed face"
+                + (f"exact same {skin_tone_hint}, " if skin_tone_hint != "human skin tone, natural complexion" else "")
+                + f"{hair_positive} "
+                + "natural skin texture, visible pores, film grain, realistic lighting, "
+                + "sharp focus, 8k, no face covering, no mask, "
+                + "no surgical mask, open face, revealed face"
             ),
             "negative_prompt": NEGATIVE,
             "num_outputs": 1,
