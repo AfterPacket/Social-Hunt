@@ -3308,6 +3308,9 @@ async function initDemaskView() {
   const actions = document.getElementById("demaskActions");
   const downloadBtn = document.getElementById("downloadDemaskBtn");
   const saveToNotesBtn = document.getElementById("saveDemaskToNotesBtn");
+  const targetMarker = document.getElementById("demaskTargetMarker");
+  const targetHint = document.getElementById("demaskTargetHint");
+  let targetPoint = null;
 
   if (!uploadInput) return;
 
@@ -3318,9 +3321,28 @@ async function initDemaskView() {
     reader.onload = (ev) => {
       originalPreview.src = ev.target.result;
       previewContainer.style.display = "block";
-      startBtn.disabled = false;
+      targetPoint = null;
+      targetMarker.style.display = "none";
+      startBtn.disabled = true;
+      targetHint.textContent = "Click the one covered face you want to reconstruct.";
     };
     reader.readAsDataURL(file);
+  };
+
+  previewContainer.onclick = (e) => {
+    if (!originalPreview.naturalWidth) return;
+    const rect = originalPreview.getBoundingClientRect();
+    targetPoint = {
+      x: (e.clientX - rect.left) * (originalPreview.naturalWidth / rect.width),
+      y: (e.clientY - rect.top) * (originalPreview.naturalHeight / rect.height),
+    };
+    const containerRect = previewContainer.getBoundingClientRect();
+    targetMarker.style.left = `${e.clientX - containerRect.left}px`;
+    targetMarker.style.top = `${e.clientY - containerRect.top}px`;
+    targetMarker.style.display = "block";
+    targetHint.textContent = "Target selected. Click again to choose a different face.";
+    statusEl.textContent = "Target face selected.";
+    startBtn.disabled = false;
   };
 
   startBtn.onclick = async () => {
@@ -3336,6 +3358,8 @@ async function initDemaskView() {
 
     const fd = new FormData();
     fd.append("file", file);
+    fd.append("target_x", String(targetPoint.x));
+    fd.append("target_y", String(targetPoint.y));
 
     try {
       const res = await fetch("/sh-api/demask", {

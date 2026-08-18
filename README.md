@@ -79,7 +79,7 @@
 - **Frontend:** Vanilla HTML / CSS / JS — no heavy framework, fast loads
 - **Core engine:** Async concurrency with per-provider heuristics and status detection
 - **Storage:** JSON flat-files for settings and job results; notes encrypted in browser localStorage
-- **Optional services:** Replicate (cloud AI), IOPaint (interactive inpainting), DeepMosaic (automated mosaic removal)
+- **Optional services:** Replicate (cloud AI), IOPaint (interactive inpainting), DeepMosaic (automated mosaic removal), local SD inpainting (demask on GPU)
 
 ---
 
@@ -143,7 +143,7 @@ Open `https://your-domain`.
 
 For Windows machines without Docker, two PowerShell scripts in `scripts/` create
 isolated Python environments for the AI workers (IOPaint, DeepMosaic) and launch
-all three services as background processes. The main app stays on secure
+all four services as background processes. The main app stays on secure
 Pillow 12 with no torch; the workers keep their own (legacy) torch + Pillow in
 separate venvs. The app reaches them over loopback HTTP.
 
@@ -154,7 +154,17 @@ DeepMosaics, downloads models):
 powershell -ExecutionPolicy Bypass -File scripts\setup-ai.ps1
 ```
 
-Start everything (Social-Hunt :8000, IOPaint :8080, DeepMosaic :8081):
+For GPU-accelerated SD demasking (recommended if you have an NVIDIA GPU such
+as an RTX 4090), add the `-GPU` flag so the CUDA build of torch is installed in
+`.venv-iopaint`. Without it, `iopaint==1.6.0` pulls CPU-only torch and the SD
+demask worker silently falls back to CPU (~13 min/image vs ~30 s on a 4090):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup-ai.ps1 -GPU
+```
+
+Start everything (Social-Hunt :8000, IOPaint :8080, IOPaint SD :8082,
+DeepMosaic :8081):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\start-social-hunt.ps1
@@ -320,6 +330,10 @@ All settings can be set as environment variables (useful for Docker / CI):
 | `SOCIAL_HUNT_BOOTSTRAP_SECRET` | Secure secret for bootstrap endpoint |
 | `SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD` | Enable plugin upload via dashboard (`1`) |
 | `SOCIAL_HUNT_FACE_AI_URL` | Self-hosted face AI endpoint URL |
+| `IOPAINT_URL` | IOPaint lama worker URL (default `http://127.0.0.1:8080`) |
+| `IOPAINT_SD_URL` | IOPaint SD demask worker URL (default `http://127.0.0.1:8082`) |
+| `DEEPMOSAIC_URL` | DeepMosaic worker URL (default `http://127.0.0.1:8081`) |
+| `REPLICATE_API_TOKEN` | Replicate API token (fallback for demask when local SD is down) |
 | `HCAPTCHA_SECRET` | hCaptcha server secret (enables captcha on login) |
 | `HCAPTCHA_SITEKEY` | hCaptcha site key (sent to frontend) |
 
@@ -459,14 +473,31 @@ Each card shows the state name, portal domain, and a direct link to that state's
 
 ### AI Demasking
 
-Removes mosaic censoring and restores faces using three different engines. The
-local engines (IOPaint, DeepMosaic) run in **isolated environments** with their
-own torch + Pillow, separate from the main app — see
+Removes mosaic censoring and restores faces using several engines. The
+local engines (IOPaint, DeepMosaic, SD demask) run in **isolated environments**
+with their own torch + Pillow, separate from the main app — see
 [`docker/docs/IOPAINT_GUIDE.md`](docker/docs/IOPAINT_GUIDE.md) for setup.
 
-#### Replicate API (cloud, recommended)
+#### Local SD demask (GPU, no external API)
 
-Uses state-of-the-art models hosted on [Replicate](https://replicate.com). Requires a Replicate API key.
+Runs a local Stable Diffusion inpainting model (`Sanster/Realistic_Vision_V1.4-inpainting`)
+on your GPU via a dedicated IOPaint instance on port `8082`. No Replicate token
+needed — the entire pipeline runs locally. Requires `setup-ai.ps1 -GPU` so the
+CUDA build of torch is installed in `.venv-iopaint`. On an RTX 4090 a 75-step
+inpainting takes ~30 s (vs ~13 min on CPU).
+
+1. Run `powershell -ExecutionPolicy Bypass -File scripts\setup-ai.ps1 -GPU`
+2. Start all services: `powershell -ExecutionPolicy Bypass -File scripts\start-social-hunt.ps1`
+3. Go to **Demasking → Upload** an image and click **Process**.
+4. The app uses the local SD worker automatically; Replicate is only used as a
+   fallback if the local worker is down.
+
+> **Note:** Demasking a physical face covering (mask, balaclava) hallucinates a
+> plausible face via SD inpainting — it cannot recover the real face underneath.
+
+#### Replicate API (cloud, fallback)
+
+Uses state-of-the-art models hosted on [Replicate](https://replicate.com). Requires a Replicate API key. Used automatically when the local SD worker is not available.
 
 1. Add `replicate_key` in Settings.
 2. Go to **Demasking → Upload** an image.
@@ -476,8 +507,9 @@ Uses state-of-the-art models hosted on [Replicate](https://replicate.com). Requi
 #### IOPaint (interactive)
 
 Runs a local [IOPaint](https://github.com/Sanster/IOPaint) inpainting server
-accessible from the dashboard. IOPaint pins `Pillow==9.5.0` and `torch==2.1.2`,
-so it runs in its own venv (Windows) or container (Docker `--profile ai`).
+accessible from the dashboard. IOPaint pins `Pillow==9.5.0` and pulls
+torch (currently 2.13.0), so it runs in its own venv (Windows) or container
+(Docker `--profile ai`).
 
 1. Start the AI workers — see [`docker/docs/IOPAINT_GUIDE.md`](docker/docs/IOPAINT_GUIDE.md).
 2. Go to **Demasking → IOPaint Inpainting**.
@@ -713,6 +745,7 @@ rather than under a subpath. Proxying it under `/iopaint/` breaks its internal
 - `/` → Social-Hunt (`social-hunt:8000`)
 - `/sh-api/` → Social-Hunt API (`social-hunt:8000`)
 - IOPaint WebUI → direct port `8080` (separate origin, not proxied)
+- IOPaint SD demask → direct port `8082` (not proxied)
 - DeepMosaic API → direct port `8081` (not proxied)
 
 > **Important:** Social-Hunt uses `/sh-api/` exclusively. Do not add a global

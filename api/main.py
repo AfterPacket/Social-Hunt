@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import hashlib
 import json
 import os
 import re
@@ -1350,7 +1351,11 @@ def _detect_facial_hair(
         return "unknown"
 
 
-def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list, bool]:
+def _generate_face_coverage_mask(
+    image_bytes: bytes,
+    target_x: Optional[float] = None,
+    target_y: Optional[float] = None,
+) -> tuple[bytes, list, bool]:
     """
     Generate a PNG inpainting mask that covers the face-covering region
     (gaiter, balaclava, surgical mask, ski mask, etc.) in WHITE.
@@ -1439,6 +1444,32 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list, bool]
     # so any detector will fail.  We place a generous mask in the upper-centre
     # of the frame — statistically where a head appears in portrait/bust shots.
     used_heuristic = False
+    if target_x is not None and target_y is not None:
+        tx, ty = float(target_x), float(target_y)
+        selected_box = next(
+            (b for b in face_boxes if b[3] <= tx <= b[1] and b[0] <= ty <= b[2]),
+            None,
+        )
+        if selected_box is not None:
+            face_boxes = [selected_box]
+            print(f"[Demask] Using detected face at selected point ({tx:.0f},{ty:.0f}).")
+        else:
+            # Fully covered faces have no landmarks; build one local box around
+            # the user's click instead of masking a broad region of the image.
+            # Keep the click fallback close to a normal face, even when the
+            # source is a wide crowd photo. The previous width made a large
+            # blank panel that the inpainting model filled uniformly.
+            fw = min(int(w_img * 0.18), int(h_img * 0.28))
+            fh = int(fw * 1.25)
+            left = max(0, min(w_img - fw, int(tx - fw / 2)))
+            # The user usually clicks the mouth/center of the covering. Extend
+            # upward far enough to include sunglasses and the nose, but keep
+            # the cap outside the reconstruction box.
+            top = max(0, min(h_img - fh, int(ty - fh * 0.75)))
+            face_boxes = [(top, left + fw, top + fh, left)]
+            print(f"[Demask] Using selected target box ({left},{top},{left + fw},{top + fh}).")
+        # Do not enter the broad upper-frame heuristic after an explicit click.
+        used_heuristic = False
     if not face_boxes:
         print(
             "[Demask] No face detected (subject likely fully covered). "
@@ -1467,17 +1498,38 @@ def _generate_face_coverage_mask(image_bytes: bytes) -> tuple[bytes, list, bool]
         # upper nose, which are the strongest identity anchors — leaving them
         # visible constrains the model and reduces hallucinated features.
         pad_x = int(fw * 0.08)
-        # 35 % into the face box = roughly nose-bridge level for a balaclava
-        mask_top = top + int(fh * 0.35)
+        # For an explicitly selected target, include glasses/sunglasses and
+        # the nose so the worker can reconstruct the whole covered face. In
+        # automatic mode keep the conservative lower-face mask.
+        mask_top_fraction = 0.0 if target_x is not None and target_y is not None else 0.35
+        mask_top = top + int(fh * mask_top_fraction)
         mask_bottom = min(h_img, bottom + int(fh * 0.10))
         mask_left = max(0, left - pad_x)
         mask_right = min(w_img, right + pad_x)
 
-        draw.rectangle([mask_left, mask_top, mask_right, mask_bottom], fill=255)
+        # Use a lower-face contour instead of a rectangle. A rectangular mask
+        # is visible after compositing and encourages the model to create a
+        # floating portrait panel around the face.
+        cx = (mask_left + mask_right) // 2
+        lower_width = max(1, int((mask_right - mask_left) * 0.68))
+        jaw_left = max(mask_left, cx - lower_width // 2)
+        jaw_right = min(mask_right, cx + lower_width // 2)
+        draw.polygon(
+            [
+                (mask_left + int(fw * 0.10), mask_top),
+                (mask_right - int(fw * 0.10), mask_top),
+                (mask_right, mask_top + int(fh * 0.28)),
+                (jaw_right, mask_bottom - int(fh * 0.08)),
+                (cx, mask_bottom),
+                (jaw_left, mask_bottom - int(fh * 0.08)),
+                (mask_left, mask_top + int(fh * 0.28)),
+            ],
+            fill=255,
+        )
 
-    # Feather edges so the inpainted region blends naturally at boundaries
-    mask = mask.filter(ImageFilter.GaussianBlur(radius=6))
-    mask = mask.point(lambda p: 255 if p > 25 else 0)
+    # Preserve the feather as grayscale alpha. Thresholding it back to a hard
+    # black/white rectangle was the source of visible seams in the result.
+    mask = mask.filter(ImageFilter.GaussianBlur(radius=12))
 
     buf = BytesIO()
     mask.save(buf, format="PNG")
@@ -1655,6 +1707,8 @@ def _crop_for_inpainting(
 @app.post("/sh-api/demask")
 async def api_demask(
     file: UploadFile = File(...),
+    target_x: Optional[float] = Form(default=None),
+    target_y: Optional[float] = Form(default=None),
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
 ):
     """
@@ -1688,20 +1742,16 @@ async def api_demask(
         replicate_token = replicate_token.get("value")
 
     if not replicate_token:
-        # Try local face-restoration service as last resort
-        try:
-            content = await file.read()
-            restored_bytes = await restore_face(content, strength=0.7)
-            if restored_bytes:
-                return StreamingResponse(
-                    BytesIO(restored_bytes), media_type="image/png"
-                )
-        except Exception as e:
-            print(f"[Demask] Local fallback failed: {e}")
-        raise HTTPException(
-            status_code=400,
-            detail="AI service unavailable. Configure REPLICATE_API_TOKEN in Settings.",
-        )
+        # No Replicate token, but the local SD IOPaint worker may still be
+        # available, so don't hard-fail here. Only block if the local SD
+        # worker is also unreachable.
+        if not await _iopaint_sd_probe():
+            raise HTTPException(
+                status_code=400,
+                detail="Controlled demasking is unavailable. Configure REPLICATE_API_TOKEN in Settings, or start the local SD worker (IOPAINT_SD_URL).",
+            )
+        else:
+            print("[Demask] No Replicate token, but local SD IOPaint worker is reachable - proceeding with local-only mode.")
 
     try:
         # ── 2. Read & encode image ────────────────────────────────────────────
@@ -1734,12 +1784,12 @@ async def api_demask(
         mime = file.content_type or "image/jpeg"
         b64_img = f"data:{mime};base64,{base64.b64encode(content).decode()}"
 
-        rep_client = replicate.Client(api_token=replicate_token)
+        rep_client = replicate.Client(api_token=replicate_token) if replicate_token else None
 
-        # ── 3. Auto-generate face coverage mask ───────────────────────────────
+        # 3. Auto-generate face coverage mask
         print("[Demask] Generating face coverage mask…")
         mask_bytes, face_boxes, used_heuristic = await asyncio.to_thread(
-            _generate_face_coverage_mask, content
+            _generate_face_coverage_mask, content, target_x, target_y
         )
         print(f"[Demask] Mask generated. used_heuristic={used_heuristic}")
 
@@ -1766,9 +1816,10 @@ async def api_demask(
         # ── 4b. Pre-fill gaiter region with skin colour ────────────────────────
         # This prevents SD from "replacing mask with mask" — the model sees
         # flesh-coloured pixels and generates facial features instead.
-        prefilled_content = await asyncio.to_thread(
-            _prefill_mask_with_skin, content, mask_bytes, face_boxes
-        )
+        # Keep original pixels as conditioning context. A flat skin swatch in
+        # the masked area causes the local worker to produce black or uniform
+        # fills and removes useful edge/shadow information.
+        prefilled_content = content
 
         # ── 5. Crop face region for focused, low-upscale inpainting ──────────
         # Sending just the face crop to SD (resized to 512×512) and pasting the
@@ -1797,6 +1848,8 @@ async def api_demask(
         v_inpaint_secondary = None
 
         try:
+            if rep_client is None:
+                raise RuntimeError("no Replicate token")
             m_primary = await asyncio.to_thread(rep_client.models.get, INPAINT_PRIMARY)
             v_inpaint_primary = m_primary.latest_version.id
             print(f"[Demask] Primary model: {INPAINT_PRIMARY}@{v_inpaint_primary}")
@@ -1804,6 +1857,8 @@ async def api_demask(
             print(f"[Demask] Could not fetch primary model ({e}); will use secondary.")
 
         try:
+            if rep_client is None:
+                raise RuntimeError("no Replicate token")
             m_secondary = await asyncio.to_thread(
                 rep_client.models.get, INPAINT_SECONDARY
             )
@@ -1830,7 +1885,7 @@ async def api_demask(
             "second head, extra head, cloned face, misaligned facial features, "
             "warped face, stretched face, extreme closeup, zoomed face, "
             "out-of-frame face, poorly placed eyes, asymmetrical eyes, "
-            "mask, balaclava, face covering, surgical mask, sunglasses, "
+            "mask, balaclava, face covering, surgical mask, sunglasses, glasses, "
             "distorted, blurry, deformed, bad anatomy, watermark, text, logo, "
             "nsfw, nude, naked, explicit"
         )
@@ -1891,6 +1946,11 @@ async def api_demask(
             + (" " + extra_gender_negative if extra_gender_negative else "")
         )
 
+        # Derive a stable seed from the uploaded pixels.  That makes reruns of
+        # the same image reproducible while avoiding one global latent face
+        # being reused for every unrelated upload.
+        demask_seed = int(hashlib.sha256(content).hexdigest()[:8], 16)
+
         INPAINT_INPUT = {
             "image": crop_b64_img,
             "mask": crop_b64_mask,
@@ -1901,10 +1961,10 @@ async def api_demask(
                 + f"{hair_positive} "
                 + "same head pose and camera angle as input, "
                 + "same face size and framing as input, "
-                + "neutral expression, mouth closed, eyes aligned, "
-                + "realistic skin texture with visible pores, subtle film grain, "
-                + "natural lighting matching the scene, sharp focus, "
-                + "fill only the covered face region, no face covering, no mask"
+                + "aligned facial landmarks; natural nose, nostrils, closed mouth, cheeks, jaw and chin; "
+                + "ears and temples aligned when visible; eyes aligned; "
+                + "realistic skin texture and lighting matching the scene; "
+                + "remove glasses and fill only the covered face region, no mask"
             ),
             "negative_prompt": NEGATIVE,
             "num_outputs": 1,
@@ -1916,10 +1976,48 @@ async def api_demask(
             # produces more organic, photographic skin compared to the fully
             # deterministic DPMSolverMultistep.
             "scheduler": "K_EULER_ANCESTRAL",
+            # Keep the result reproducible for the same upload and mask.  This
+            # does not make the hidden face factual; it only prevents a new
+            # hallucinated face on every click.
+            "seed": demask_seed,
         }
 
-        # ── 7a. Try primary (realistic-vision photorealistic fine-tune) ────────
-        if v_inpaint_primary:
+        inpainted_bytes_cached = None  # set by local SD path; skips Replicate download
+
+        # 7a-LOCAL: Try the local SD IOPaint worker first (no API key needed).
+        # Uses the same SD model class as the Replicate path below, but runs on
+        # the local GPU via a dedicated IOPaint instance on IOPAINT_SD_URL.
+        # Falls through to Replicate if the local worker is down or fails.
+        if await _iopaint_sd_probe():
+            print(f"[Demask] Local SD IOPaint worker reachable at {IOPAINT_SD_URL}; running local inpainting...")
+            local_bytes = await _iopaint_sd_inpaint(
+                image_b64=crop_b64_img,
+                mask_b64=crop_b64_mask,
+                prompt=INPAINT_INPUT["prompt"],
+                negative_prompt=INPAINT_INPUT["negative_prompt"],
+                steps=INPAINT_INPUT["num_inference_steps"],
+                guidance_scale=INPAINT_INPUT["guidance_scale"],
+                sampler="Euler a",
+                seed=INPAINT_INPUT["seed"],
+                strength=0.72,
+                mask_blur=4,
+            )
+            if local_bytes and _inpaint_result_is_degenerate(local_bytes, crop_b64_mask):
+                print("[Demask] Local SD returned a black/uniform masked region; rejecting result and trying Replicate.")
+                local_bytes = None
+            if local_bytes:
+                inpainted_bytes_cached = local_bytes
+                inpainted_url = "local"
+                print(f"[Demask] Local SD inpainting succeeded ({len(local_bytes)} bytes); skipping Replicate.")
+            else:
+                print("[Demask] Local SD inpainting failed; falling back to Replicate API.")
+        elif IOPAINT_SD_URL:
+            print(f"[Demask] Local SD IOPaint worker not reachable at {IOPAINT_SD_URL}; using Replicate.")
+        else:
+            print("[Demask] No local SD worker configured (IOPAINT_SD_URL unset); using Replicate.")
+
+        # 7a. Try primary (realistic-vision photorealistic fine-tune)
+        if not inpainted_url and v_inpaint_primary:
             print(f"[Demask] Running primary inpainting ({INPAINT_PRIMARY})…")
             try:
                 out = await asyncio.to_thread(
@@ -1934,6 +2032,12 @@ async def api_demask(
                     print(f"[Demask] Primary succeeded → {inpainted_url}")
             except Exception as e:
                 print(f"[Demask] Primary inpainting failed ({e}); trying secondary.")
+
+        if not inpainted_url and rep_client is None:
+            raise HTTPException(
+                status_code=502,
+                detail="The local SD worker rejected its output. Restart it with the demasking worker settings, or configure REPLICATE_API_TOKEN for the cloud fallback.",
+            )
 
         # ── 7b. Fallback: SD 1.5 base inpainting ──────────────────────────────
         if not inpainted_url:
@@ -1952,11 +2056,12 @@ async def api_demask(
             except Exception as e:
                 print(f"[Demask] Secondary inpainting failed: {e}")
 
-        # ── 7c. Last-resort fallback: pix2pix on the full image ───────────────
+        # ── 7c. Last-resort fallback: pix2pix on the face crop ────────────────
+        # Never run an image-to-image fallback over the full photo.  Its output
+        # is later composited as a crop; passing the full image here produces a
+        # resized rectangular overlay (and can alter unrelated people).
         if not inpainted_url:
-            print("[Demask] Falling back to instruct-pix2pix on full image…")
-            mime = file.content_type or "image/jpeg"
-            b64_full = f"data:{mime};base64,{base64.b64encode(content).decode()}"
+            print("[Demask] Falling back to instruct-pix2pix on the face crop…")
             try:
                 m_p2p = await asyncio.to_thread(
                     rep_client.models.get, "timothybrooks/instruct-pix2pix"
@@ -1971,7 +2076,7 @@ async def api_demask(
                     rep_client.run,
                     f"timothybrooks/instruct-pix2pix:{v_p2p}",
                     input={
-                        "image": b64_full,
+                        "image": crop_b64_img,
                         "prompt": (
                             "remove the face covering without changing framing, "
                             "preserve original head pose and proportions, "
@@ -1983,6 +2088,7 @@ async def api_demask(
                         "num_inference_steps": 75,
                         "image_guidance_scale": 2.0,
                         "guidance_scale": 8.0,
+                        "seed": INPAINT_INPUT["seed"],
                     },
                 )
                 if isinstance(output_fb, list) and len(output_fb) > 0:
@@ -1994,7 +2100,13 @@ async def api_demask(
 
         if not inpainted_url:
             raise HTTPException(
-                status_code=500, detail="Inpainting produced no output."
+                status_code=502,
+                detail=(
+                    "The local demasking worker did not return a usable image. "
+                    "Restart the worker with scripts\\start-social-hunt.ps1 and verify port 8082 is ready."
+                    if rep_client is None
+                    else "The configured AI providers did not return a usable image. Check the worker logs and Replicate token."
+                ),
             )
 
         print(f"[Demask] Inpainting complete → {inpainted_url}")
@@ -2006,14 +2118,25 @@ async def api_demask(
         # using the mask so only the covered region changes.
         # Download inpainted bytes ONCE so both the primary composite and any
         # fallback composite path use the same data (Replicate URLs expire quickly).
-        print("[Demask] Downloading inpainted result…")
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as hc:
-                inp_resp = await hc.get(inpainted_url)
-            inpainted_bytes_cached = inp_resp.content
-        except Exception as dl_err:
-            print(f"[Demask] Download failed: {dl_err}")
-            raise HTTPException(status_code=500, detail=f"Could not download inpainted result: {dl_err}")
+        # The local SD path already set inpainted_bytes_cached directly, so
+        # skip the Replicate URL download in that case.
+        if not inpainted_bytes_cached:
+            print("[Demask] Downloading inpainted result...")
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as hc:
+                    inp_resp = await hc.get(inpainted_url)
+                inpainted_bytes_cached = inp_resp.content
+            except Exception as dl_err:
+                print(f"[Demask] Download failed: {dl_err}")
+                raise HTTPException(status_code=500, detail=f"Could not download inpainted result: {dl_err}")
+        else:
+            print("[Demask] Using local SD result (no download needed).")
+
+        if _inpaint_result_is_degenerate(inpainted_bytes_cached, crop_b64_mask):
+            raise HTTPException(
+                status_code=502,
+                detail="The AI engine returned a blank or invalid reconstruction. No altered image was saved.",
+            )
 
         print("[Demask] Compositing crop result onto original image…")
         try:
@@ -2071,6 +2194,8 @@ async def api_demask(
                 return StreamingResponse(buf2, media_type="image/png")
             except Exception as fb_err:
                 print(f"[Demask] Fallback composite also failed ({fb_err}); returning raw.")
+                if inpainted_bytes_cached:
+                    return StreamingResponse(BytesIO(inpainted_bytes_cached), media_type="image/png")
                 async with httpx.AsyncClient() as hc2:
                     img_res2 = await hc2.get(inpainted_url)
                 return StreamingResponse(BytesIO(img_res2.content), media_type="image/png")
@@ -2102,6 +2227,100 @@ iopaint_process: Optional[subprocess.Popen] = None
 # or as a remote sibling container. Set IOPAINT_URL (e.g. http://iopaint:8080)
 # to use the remote mode, which is how the docker-compose `ai` profile runs it.
 IOPAINT_URL = os.getenv("IOPAINT_URL", "").strip().rstrip("/")
+
+# Optional second IOPaint instance dedicated to SD inpainting for the Demask
+# feature. Runs on a separate port (e.g. :8082) with an SD model
+# (Sanster/Realistic_Vision_V1.4-inpainting) on the GPU. When reachable, the
+# Demask pipeline uses this locally instead of the Replicate API, falling back
+# to Replicate if the local SD worker is down or fails. This keeps the heavy
+# torch/diffusers stack in the isolated .venv-iopaint, never in the main .venv.
+IOPAINT_SD_URL = os.getenv("IOPAINT_SD_URL", "").strip().rstrip("/")
+
+
+async def _iopaint_sd_probe() -> bool:
+    """Return True if the local SD IOPaint worker answers at IOPAINT_SD_URL."""
+    if not IOPAINT_SD_URL:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as hc:
+            resp = await hc.get(IOPAINT_SD_URL + "/")
+        return resp.status_code < 500
+    except Exception:
+        return False
+
+
+async def _iopaint_sd_inpaint(
+    image_b64: str,
+    mask_b64: str,
+    prompt: str,
+    negative_prompt: str,
+    steps: int = 75,
+    guidance_scale: float = 5.5,
+    sampler: str = "Euler a",
+    seed: int = -1,
+    mask_blur: int = 11,
+    strength: float = 1.0,
+) -> Optional[bytes]:
+    """
+    Run SD inpainting on the local IOPaint SD worker and return the inpainted
+    image as PNG bytes, or None if the worker is unreachable / the call fails.
+
+    Maps the Replicate inpainting input fields to IOPaint's InpaintRequest
+    schema (sd_steps, sd_guidance_scale, sd_sampler, sd_seed, ...). The IOPaint
+    /api/v1/inpaint endpoint returns raw image bytes (not a URL like Replicate),
+    so the caller can composite directly without an extra download hop.
+    """
+    if not IOPAINT_SD_URL:
+        return None
+    payload = {
+        "image": image_b64,
+        "mask": mask_b64,
+        "prompt": prompt,
+        "negative_prompt": negative_prompt,
+        "sd_steps": steps,
+        "sd_guidance_scale": guidance_scale,
+        "sd_sampler": sampler,
+        "sd_seed": seed,
+        "sd_mask_blur": mask_blur,
+        "sd_strength": strength,
+        "sd_match_histograms": False,
+    }
+    try:
+        # SD inference on GPU is ~10-30s; allow up to 5 min for cold starts / CPU fallback.
+        async with httpx.AsyncClient(timeout=300.0) as hc:
+            resp = await hc.post(
+                IOPAINT_SD_URL + "/api/v1/inpaint",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+            )
+        if resp.status_code != 200:
+            print(f"[Demask] Local SD IOPaint returned HTTP {resp.status_code}: {resp.text[:300]}")
+            return None
+        return resp.content
+    except Exception as e:
+        print(f"[Demask] Local SD IOPaint call failed: {e}")
+        return None
+
+
+def _inpaint_result_is_degenerate(image_bytes: bytes, mask_b64: str) -> bool:
+    """Reject blank/black/flat outputs before they can be composited."""
+    try:
+        import numpy as np
+        from PIL import Image as PILImage
+
+        encoded = mask_b64.split(",", 1)[1] if "," in mask_b64 else mask_b64
+        mask = PILImage.open(BytesIO(base64.b64decode(encoded))).convert("L")
+        image = PILImage.open(BytesIO(image_bytes)).convert("RGB")
+        mask = mask.resize(image.size, PILImage.NEAREST)
+        pixels = np.asarray(image)[np.asarray(mask) > 180]
+        if pixels.size == 0:
+            return True
+        mean = float(pixels.mean())
+        spread = float(pixels.std())
+        return (mean < 12 and spread < 12) or (mean > 248 and spread < 8) or spread < 2.5
+    except Exception as exc:
+        print(f"[Demask] Could not validate inpaint result: {exc}")
+        return False
 
 
 async def _iopaint_remote_probe() -> bool:

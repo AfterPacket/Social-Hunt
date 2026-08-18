@@ -14,8 +14,8 @@
   subprocesses. This is the exact same remote-mode wiring the docker-compose
   `ai` profile uses, just with local processes instead of containers.
 
-  Use -NoIOPaint / -NoDeepMosaic to skip either worker. Use -Stop to kill the
-  processes started by this script (tracked in data/.ai-pids.json).
+  Use -NoIOPaint / -NoIOPaintSD / -NoDeepMosaic to skip a worker. Use -Stop to
+  kill the processes started by this script (tracked in data/.ai-pids.json).
 
 .PARAMETER Stop
   Stop any Social-Hunt / IOPaint / DeepMosaic processes previously started by
@@ -23,6 +23,9 @@
 
 .PARAMETER NoIOPaint
   Do not start the IOPaint worker.
+
+.PARAMETER NoIOPaintSD
+  Do not start the IOPaint SD (demask) worker on :8082.
 
 .PARAMETER NoDeepMosaic
   Do not start the DeepMosaic worker.
@@ -35,6 +38,7 @@
 param(
     [switch]$Stop,
     [switch]$NoIOPaint,
+    [switch]$NoIOPaintSD,
     [switch]$NoDeepMosaic
 )
 
@@ -188,6 +192,42 @@ if (-not $NoIOPaint) {
     Remove-Item Env:HF_HOME        -ErrorAction SilentlyContinue
 }
 
+# 2b) IOPaint SD worker (port 8082) for demasking
+# A second IOPaint instance dedicated to SD inpainting for the Demask feature.
+# Uses Sanster/Realistic_Vision_V1.4-inpainting (photorealistic SD 1.5 fine-tune,
+# the local equivalent of the Replicate model). Runs on GPU (--device cuda) so
+# SD inference is ~10-30s on a 4090. The lama IOPaint on :8080 stays on CPU for
+# object-removal in the WebUI. Skip with -NoIOPaintSD.
+if (-not $NoIOPaint -and -not $NoIOPaintSD) {
+    Write-Host '[2b/3] Starting IOPaint SD (demask) on :8082 ...'
+    $IopaintCache = Join-Path $Root 'data\iopaint-cache'
+    New-Item -ItemType Directory -Force -Path $IopaintCache | Out-Null
+    $env:TORCH_HOME     = Join-Path $IopaintCache 'torch'
+    $env:XDG_CACHE_HOME = $IopaintCache
+    $env:HF_HOME        = Join-Path $IopaintCache 'huggingface'
+
+    $IopaintExe = Join-Path $Root '.venv-iopaint\Scripts\iopaint.exe'
+    $IoSdOut = Join-Path $LogDir 'iopaint-sd-stdout.log'
+    $IoSdErr  = Join-Path $LogDir 'iopaint-sd-stderr.log'
+    # The SD safety checker can classify a realistic face reconstruction as a
+    # false-positive and return a completely black image. This worker is used
+    # only for the explicitly selected demasking crop, so disable that checker
+    # here; the API still rejects blank/invalid outputs before compositing.
+    $ioSdArgs = 'start --host 127.0.0.1 --port 8082 --device cuda --model Sanster/Realistic_Vision_V1.4-inpainting --disable-nsfw-checker'
+    if (-not (Test-Path $IopaintExe)) {
+        $proc = Start-Process -FilePath $IopaintPy -ArgumentList "-m iopaint $ioSdArgs" -WorkingDirectory $Root -PassThru -WindowStyle Hidden -RedirectStandardOutput $IoSdOut -RedirectStandardError $IoSdErr
+    } else {
+        $proc = Start-Process -FilePath $IopaintExe -ArgumentList $ioSdArgs -WorkingDirectory $Root -PassThru -WindowStyle Hidden -RedirectStandardOutput $IoSdOut -RedirectStandardError $IoSdErr
+    }
+    Save-Pid 'iopaint-sd' $proc.Id
+    Write-Host "      pid $($proc.Id) -> http://127.0.0.1:8082/" -ForegroundColor DarkGray
+    Write-Host '      (first launch downloads the SD model ~4GB, be patient)' -ForegroundColor DarkGray
+    Write-Host "      logs: $IoSdErr" -ForegroundColor DarkGray
+    Remove-Item Env:TORCH_HOME     -ErrorAction SilentlyContinue
+    Remove-Item Env:XDG_CACHE_HOME -ErrorAction SilentlyContinue
+    Remove-Item Env:HF_HOME        -ErrorAction SilentlyContinue
+}
+
 # --- 3) Social-Hunt main app (port 8000) --------------------------------------
 Write-Host '[3/3] Starting Social-Hunt on :8000 ...'
 $RunPy = Join-Path $Root 'run.py'
@@ -201,6 +241,7 @@ if (-not (Test-Path $RunPy)) {
 # Start-Process inherits the current $env: block, so we set them here.
 if (-not $NoIOPaint)    { $env:IOPAINT_URL    = 'http://127.0.0.1:8080' }
 if (-not $NoDeepMosaic) { $env:DEEPMOSAIC_URL = 'http://127.0.0.1:8081' }
+if (-not $NoIOPaint -and -not $NoIOPaintSD) { $env:IOPAINT_SD_URL = 'http://127.0.0.1:8082' }
 
 $ShOut = Join-Path $LogDir 'social-hunt-stdout.log'
 $ShErr  = Join-Path $LogDir 'social-hunt-stderr.log'
@@ -214,6 +255,7 @@ Write-Host "      logs: $ShErr" -ForegroundColor DarkGray
 # Clear the loopback URL env vars we set for the main app.
 Remove-Item Env:IOPAINT_URL    -ErrorAction SilentlyContinue
 Remove-Item Env:DEEPMOSAIC_URL -ErrorAction SilentlyContinue
+Remove-Item Env:IOPAINT_SD_URL -ErrorAction SilentlyContinue
 
 # --- summary ------------------------------------------------------------------
 Write-Host ''
@@ -223,6 +265,7 @@ Write-Host '==================================================' -ForegroundColor
 Write-Host ''
 Write-Host '  Social-Hunt    : http://127.0.0.1:8000' -ForegroundColor White
 if (-not $NoIOPaint)    { Write-Host '  IOPaint WebUI  : http://127.0.0.1:8080' -ForegroundColor White }
+if (-not $NoIOPaint -and -not $NoIOPaintSD) { Write-Host '  IOPaint SD (demask): http://127.0.0.1:8082' -ForegroundColor White }
 if (-not $NoDeepMosaic) { Write-Host '  DeepMosaic API : http://127.0.0.1:8081/status' -ForegroundColor White }
 Write-Host ''
 Write-Host '  Logs: data\logs\*.log' -ForegroundColor DarkGray

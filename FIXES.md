@@ -726,3 +726,68 @@ root cause.
   first 16 bytes (hex) in the error message. Future unsupported-format issues
   will surface their magic bytes in the 400 response instead of the generic
   `UnidentifiedImageError`.
+
+## Local SD demasking built into Social-Hunt (no external API required)
+
+**Cause:** The Demask feature previously required a `REPLICATE_API_TOKEN`
+to call a remote Stable Diffusion inpainting model (lucataco/realistic-vision-v5)
+on Replicate's cloud. Without a token the endpoint hard-failed with:
+
+```
+Error: AI service unavailable. Configure REPLICATE_API_TOKEN in Settings,
+or start the local SD worker (IOPAINT_SD_URL).
+```
+
+The user wanted to run demasking locally on their RTX 4090 without relying on
+a third-party API (cost, privacy, rate limits, network dependency).
+
+**Fix:**
+
+- `api/main.py`: added `IOPAINT_SD_URL` env var, `_iopaint_sd_probe()`, and
+  `_iopaint_sd_inpaint()`. The `api_demask` endpoint now tries the local SD
+  IOPaint worker FIRST, before falling back to Replicate. If the local worker is
+  reachable, the SD inpainting runs entirely on the local GPU and Replicate is
+  skipped (no token needed, no network call, no cost).
+
+  The field mapping from the Replicate schema to IOPaint's SD schema is:
+  `num_inference_steps` -> `sd_steps`, `guidance_scale` -> `sd_guidance_scale`,
+  `scheduler: K_EULER_ANCESTRAL` -> `sd_sampler: Euler a`, `seed` -> `sd_seed: -1`
+  (random). IOPaint returns raw image bytes (not a URL like Replicate), so the
+  result is composited directly without a download step.
+
+  Replicate remains the fallback if the local SD worker is down or no
+  `IOPAINT_SD_URL` is set, preserving backward compatibility for users who
+  prefer the cloud API.
+
+- `scripts/start-social-hunt.ps1`: added section 2b which starts a second
+  IOPaint instance on port 8082 dedicated to SD inpainting, using the model
+  `Sanster/Realistic_Vision_V1.4-inpainting` (a photorealistic SD 1.5 fine-tune,
+  the local equivalent of the Replicate model). The main app gets
+  `IOPAINT_SD_URL=http://127.0.0.1:8082` so `api_demask` finds it. The lama
+  IOPaint on :8080 (object removal in the WebUI) is unchanged.
+
+  The SD model (~4 GB) downloads from HuggingFace on first launch and is cached
+  in `data/iopaint-cache/huggingface/hub/`; subsequent starts load from disk in
+  ~30 s.
+
+**Why CPU torch was the default and how it was fixed:**
+
+`iopaint==1.6.0` pulls CPU-only torch by default on Windows (`torch==2.13.0+cpu`).
+The SD worker is started with `--device cuda`, but without a CUDA build of
+torch it silently falls back to CPU with only a warning in the log:
+
+```
+WARNING | iopaint.runtime:check_device:68 - CUDA is not available, use cpu instead
+```
+
+On CPU, SD inpainting takes ~10.5 s/step x 75 steps = ~13 min/image. On the
+4090 with CUDA torch it is ~2.4 steps/s = ~30 s/image (a ~25x speedup).
+
+`scripts/setup-ai.ps1` now accepts a `-GPU` switch that reinstalls the CUDA
+build of torch (`--force-reinstall` is required because the version string is
+identical: `2.13.0` vs `2.13.0+cu126`) from the PyTorch CUDA index
+(`https://download.pytorch.org/whl/cu126`). After install it verifies
+`torch.cuda.is_available()` and prints the GPU name.
+
+The lama IOPaint on :8080 stays on CPU by design (lama is ~200 MB and fast on
+CPU); only the SD worker on :8082 benefits from CUDA.

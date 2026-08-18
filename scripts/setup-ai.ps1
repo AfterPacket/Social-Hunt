@@ -16,13 +16,22 @@
 .PARAMETER Force
   Recreate the AI venvs even if they already exist.
 
+.PARAMETER GPU
+  Install CUDA-enabled torch in .venv-iopaint so the SD demask worker uses
+  the GPU (e.g. RTX 4090) instead of CPU. iopaint==1.6.0 pulls CPU torch by
+  default; this upgrades it to the matching CUDA build from the PyTorch
+  index. Without this, --device cuda is silently downgraded to CPU and SD
+  inpainting takes ~13 min/image instead of ~30s on a 4090.
+
 .EXAMPLE
   pwsh scripts/setup-ai.ps1
   pwsh scripts/setup-ai.ps1 -Force
+  pwsh scripts/setup-ai.ps1 -GPU
 #>
 [CmdletBinding()]
 param(
-    [switch]$Force
+    [switch]$Force,
+    [switch]$GPU
 )
 
 $ErrorActionPreference = 'Stop'
@@ -116,6 +125,41 @@ if ((Test-Path $IopaintPy) -and -not $Force) {
     if ($LASTEXITCODE -ne 0) {
         Write-Host '[error] iopaint install failed. Network or wheel issue.' -ForegroundColor Red
         exit 1
+    }
+
+    # CUDA torch upgrade: iopaint==1.6.0 pulls CPU-only torch by default on
+    # Windows. The SD demask worker (start-social-hunt.ps1 section 2b) passes
+    # --device cuda, but without a CUDA build of torch it silently falls back
+    # to CPU with just a warning, making SD inpainting take ~13 min/image on a
+    # 4090. This step replaces the CPU wheel with the CUDA build from the
+    # PyTorch index, keeping the same torch version (pip --force-reinstall
+    # is needed because the version string is identical: 2.13.0 vs 2.13.0+cu).
+    if ($GPU) {
+        $torchVer = (& $IopaintPy -c 'import torch; print(torch.__version__)') 2>$null
+        if ($torchVer -and ($torchVer -match '^(\d+\.\d+\.\d+)')) {
+            $tv = $Matches[1]
+            $tvMinor = $Matches[1].Split('.')[1]
+            # torchvision version that ships with this torch (torch 2.x -> torchvision 0.(x+15).0)
+            # but iopaint pins torchvision loosely; just reinstall the matching CUDA build.
+            Write-Host "[3.5/5] Upgrading torch $tv to CUDA build (GPU mode) ..." -ForegroundColor Cyan
+            # cu126 has torch 2.13.0; fall back to the index that carries this version.
+            & $IopaintPy -m pip install --no-cache-dir --force-reinstall "torch==$tv" 'torchvision' --index-url https://download.pytorch.org/whl/cu126
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host '[warn] CUDA torch install failed; SD worker will fall back to CPU.' -ForegroundColor Yellow
+            } else {
+                $cudaOk = (& $IopaintPy -c 'import torch; print(torch.cuda.is_available())') 2>$null
+                if ($cudaOk -match 'True') {
+                    $devName = (& $IopaintPy -c 'import torch; print(torch.cuda.get_device_name(0))') 2>$null
+                    Write-Host "[info] CUDA torch OK: $devName" -ForegroundColor Green
+                } else {
+                    Write-Host '[warn] CUDA torch installed but torch.cuda.is_available() is False.' -ForegroundColor Yellow
+                }
+            }
+        } else {
+            Write-Host '[warn] Could not detect torch version; skipping CUDA upgrade.' -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host '[info] Skipping CUDA torch upgrade (no -GPU flag). SD demask will run on CPU.' -ForegroundColor DarkGray
     }
 
     # pillow-avif-plugin: Pillow 9.5.0 (pinned by iopaint 1.6.0) cannot decode
@@ -469,10 +513,12 @@ Write-Host 'Next step: start everything with'
 Write-Host '  pwsh scripts/start-social-hunt.ps1' -ForegroundColor Cyan
 Write-Host ''
 Write-Host 'Services (when started):'
-Write-Host '  Social-Hunt   : http://127.0.0.1:8000'
-Write-Host '  IOPaint WebUI : http://127.0.0.1:8080'
-Write-Host '  DeepMosaic API: http://127.0.0.1:8081/status'
+Write-Host '  Social-Hunt      : http://127.0.0.1:8000'
+Write-Host '  IOPaint WebUI    : http://127.0.0.1:8080'
+Write-Host '  IOPaint SD demask: http://127.0.0.1:8082  (requires -GPU for CUDA)'
+Write-Host '  DeepMosaic API   : http://127.0.0.1:8081/status'
 Write-Host ''
 Write-Host 'NOTE: If DeepMosaics models are missing, /process will return 500.'
 Write-Host '      Re-run this script or manually run download_deepmosaic_models.py.' -ForegroundColor DarkGray
+Write-Host 'NOTE: For GPU-accelerated SD demasking, re-run with -GPU to install CUDA torch.' -ForegroundColor DarkGray
 Write-Host ''
