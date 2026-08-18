@@ -108,17 +108,30 @@ if ((Test-Path $IopaintPy) -and -not $Force) {
     & $Py -m venv $IopaintVenv
     if ($LASTEXITCODE -ne 0) { Write-Host '[error] venv creation failed' -ForegroundColor Red; exit 1 }
 
-    Write-Host '[2/4] Upgrading pip in .venv-iopaint ...'
+    Write-Host '[2/5] Upgrading pip in .venv-iopaint ...'
     & $IopaintPy -m pip install --upgrade pip wheel | Out-Null
 
-    Write-Host '[3/4] Installing iopaint==1.6.0 (this pulls torch 2.1.2 + Pillow 9.5.0, isolated here) ...'
+    Write-Host '[3/5] Installing iopaint==1.6.0 (this pulls torch 2.1.2 + Pillow 9.5.0, isolated here) ...'
     & $IopaintPy -m pip install 'iopaint==1.6.0'
     if ($LASTEXITCODE -ne 0) {
         Write-Host '[error] iopaint install failed. Network or wheel issue.' -ForegroundColor Red
         exit 1
     }
 
-    Write-Host '[4/4] Verifying iopaint import ...'
+    # pillow-avif-plugin: Pillow 9.5.0 (pinned by iopaint 1.6.0) cannot decode
+    # AVIF images. Browsers and phone cameras increasingly save .jpg files
+    # that are actually AVIF (magic bytes 'ftypavif'); the WebUI canvas renders
+    # them fine via native browser AVIF support, but the backend Image.open()
+    # raises UnidentifiedImageError -> 500 'cannot identify image file'. The
+    # plugin registers itself on PIL import, so it must be installed AFTER
+    # iopaint (which pins Pillow).
+    Write-Host '[4/5] Installing pillow-avif-plugin (adds AVIF decode to Pillow 9.5.0) ...'
+    & $IopaintPy -m pip install 'pillow-avif-plugin'
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '[warn] pillow-avif-plugin install failed; AVIF .jpg uploads will fail.' -ForegroundColor Yellow
+    }
+
+    Write-Host '[5/5] Verifying iopaint import ...'
     # Avoid double quotes in -c (PowerShell strips them for native commands).
     & $IopaintPy -c 'import iopaint'
     if ($LASTEXITCODE -ne 0) {
@@ -179,7 +192,10 @@ print('PATCHED' if patched else 'NOT FOUND')
     # Patch iopaint/helper.py: decode_base64_to_image crashes with
     # UnidentifiedImageError when the WebUI frontend sends empty/None base64
     # to /api/v1/inpaint (same browser bug as gen-info, but on the inpaint
-    # endpoint). Add a guard that raises a clear ValueError instead.
+    # endpoint), OR when the uploaded image is in a format Pillow cannot
+    # decode (e.g. AVIF without pillow-avif-plugin). Add a guard that raises a
+    # clear ValueError instead, including the first 16 bytes of the image so
+    # the magic bytes (e.g. 'ftypavif') are visible in the 400 response.
     $IoHelperPy = Join-Path $IopaintVenv 'Lib\site-packages\iopaint\helper.py'
     if (Test-Path $IoHelperPy) {
         $helperPatch = @"
@@ -208,7 +224,14 @@ replacement = '''def decode_base64_to_image(
     if not image_bytes:
         raise ValueError("Decoded image bytes are empty")
     ext = get_image_ext(image_bytes)
-    image = Image.open(io.BytesIO(image_bytes))'''
+    try:
+        image = Image.open(io.BytesIO(image_bytes))
+    except Exception as e:
+        first_bytes = image_bytes[:16].hex() if image_bytes else 'empty'
+        raise ValueError(
+            f"Cannot decode image (format unsupported by Pillow): {e}. "
+            f"bytes_len={len(image_bytes)}, first_bytes_hex={first_bytes}"
+        )'''
 new_text = re.sub(pattern, replacement, text, count=1, flags=re.DOTALL)
 if new_text != text:
     with open(p, 'w', encoding='utf-8') as f:

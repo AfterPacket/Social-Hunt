@@ -678,3 +678,43 @@ coverings), use either:
 DeepMosaic's **Clean** mode removes **digital mosaic pixelation**
 (Japanese-style censorship blur), not physical face coverings. It will return
 the image unchanged if no mosaic pixelation is detected.
+
+## IOPaint 400: cannot identify image file (AVIF image with a .jpg extension)
+
+**Cause:** The user's upload `original (1).jpg` was actually an **AVIF** file
+(magic bytes `ftypavif` at offset 4), despite the `.jpg` extension. Browsers
+and phone cameras increasingly save AVIF images with a `.jpg` extension. The
+IOPaint WebUI canvas renders the image fine (browsers have native AVIF
+support), but the backend `decode_base64_to_image()` calls
+`Image.open(io.BytesIO(avif_bytes))`, and **Pillow 9.5.0** (the version pinned
+by `iopaint==1.6.0`) **does not support AVIF**. `Image.open` raises
+`UnidentifiedImageError`, which surfaced in the browser as:
+
+```
+400: Invalid image or mask data: cannot identify image file <_io.BytesIO object at 0x...>
+```
+
+The 400 (not 500) is from the `api_inpaint` try/except guard added in the
+previous fix — without that guard it would have been a 500 crash. The error
+message does not name AVIF because Pillow's `UnidentifiedImageError` does not
+report the file magic bytes.
+
+**Why it hid:** The `.jpg` extension is a lie. Every tool that inspects the
+extension (the OS, the browser file picker, the WebUI canvas) reports "JPEG",
+so AVIF is never suspected. The bug only appears in the backend where Pillow
+parses the actual bytes. Adding debug logging to `decode_base64_to_image`
+(revealing `first_bytes=b'\x00\x00\x00 ftypavif...'`) was what identified the
+root cause.
+
+**Fix:**
+
+- `scripts/setup-ai.ps1`: installs `pillow-avif-plugin` into `.venv-iopaint`
+  immediately after `iopaint==1.6.0`. The plugin registers itself on `PIL`
+  import and adds an AVIF decoder to Pillow 9.5.0. It must be installed AFTER
+  iopaint (which pins Pillow) so it binds to the pinned version.
+
+- `iopaint/helper.py` (patched by `setup-ai.ps1`): `decode_base64_to_image`
+  now wraps `Image.open` in a try/except that includes `bytes_len` and the
+  first 16 bytes (hex) in the error message. Future unsupported-format issues
+  will surface their magic bytes in the 400 response instead of the generic
+  `UnidentifiedImageError`.
