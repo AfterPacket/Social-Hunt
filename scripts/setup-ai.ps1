@@ -155,45 +155,52 @@ if ((Test-Path $IopaintPy) -and -not $Force) {
     # corrupted multipart upload to /api/v1/gen-info (a browser bug in IOPaint
     # 1.6.0). load_img() then raises UnidentifiedImageError and the request
     # 500s, surfacing as "cannot identify image file <_io.BytesIO object>".
-    # We insert a guard that returns empty GenInfoResponse on empty/invalid
-    # data so the upload flow continues to the inpaint step. Re-applied
-    # after every install because the wheel is not editable in git.
+    # We replace the def+load_img block with a guarded version that returns
+    # empty GenInfoResponse on empty/invalid data. Uses regex (not line
+    # skipping) so the original load_img call can never survive the patch.
+    # Re-applied after every install because the wheel is not editable in git.
     $IoApiPy = Join-Path $IopaintVenv 'Lib\site-packages\iopaint\api.py'
     if (Test-Path $IoApiPy) {
         $patchPy = @"
-import sys
+import sys, re
 p = sys.argv[1]
 with open(p, encoding='utf-8') as f:
-    lines = f.readlines()
-if any('Guard against empty/corrupted multipart uploads' in l for l in lines):
-    print('already patched')
+    text = f.read()
+if 'Guard against empty/corrupted multipart uploads' in text:
+    # Idempotent: also strip a leftover duplicate original load_img line
+    # from a previous buggy patch run, so re-running setup-ai.ps1 fixes it.
+    text2 = re.sub(
+        r'(return GenInfoResponse\(prompt="", negative_prompt=""\)\n)(\s*_, _, info = load_img\(file\.file\.read\(\), return_info=True\)\n)',
+        r'\1',
+        text,
+        count=1
+    )
+    if text2 != text:
+        with open(p, 'w', encoding='utf-8') as f:
+            f.write(text2)
+        print('FIXED leftover duplicate load_img in api_geninfo')
+    else:
+        print('already patched')
     sys.exit(0)
-out = []
-i = 0
-patched = False
-while i < len(lines):
-    line = lines[i]
-    if 'def api_geninfo(self, file: UploadFile) -> GenInfoResponse:' in line and not patched:
-        out.append(line)
-        out.append('        # Guard against empty/corrupted multipart uploads from the WebUI\n')
-        out.append('        # frontend (browser sends an empty file). Without this, load_img\n')
-        out.append('        # raises UnidentifiedImageError and the request 500s.\n')
-        out.append('        data = file.file.read()\n')
-        out.append('        if not data:\n')
-        out.append('            return GenInfoResponse(prompt="", negative_prompt="")\n')
-        out.append('        try:\n')
-        out.append('            _, _, info = load_img(data, return_info=True)\n')
-        out.append('        except Exception:\n')
-        out.append('            return GenInfoResponse(prompt="", negative_prompt="")\n')
-        i += 1  # skip original load_img line
-        i += 1
-        patched = True
-        continue
-    out.append(line)
-    i += 1
-with open(p, 'w', encoding='utf-8') as f:
-    f.writelines(out)
-print('PATCHED' if patched else 'NOT FOUND')
+pattern = r'def api_geninfo\(self, file: UploadFile\) -> GenInfoResponse:\n\s*_, _, info = load_img\(file\.file\.read\(\), return_info=True\)'
+replacement = '''def api_geninfo(self, file: UploadFile) -> GenInfoResponse:
+        # Guard against empty/corrupted multipart uploads from the WebUI
+        # frontend (browser sends an empty file). Without this, load_img
+        # raises UnidentifiedImageError and the request 500s.
+        data = file.file.read()
+        if not data:
+            return GenInfoResponse(prompt="", negative_prompt="")
+        try:
+            _, _, info = load_img(data, return_info=True)
+        except Exception:
+            return GenInfoResponse(prompt="", negative_prompt="")'''
+new_text = re.sub(pattern, replacement, text, count=1)
+if new_text != text:
+    with open(p, 'w', encoding='utf-8') as f:
+        f.write(new_text)
+    print('PATCHED api_geninfo')
+else:
+    print('api_geninfo pattern not found')
 "@
         $patchScript = Join-Path $env:TEMP 'iopaint_geninfo_patch.py'
         Set-Content -Path $patchScript -Value $patchPy -Encoding UTF8
