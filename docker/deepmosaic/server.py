@@ -116,7 +116,30 @@ async def process(
 
     safe_name = (file.filename or "upload").replace("/", "_").replace("\\", "_")
     in_path = TEMP_DIR / f"{job_id}_{safe_name}"
-    in_path.write_bytes(await file.read())
+    upload_bytes = await file.read()
+
+    # Normalize the upload to a standard RGB JPEG before saving it for the
+    # DeepMosaics subprocess. This fixes three failure modes at once:
+    #   1. CMYK / progressive JPEGs: PIL can decode them but cv2.imdecode
+    #      (used by impro.imread) returns None, causing 'NoneType has no shape'.
+    #   2. Empty / corrupted uploads: PIL.Image.open raises immediately.
+    #   3. Unusual formats (WebP, BMP, TIFF, RGBA PNG): converting to RGB
+    #      JPEG ensures the subprocess always gets a plain sRGB image.
+    try:
+        from io import BytesIO
+        from PIL import Image
+        img = Image.open(BytesIO(upload_bytes))
+        img = img.convert("RGB")
+        buf = BytesIO()
+        img.save(buf, format="JPEG", quality=95)
+        upload_bytes = buf.getvalue()
+    except Exception as e:
+        return JSONResponse(
+            status_code=400,
+            content={"detail": f"Invalid image upload: {e}"},
+        )
+
+    in_path.write_bytes(upload_bytes)
 
     cmd = [
         sys.executable,
@@ -183,7 +206,12 @@ async def process(
     stderr_str = stderr.decode("utf-8", errors="ignore")
 
     if proc.returncode != 0:
-        err = (stderr_str or stdout_str or "unknown error")[:500]
+        # Surface the full error output so the cause is diagnosable. The
+        # DeepMosaics CLI prints a multi-section error report (Environment /
+        # BUG / traceback); truncating to 500 chars cuts it off mid-report.
+        full_err = stderr_str or stdout_str or "unknown error"
+        print(f"[deepmosaic-worker] FAILED exit={proc.returncode}\n{full_err}", flush=True)
+        err = full_err[:2000]
         try:
             in_path.unlink(missing_ok=True)
         except Exception:

@@ -532,3 +532,149 @@ before `install_rarfile()` could ever run when the package wasn't installed.
 **Fix:** The top-level import was removed; `_ensure_rarfile()` now installs
 and imports it lazily inside `main()`. `gdown` was added to the deepmosaic
 venv's dependency list in `setup-ai.ps1`.
+
+## DeepMosaic crashed with `RuntimeError` loading state_dict (missing/extra keys)
+
+**Cause:** `DeepMosaics/models/loadmodel.py` calls `load_state_dict()` without
+`strict=False` in four places: `pix2pix()`, `style()`, `video()`, and
+`bisenet()` (two calls — roi and mosaic_position). The upstream checkpoints
+(`clean_face_HD.pth`, `mosaic_position.pth`, `add_face.pth`, etc.) were
+saved with older PyTorch and contain key mismatches (extra buffers like
+`num_batches_tracked`, or renamed keys) under torch >= 2.x. Without
+`strict=False` the loader raises `RuntimeError: Error(s) in loading state_dict
+for ...: Missing key(s) ... / Unexpected key(s) ...` and the whole `/process`
+job crashes with exit 1.
+
+The `apply_compat_patches()` method in `api/main.py` was designed to patch
+`loadmodel.py` at runtime, but it has an early return in remote mode
+(`if self.remote: return`). The non-Docker deploy uses remote mode (loopback
+HTTP to the worker), so the patches were never applied. Even in local mode,
+`apply_compat_patches()` only patched the `style()` `netG.load_state_dict
+(state_dict)` call and the `model_util.py` InstanceNorm helper — it missed the
+`pix2pix()`, `video()`, and both `bisenet()` calls.
+
+**Fix:**
+
+- `DeepMosaics/models/loadmodel.py`: added `strict=False` to all four
+  `load_state_dict()` call sites (lines 22, 47, 56, 68, 70). The `strict=False`
+  flag tells PyTorch to silently drop unexpected keys and leave missing keys at
+  their initialised values, which is correct for inference with these legacy
+  checkpoints.
+
+- `scripts/setup-ai.ps1`: added a post-clone patch block that re-applies the
+  `strict=False` edits to `loadmodel.py` after every fresh clone. Because
+  `DeepMosaics/` is `.gitignore`d (it's a submodule), the patched file is not
+  versioned and must be re-patched on every setup. The patch covers all four
+  call sites (pix2pix, style, video, bisenet roi, bisenet mosaic_position).
+
+- `docker/deepmosaic/server.py`: error truncation increased from 500 to 2000
+  chars, and the full failure output is now printed to the worker's stdout so
+  the root cause is visible in `data/logs/deepmosaic-stdout.log` instead of
+  being cut off mid-traceback.
+
+## IOPaint WebUI "cannot identify image file <_io.BytesIO object>"
+
+**Cause:** The IOPaint 1.6.0 WebUI frontend sometimes sends an empty or
+ corrupted multipart upload to its own `/api/v1/gen-info` endpoint. The
+ `api_geninfo` handler in `iopaint/api.py` calls `load_img(file.file.read())`
+ unconditionally; when `file.file.read()` returns empty bytes,
+ `Image.open(io.BytesIO(b''))` raises `UnidentifiedImageError` and the whole
+ request 500s. The error message `cannot identify image file <_io.BytesIO
+ object at 0x...>` surfaces in the browser with no hint that the upload was
+ empty. The actual inpainting endpoint (`/api/v1/inpaint`) works fine via
+ direct API calls — only the metadata-extraction step crashes.
+
+**Fix:**
+
+- `iopaint/api.py` (in `.venv-iopaint`, patched by `setup-ai.ps1` after
+  install): `api_geninfo` now reads `file.file.read()` into a local variable,
+  returns an empty `GenInfoResponse` on empty data, and wraps `load_img` in a
+  try/except that returns empty prompt info on any decode failure. This lets
+  the upload flow continue to the inpaint step instead of crashing.
+
+- `scripts/setup-ai.ps1`: added a post-install patch block (using a temp
+  Python script) that re-applies the `api_geninfo` guard after every IOPaint
+  install, since the wheel is not editable in git.
+
+- `web/views/iopaint.html`: the "Open IOPaint WebUI" button was opening
+  `/iopaint/?v=...` on the Social-Hunt port (8000), which returned 404 — there
+  is no IOPaint proxy route. It now opens `http://127.0.0.1:<port>/?v=...`
+  directly on the IOPaint server's own port, where the WebUI's absolute
+  requests to `/api/v1/...` and `/socket.io/...` resolve correctly.
+
+## DeepMosaic returned the original image unchanged ("people not demasked")
+
+**Cause:** Two compounding issues:
+
+1. CMYK / progressive JPEGs: the user's `original (1).jpg` was a CMYK JPEG.
+   PIL reads it fine (the main app validates with PIL), but `cv2.imdecode`
+   (used by DeepMosaics' `impro.imread`) returns `None` for CMYK JPEGs.
+   That `None` propagated to `runmodel.get_mosaic_position` as
+   `'NoneType' object has no attribute 'shape'`.
+
+2. DeepMosaic's **Clean** mode removes **digital mosaic pixelation**
+   (Japanese-style censorship blur), not physical face coverings (masks,
+   balaclavas, gaiters). When no mosaic pixelation is detected (the
+   segmentation model returns `size <= 100`), it prints `Do not find mosaic`
+   and saves the original image unchanged. Users uploading images with
+   physical face coverings and expecting demasking should use the **Demask**
+   feature (Replicate SD inpainting), not DeepMosaic's Clean mode.
+
+**Fix:**
+
+- `docker/deepmosaic/server.py`: uploads are now normalized to a standard
+  RGB JPEG via `PIL.Image.open().convert('RGB')` before being saved for the
+  subprocess. This fixes CMYK, progressive JPEG, WebP, BMP, TIFF, and RGBA
+  PNG inputs — `cv2.imdecode` always succeeds on the normalized output.
+
+- `DeepMosaics/cores/clean.py` (patched by `setup-ai.ps1`): added a guard
+  after `impro.imread(path)` that raises a clear `RuntimeError` if the image
+  is `None`, instead of the cryptic `'NoneType' object has no attribute
+  'shape'` traceback.
+
+## IOPaint `/api/v1/inpaint` 500: cannot identify image file (empty base64)
+
+**Cause:** The same IOPaint 1.6.0 WebUI frontend bug that affects
+`/api/v1/gen-info` also affects `/api/v1/inpaint`. When the user clicks
+“Inpaint” before the canvas image is fully loaded (or with a large image
+that the canvas struggles with), the frontend sends empty or truncated
+base64 to the inpaint endpoint. `decode_base64_to_image()` in
+`iopaint/helper.py` calls `Image.open(io.BytesIO(image_bytes))` without
+validating the input, so empty/corrupted bytes raise
+`UnidentifiedImageError: cannot identify image file <_io.BytesIO object>`
+and the request crashes with 500.
+
+Large images are especially affected: the WebUI canvas `toDataURL()`
+produces a very large base64 string that can be truncated during the
+HTTP transfer, producing bytes that `Image.open` cannot decode.
+
+**Fix:**
+
+- `iopaint/helper.py` (patched by `setup-ai.ps1`): `decode_base64_to_image`
+  now guards against `None`/empty encoding, strips the data URL prefix
+  safely, validates `base64.b64decode` in a try/except, and checks for empty
+  decoded bytes — raising a clear `ValueError` at each step instead of
+  falling through to `Image.open` with invalid data.
+
+- `iopaint/api.py` (patched by `setup-ai.ps1`): `api_inpaint` wraps the two
+  `decode_base64_to_image` calls (image + mask) in a try/except that returns
+  HTTP 400 with a clear message (`Invalid image or mask data: ...`) instead
+  of letting the exception crash the request with a 500.
+
+  Both patches are re-applied by `setup-ai.ps1` after every IOPaint install
+  because the wheel is not editable in git.
+
+**Note on demasking:** IOPaint's default `lama` model is an **object removal**
+model — it fills the masked area with background pixels, which is why masking
+a face and running lama produces a blurred/background result instead of a
+reconstructed face. For **face reconstruction** (demasking physical face
+coverings), use either:
+  - Social-Hunt's **Demask** feature (Replicate SD inpainting with a face
+    prompt), or
+  - IOPaint with a **diffusion model** (e.g. `runwayml/stable-diffusion-inpainting`)
+    and a prompt like “a face”. This is much slower on CPU than lama and
+    requires downloading the 4GB+ SD model.
+
+DeepMosaic's **Clean** mode removes **digital mosaic pixelation**
+(Japanese-style censorship blur), not physical face coverings. It will return
+the image unchanged if no mosaic pixelation is detected.
