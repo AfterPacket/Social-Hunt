@@ -464,3 +464,71 @@ that routes `/api/` globally will collide with any backend that also uses
   quality is commented out in `web/views/deepmosaic.html`, and the backend
   branch for `quality == "traditional"` is unreachable. Known, not blocking —
   the "medium" and "high" quality paths work.
+
+## DeepMosaic crashed with `remote 500` because the models never downloaded
+
+**Cause:** Two compounding bugs.
+
+1. `scripts/setup-ai.ps1` piped a stream of `n` answers to
+   `download_deepmosaic_models.py`. The downloader's **first** prompt is
+   `Do you want to continue? (y/n):` — answering `n` aborts immediately, so
+   **zero** model files were ever fetched. `DeepMosaics/pretrained_models/`
+   contained only the 28-byte `put_pretrained_model_here` placeholder.
+
+2. When a model was missing, `deepmosaic.py` / `cores/options.py` called
+   `input('Please press any key to exit.\n')`. The worker launches the
+   subprocess with `stdin=asyncio.subprocess.DEVNULL`; under a closed stdin
+   `input()` raises an **uncaught** `EOFError`, so Python exits with code 1
+   instead of the intended `sys.exit(0)`. The worker surfaced this as a bare
+   `DeepMosaic failed (exit 1): Traceback ...` with no indication that the
+   actual problem was missing model weights.
+
+**Fixes:**
+
+- `download_deepmosaic_models.py` now accepts `--yes` / `-y` which auto-answers
+  every prompt via an `ask()` helper (and falls back to the default on
+  `EOFError` for true no-stdin environments). `setup-ai.ps1` calls it with
+  `--yes`. The dead `catbox.moe` mirror URLs were replaced with the official
+  Google Drive file IDs used by `gdown`, so models actually download.
+
+- `DeepMosaics/cores/options.py` and `DeepMosaics/deepmosaic.py`: every
+  `input('Please press any key to exit.\n')` replaced with `print()` +
+  `sys.exit(1)`. The worker now returns a clear `Error: Model does not exist!`
+  message instead of a truncated traceback.
+
+- `docker/deepmosaic/server.py` now pre-checks model presence for the
+  requested `mode` **before** spawning the subprocess and returns a clean 500
+  with the message `DeepMosaic models are not downloaded. Run\n  python download_deepmosaic_models.py --yes`.
+
+## Model filename mismatch between server and Google Drive
+
+**Cause:** The worker's `_models_present()` and model-selection logic checked
+for `clean_youknow_v1.pth` and `style/candy.pth`, but the official DeepMosaics
+Google Drive folder ships `clean_youknow_resnet_9blocks.pth` and
+`style/edges2cat.pth`. Even after a successful download the worker reported
+the models as missing.
+
+**Fix:** Updated `_models_present()`, the `/process` model-selection blocks, and
+the `DeepMosaicService` class in `api/main.py` to look for the real filenames
+(`clean_youknow_resnet_9blocks.pth`, `edges2cat.pth`).
+
+## Demask endpoint crashed with "cannot identify image file <_io.BytesIO object>"
+
+**Cause:** `PIL.Image.open(BytesIO(content))` in `_generate_face_coverage_mask`
+raises `UnidentifiedImageError` when the upload isn't a valid image (empty,
+corrupted, or wrong MIME type). The error bubbled up as a raw 500 with a
+cryptic traceback referencing a memory address.
+
+**Fix:** `api/main.py` `/sh-api/demask` now validates the upload with
+`Image.open(BytesIO(content)).verify()` before any processing and returns a
+clear 400 `Cannot identify image file. Please upload a valid JPEG, PNG, WebP,
+or BMP image.`
+
+## `rarfile` import crash in download_deepmosaic_models.py
+
+**Cause:** `import rarfile` was at module top level, so the script crashed
+before `install_rarfile()` could ever run when the package wasn't installed.
+
+**Fix:** The top-level import was removed; `_ensure_rarfile()` now installs
+and imports it lazily inside `main()`. `gdown` was added to the deepmosaic
+venv's dependency list in `setup-ai.ps1`.

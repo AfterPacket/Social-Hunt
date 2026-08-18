@@ -46,9 +46,9 @@ def _model_path(*parts: str) -> Path:
 def _models_present() -> dict:
     return {
         "clean_face_HD": _model_path("mosaic", "clean_face_HD.pth").exists(),
-        "clean_youknow_v1": _model_path("mosaic", "clean_youknow_v1.pth").exists(),
+        "clean_youknow_v1": _model_path("mosaic", "clean_youknow_resnet_9blocks.pth").exists(),
         "add_face": _model_path("mosaic", "add_face.pth").exists(),
-        "style_candy": _model_path("style", "candy.pth").exists(),
+        "style_candy": _model_path("style", "edges2cat.pth").exists(),
         "style_monet": _model_path("style", "style_monet.pth").exists(),
     }
 
@@ -75,6 +75,39 @@ async def process(
         return JSONResponse(
             status_code=500,
             content={"detail": f"deepmosaic.py not found at {DEEPMOSAIC_SCRIPT}"},
+        )
+
+    # Pre-check the model weights required for the requested mode so we can
+    # return a clean, actionable error instead of a cryptic subprocess traceback.
+    # The DeepMosaics CLI hard-codes a default model_path and only crashes inside
+    # getparse() when the file is missing, so we surface the real cause here.
+    if mode == "add":
+        required = [_model_path("mosaic", "add_face.pth")]
+    elif mode == "clean":
+        required = [
+            _model_path("mosaic", "clean_face_HD.pth"),
+            _model_path("mosaic", "clean_youknow_resnet_9blocks.pth"),
+        ]
+    elif mode == "style":
+        required = [_model_path("style", "edges2cat.pth"), _model_path("style", "style_monet.pth")]
+    else:
+        return JSONResponse(
+            status_code=400,
+            content={"detail": f"Unknown mode '{mode}'. Expected add | clean | style."},
+        )
+
+    missing = [str(p) for p in required if not p.exists()]
+    if missing and not (mode == "clean" and any(p.exists() for p in required)):
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": (
+                    "DeepMosaic models are not downloaded. Run "
+                    "`python download_deepmosaic_models.py --yes` (in the deepmosaic "
+                    "venv) to fetch them. Missing: "
+                    + ", ".join(missing)
+                )
+            },
         )
 
     job_id = str(uuid.uuid4())
@@ -108,13 +141,13 @@ async def process(
     elif mode == "clean":
         for model in (
             _model_path("mosaic", "clean_face_HD.pth"),
-            _model_path("mosaic", "clean_youknow_v1.pth"),
+            _model_path("mosaic", "clean_youknow_resnet_9blocks.pth"),
         ):
             if model.exists():
                 cmd.extend(["--model_path", str(model)])
                 break
     elif mode == "style":
-        style_model = _model_path("style", "candy.pth")
+        style_model = _model_path("style", "edges2cat.pth")
         if style_model.exists():
             cmd.extend(["--model_path", str(style_model)])
         if quality == "high":

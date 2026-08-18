@@ -1708,6 +1708,29 @@ async def api_demask(
         content = await file.read()
         print(f"[Demask] Processing: {file.filename}  ({len(content)} bytes)")
 
+        if not content or len(content) < 100:
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded file is empty or too small to be a valid image.",
+            )
+
+        # Validate that the upload is a readable image before proceeding.
+        # This surfaces a clear error instead of the cryptic Pillow traceback
+        # "cannot identify image file <_io.BytesIO object at 0x...>".
+        try:
+            from PIL import Image as _PILImage, UnidentifiedImageError
+            _PILImage.open(BytesIO(content)).verify()
+        except UnidentifiedImageError:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot identify image file. Please upload a valid JPEG, PNG, WebP, or BMP image.",
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Uploaded file is not a valid image: {exc}",
+            )
+
         mime = file.content_type or "image/jpeg"
         b64_img = f"data:{mime};base64,{base64.b64encode(content).decode()}"
 
@@ -2666,7 +2689,7 @@ def patch_instance_norm_state_dict(state_dict, module, keys, i=0):
                     self.deepmosaic_dir
                     / "pretrained_models"
                     / "mosaic"
-                    / "clean_youknow_v1.pth",
+                    / "clean_youknow_resnet_9blocks.pth",
                 ]
 
                 for model in clean_models:
@@ -2823,14 +2846,14 @@ def patch_instance_norm_state_dict(state_dict, module, keys, i=0):
             elif mode == "clean":
                 for model in (
                     self.deepmosaic_dir / "pretrained_models" / "mosaic" / "clean_face_HD.pth",
-                    self.deepmosaic_dir / "pretrained_models" / "mosaic" / "clean_youknow_v1.pth",
+                    self.deepmosaic_dir / "pretrained_models" / "mosaic" / "clean_youknow_resnet_9blocks.pth",
                 ):
                     if model.exists():
                         cmd.extend(["--model_path", str(model)])
                         break
             elif mode == "style":
                 style_model = (
-                    self.deepmosaic_dir / "pretrained_models" / "style" / "candy.pth"
+                    self.deepmosaic_dir / "pretrained_models" / "style" / "edges2cat.pth"
                 )
                 if style_model.exists():
                     cmd.extend(["--model_path", str(style_model)])

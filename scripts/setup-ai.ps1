@@ -156,8 +156,8 @@ if ((Test-Path $DmPy) -and -not $Force) {
         exit 1
     }
 
-    Write-Host '[4/6] Installing DeepMosaic runtime deps (opencv, ffmpeg, fastapi, uvicorn) ...'
-    & $DmPy -m pip install 'opencv-python-headless' 'ffmpeg-python' 'tqdm' 'pillow' 'numpy<2.0' 'fastapi' 'uvicorn[standard]' 'python-multipart' 'aiofiles'
+    Write-Host '[4/6] Installing DeepMosaic runtime deps (opencv, ffmpeg, fastapi, uvicorn, gdown) ...'
+    & $DmPy -m pip install 'opencv-python-headless' 'ffmpeg-python' 'tqdm' 'pillow' 'numpy<2.0' 'fastapi' 'uvicorn[standard]' 'python-multipart' 'aiofiles' 'gdown'
     if ($LASTEXITCODE -ne 0) {
         Write-Host '[error] DeepMosaic deps install failed.' -ForegroundColor Red
         exit 1
@@ -188,16 +188,38 @@ if ((Test-Path $DmPy) -and -not $Force) {
         }
     }
 
+    # Patch DeepMosaics to be non-interactive: the upstream code calls
+    # input('Please press any key to exit.\n') on missing-model/wrong-mode
+    # paths. Under the worker's stdin=DEVNULL this raises an uncaught EOFError
+    # (exit code 1) instead of a clean error. Replace input() with print()+sys.exit(1).
+    # DeepMosaics/ is .gitignore'd, so this patch must be re-applied after every
+    # fresh clone — hence we run it unconditionally here.
+    $OptPy = Join-Path $Root 'DeepMosaics\cores\options.py'
+    $DmPy2  = Join-Path $Root 'DeepMosaics\deepmosaic.py'
+    foreach ($f in @($OptPy, $DmPy2)) {
+        if (Test-Path $f) {
+            $txt = Get-Content $f -Raw
+            $orig = $txt
+            $txt = $txt -replace "input\('Please press any key to exit\.\\n'\)", 'sys.exit(1)'
+            $txt = $txt -replace "input\('Please check mosaic_position_model_path!'\)", "print('Error: Please check mosaic_position_model_path!')"
+            if ($txt -ne $orig) {
+                Set-Content $f -Value $txt -NoNewline
+                Write-Host "[info] Patched non-interactive exits in $f" -ForegroundColor DarkGray
+            }
+        }
+    }
+
     Write-Host '[6/6] Downloading DeepMosaic models (non-interactive) ...'
-    # The downloader prompts several times; we answer 'n' to everything so it
-    # downloads what's missing and skips RAR re-extraction prompts. If the
-    # models are already present it's a no-op.
+    # The downloader now supports --yes which auto-answers every prompt so it
+    # runs cleanly with no stdin (it previously aborted on the first prompt).
     $DlScript = Join-Path $Root 'download_deepmosaic_models.py'
     if (Test-Path $DlScript) {
-        # Pipe a stream of 'n' answers (one per prompt). Enough for all prompts.
-        $answers = ('n','n','n','n','n','n','n','n','n','n') -join "`n"
-        $answers | & $DmPy $DlScript 2>&1 | Out-Host
-        Write-Host '[info] Model download step finished (see output above).'
+        & $DmPy $DlScript --yes 2>&1 | Out-Host
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host '[warn] download_deepmosaic_models.py exited non-zero. Models may be incomplete.' -ForegroundColor Yellow
+        } else {
+            Write-Host '[info] Model download step finished.' -ForegroundColor DarkGray
+        }
     } else {
         Write-Host '[warn] download_deepmosaic_models.py not found; skipping model download.' -ForegroundColor Yellow
     }
