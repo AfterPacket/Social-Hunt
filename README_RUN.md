@@ -150,9 +150,12 @@ services:
       - ../plugins:/app/plugins
 ```
 
-### Docker SSL (Nginx + IOPaint)
+### Docker SSL (Nginx + AI workers)
 Use the SSL-aware Nginx proxy in `docker/docker-compose.yml`. This setup
-terminates TLS and routes `/` to Social-Hunt and `/iopaint` to IOPaint.
+terminates TLS and serves Social-Hunt at `/`. The AI workers (IOPaint,
+DeepMosaic) run in sibling containers and are reached over the internal docker
+network (`IOPAINT_URL`, `DEEPMOSAIC_URL`); IOPaint's web UI is opened directly on
+port `8080` (separate origin) from the dashboard.
 
 1) Generate the SSL config and env file:
 ```bash
@@ -186,31 +189,47 @@ docker compose --profile certbot run --rm certbot renew --webroot -w /var/www/ce
 
 ---
 
-## 🤖 AI Demasking (Replicate or Self-Hosted)
+## 🤖 AI Demasking (Replicate, IOPaint, or DeepMosaic)
 
-### Replicate API
+Social-Hunt's demasking has three engines. The local ones (IOPaint,
+DeepMosaic) run in **isolated environments** with their own torch + Pillow
+9.5.0, separate from the main app (which stays on secure Pillow 12, no torch).
+The app reaches them over loopback HTTP.
+
+### Replicate API (cloud)
 Set a Replicate API token in either:
 - `replicate_api_token` in `data/settings.json`
 - `REPLICATE_API_TOKEN` in your environment
 
-### Self-hosted (DeepMosaics or custom)
-Set `SOCIAL_HUNT_FACE_AI_URL` to a service that accepts JSON:
-```json
-{
-  "image": "<base64 image bytes>",
-  "fidelity": 0.7,
-  "task": "face_restoration"
-}
+### IOPaint (interactive inpainting)
+IOPaint pins `Pillow==9.5.0` / `torch==2.1.2`, so it runs in its own venv
+(Windows) or container (Docker `--profile ai`). Start the workers:
+
+- **Docker**: `docker compose --profile ai up -d --build` (IOPaint on `:8080`)
+- **Windows (no Docker)**: `powershell -ExecutionPolicy Bypass -File scripts\setup-ai.ps1` once, then `scripts\start-social-hunt.ps1`
+
+The dashboard's **Open IOPaint WebUI** button opens `http://<host>:8080/`
+(separate origin — IOPaint is not proxied under a subpath). See
+`docker/docs/IOPAINT_GUIDE.md` for details.
+
+### DeepMosaic (automated mosaic removal)
+DeepMosaic runs in the same `--profile ai` (Docker) or `.venv-deepmosaic`
+(Windows) environment. Models are not bundled — run
+`python download_deepmosaic_models.py` once. The worker exposes a small HTTP
+API on `:8081` (`/status`, `/process`); the app calls it via `DEEPMOSAIC_URL`.
+
+### Self-hosted (custom endpoint)
+Point Social-Hunt at your own face restoration service:
+```bash
+SOCIAL_HUNT_FACE_AI_URL=http://your-ai-host:port/restore
 ```
-and returns:
+Expected request/response format:
 ```json
-{ "image": "<base64 restored image bytes>" }
+// POST with multipart/form-data: { "file": <image>, "strength": 0.5 }
+// Response: { "image": "<base64-encoded-result>" }
 ```
 
-The `DeepMosaics/` submodule can be used as a base, but it does not expose the
-`/restore` JSON API by default. Add a lightweight adapter/proxy that wraps the
-DeepMosaics server and translates requests/responses, then set
-`SOCIAL_HUNT_FACE_AI_URL` to your adapter URL.
+See `FIXES.md` for why IOPaint/DeepMosaic are isolated from the main app.
 
 ---
 

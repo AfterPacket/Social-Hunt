@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.4] - 2026-08-17
+
+### Security
+
+- **Pillow upgraded to `>=12.0.0,<13.0.0`** in `requirements.txt`,
+  `requirements-docker.txt`, and `docker/requirements-docker.txt`. Clears 25
+  Dependabot alerts (CVEs on Pillow 9.5.0: OOB read/write in `BuildHuffmanTable`,
+  `ImageFilter.RankFilter` integer overflow, `ImageCmsTransform.apply` mode
+  mismatch, `Image.paste`/`Image.crop` signed coordinate overflow,
+  `BdfFontFile`/`GdImageFile`/`PcfFontFile`/`FontFile.compile` decompression-bomb
+  bypass, `PdfParser.PdfStream.decode` DoS, `WindowsViewer.get_command` shell
+  injection, TGA RLE heap leak, McIdas AREA OOB read, and JPEG2000 scratch-buffer
+  DoS).
+- **`torch==2.13.0` / `torchvision==0.28.0` / `iopaint==1.6.0` removed from the
+  main requirements** and the `--extra-index-url` PyTorch line. These pulled the
+  vulnerable `torch==2.1.2` (heap buffer overflow, use-after-free, `torch.load`
+  RCE, `unpack_sequence` / `pad_packed_sequence` / `torch.jit.script` /
+  `torch.lstm_cell` memory corruption, Quantized Sigmoid improper init). The AI
+  workers now run in **isolated environments** (separate venvs on Windows via
+  `scripts/setup-ai.ps1`, separate containers on Linux via `docker compose
+  --profile ai`) and the main app reaches them over loopback HTTP
+  (`IOPAINT_URL` / `DEEPMOSAIC_URL`). See `FIXES.md`.
+
+### Changed
+
+- **Docker `ai` profile** replaces the old `iopaint` profile. `docker compose
+  --profile ai up -d --build` starts both IOPaint (port `8080`) and DeepMosaic
+  (port `8081`) in sibling containers. The main `social-hunt` container stays on
+  secure Pillow 12 with no torch and is wired to the workers via `IOPAINT_URL` /
+  `DEEPMOSAIC_URL`.
+- **`docker/nginx.conf` cleaned up** — removed the `/iopaint/`, `/assets/`,
+  `/api/`, and `/socket.io/` proxy blocks. IOPaint's web UI is a SPA that assumes
+  site-root serving; proxying it under `/iopaint/` broke its internal absolute
+  asset paths. The dashboard now opens IOPaint directly on port `8080`
+  (separate origin). See `FIXES.md`.
+- **`web/app.js`** `openIOPaint()` opens `http://<host>:8080/` directly. Cache-bust
+  bumped to `v2.2.8`.
+- **`api/main.py`** — `IOPAINT_URL` / `DEEPMOSAIC_URL` env-var detection, remote vs
+  local-subprocess branching, `DeepMosaicService._remote_process()` and
+  `process_video()` added, `check_models` / `apply_compat_patches` early-return in
+  remote mode.
+- **`docker/deepmosaic/server.py`** — cross-platform path defaults (Windows via
+  `os.name`), fixed four `JSONResponse(detail=...)` → `content={"detail": ...}`.
+- **`run.py`** — emoji banner wrapped in `try/except UnicodeEncodeError` for
+  Windows `cp1252` consoles.
+
+### Added
+
+- **`scripts/setup-ai.ps1`** — one-time setup for Windows (no Docker): creates
+  `.venv-iopaint` (iopaint 1.6.0 + its own torch/Pillow) and `.venv-deepmosaic`
+  (torch 2.1.2 + DeepMosaics + deps). Clones DeepMosaics (handles ZIP-download
+  case with no `.git`), downloads models non-interactively.
+- **`scripts/start-social-hunt.ps1`** — launches all three services as hidden
+  background processes, sets `IOPAINT_URL` / `DEEPMOSAIC_URL`, redirects
+  `TORCH_HOME` / `HF_HOME` to `data/iopaint-cache/` to avoid OneDrive `~/.cache`
+  permission issues, PID tracking in `data/.ai-pids.json`. `-Stop` kills all.
+- **`FIXES.md`** — narrative postmortem of 10 non-obvious bugs found during this
+  work (iopaint/pillow conflict, space-in-path truncation, emoji
+  UnicodeEncodeError, torch cache permission denied, JSONResponse detail
+  TypeError, empty DeepMosaics submodule, missing `process_video`, PID tracker
+  nested JSON, duplicate dict key, IOPaint `/iopaint/` proxy).
+- `python-multipart` added to the DeepMosaic venv (required by FastAPI
+  `UploadFile` / `Form`).
+
+### Removed
+
+- Dead files: `deepmosaic_service.py`, `deepmosaic_runner.py`,
+  `deepmosaic_patched.py`.
+- Stale `--profile iopaint` references in docs replaced with `--profile ai`.
+- Stale `C:\Git\Social-Hunt` hardcoded paths in docker docs replaced with
+  `C:\path\to\Social-Hunt`.
+
+---
+
 ## [2.2.3] - 2026-04-01
 
 ### Added

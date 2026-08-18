@@ -3573,14 +3573,19 @@ async function initIOPaintView() {
   }
 
   // Open IOPaint WebUI
+  // IOPaint runs in its own container and is exposed directly on its own port
+  // (default 8080). Opening it on a separate origin avoids path interference
+  // with Social-Hunt's /sh-api and / routes. When running locally without the
+  // container, this falls back to the current host + the detected port.
   function openIOPaint() {
     const port = serverPort
       ? serverPort.textContent
       : portInput
         ? portInput.value
         : "8080";
-    void port;
-    window.open("/iopaint/", "_blank");
+    const host = window.location.hostname || "localhost";
+    const url = `http://${host}:${port || 8080}/`;
+    window.open(url, "_blank");
   }
 
   // Add toast function if not exists
@@ -3750,16 +3755,27 @@ async function initDeepMosaicView() {
         });
 
         if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
+          // Surface the backend detail (e.g. "Models missing...") instead of
+          // a generic 500 so the user can actually diagnose the failure.
+          let detail = `Server error: ${response.status}`;
+          try {
+            const errBody = await response.json();
+            if (errBody && errBody.detail) detail = String(errBody.detail);
+          } catch (_) {
+            try {
+              const errText = await response.text();
+              if (errText) detail = errText.slice(0, 300);
+            } catch (_) {}
+          }
+          throw new Error(detail);
         }
 
         // Get the blob (image or video)
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
-        const filename = response.headers.get("content-disposition");
-        const jobMatch = filename && filename.match(/deepmosaic_(\w+)_/);
-        currentJobId = jobMatch ? jobMatch[1] : Date.now().toString();
+        // The real job id is sent in the X-Job-ID header.
+        currentJobId = response.headers.get("x-job-id") || Date.now().toString();
 
         // Show results
         resultsDiv.style.display = "block";

@@ -1959,7 +1959,6 @@ async def api_demask(
                         "negative_prompt": NEGATIVE,
                         "num_inference_steps": 75,
                         "image_guidance_scale": 2.0,
-                               "image_guidance_scale": 2.0,
                         "guidance_scale": 8.0,
                     },
                 )
@@ -2076,10 +2075,38 @@ from fastapi.responses import JSONResponse
 iopaint_process: Optional[subprocess.Popen] = None
 
 
+# IOPaint can run either as a local subprocess (iopaint installed in this env)
+# or as a remote sibling container. Set IOPAINT_URL (e.g. http://iopaint:8080)
+# to use the remote mode, which is how the docker-compose `ai` profile runs it.
+IOPAINT_URL = os.getenv("IOPAINT_URL", "").strip().rstrip("/")
+
+
+async def _iopaint_remote_probe() -> bool:
+    """Return True if the remote IOPaint service answers at IOPAINT_URL."""
+    if not IOPAINT_URL:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as hc:
+            resp = await hc.get(IOPAINT_URL + "/")
+        return resp.status_code < 500
+    except Exception:
+        return False
+
+
 @app.get("/sh-api/iopaint/status")
 async def iopaint_status():
     """Check if IOPaint server is running"""
     global iopaint_process
+
+    # Remote (sibling container) mode: the service is always "running" if reachable.
+    if IOPAINT_URL:
+        if await _iopaint_remote_probe():
+            try:
+                port = int(IOPAINT_URL.rsplit(":", 1)[-1])
+            except (ValueError, IndexError):
+                port = 8080
+            return JSONResponse({"running": True, "port": port, "remote": True})
+        return JSONResponse({"running": False, "remote": True})
 
     # Check if our tracked process is running
     if iopaint_process and iopaint_process.poll() is None:
@@ -2131,6 +2158,19 @@ async def iopaint_status():
 async def iopaint_start(request: Request):
     """Start IOPaint server"""
     global iopaint_process
+
+    # Remote (sibling container) mode: the service is managed by docker-compose
+    # and is always running when reachable. Nothing to start locally.
+    if IOPAINT_URL:
+        if await _iopaint_remote_probe():
+            try:
+                port = int(IOPAINT_URL.rsplit(":", 1)[-1])
+            except (ValueError, IndexError):
+                port = 8080
+            return JSONResponse({"success": True, "port": port, "remote": True})
+        return JSONResponse(
+            {"success": False, "error": f"Remote IOPaint not reachable at {IOPAINT_URL}"}
+        )
 
     if iopaint_process and iopaint_process.poll() is None:
         return JSONResponse({"success": False, "error": "IOPaint is already running"})
@@ -2235,6 +2275,10 @@ async def iopaint_stop():
     """Stop IOPaint server"""
     global iopaint_process
 
+    # Remote mode: the container is managed externally; we don't stop it.
+    if IOPAINT_URL:
+        return JSONResponse({"success": True, "remote": True})
+
     if iopaint_process:
         try:
             # Kill the process tree
@@ -2314,6 +2358,12 @@ async def iopaint_devices():
 @app.get("/sh-api/iopaint/check")
 async def iopaint_check():
     """Check if IOPaint is installed"""
+    # Remote mode: report "installed" when the sibling container is reachable.
+    if IOPAINT_URL:
+        reachable = await _iopaint_remote_probe()
+        return JSONResponse(
+            {"installed": reachable, "version": "remote", "remote": True}
+        )
     try:
         import iopaint
 
@@ -2328,13 +2378,31 @@ async def iopaint_check():
 # DeepMosaic Integration
 # ==============================
 
-# Replace the DeepMosaicService class in main.py with this updated version:
+# DeepMosaic can run either as a local subprocess (DeepMosaics submodule + torch
+# installed in this env) or as a remote sibling container. Set DEEPMOSAIC_URL
+# (e.g. http://deepmosaic:8081) to use the remote mode, which is how the
+# docker-compose `ai` profile runs it. This keeps torch + the vulnerable
+# DeepMosaics deps out of the main app container.
+DEEPMOSAIC_URL = os.getenv("DEEPMOSAIC_URL", "").strip().rstrip("/")
 
 
-# Updated DeepMosaicService class for main.py
+# Updated DeepMosaicService class with correct path handling
 # Updated DeepMosaicService class with correct path handling
 class DeepMosaicService:
     def __init__(self, deepmosaic_path: str = None):
+        self.remote = bool(DEEPMOSAIC_URL)
+        self.remote_url = DEEPMOSAIC_URL
+
+        if self.remote:
+            # Remote mode: the sibling container owns the DeepMosaics code,
+            # torch and the model weights. We only need a results dir here.
+            self.deepmosaic_path = None
+            self.deepmosaic_dir = None
+            self.results_dir = APP_ROOT / "data" / "deepmosaic_results"
+            self.results_dir.mkdir(parents=True, exist_ok=True)
+            print(f"[INFO] DeepMosaic running in REMOTE mode: {self.remote_url}")
+            return
+
         # First, try to find the DeepMosaic directory
         possible_dirs = [
             APP_ROOT / "DeepMosaics",
@@ -2376,6 +2444,8 @@ class DeepMosaicService:
 
     def check_models(self):
         """Check if models exist and provide guidance"""
+        if self.remote:
+            return
         models_dir = self.deepmosaic_dir / "pretrained_models"
 
         if not models_dir.exists():
@@ -2412,6 +2482,8 @@ class DeepMosaicService:
 
     def apply_compat_patches(self) -> None:
         """Patch DeepMosaics for newer PyTorch/InstanceNorm behavior."""
+        if self.remote:
+            return
         updated = False
         model_util_path = self.deepmosaic_dir / "models" / "model_util.py"
         loadmodel_path = self.deepmosaic_dir / "models" / "loadmodel.py"
@@ -2472,6 +2544,56 @@ def patch_instance_norm_state_dict(state_dict, module, keys, i=0):
         if updated:
             print("[INFO] Applied DeepMosaics compatibility patches")
 
+    async def _remote_process(
+        self,
+        input_path: str,
+        mode: str,
+        mosaic_type: str,
+        quality: str,
+    ) -> Dict[str, Any]:
+        """Forward a job to the remote DeepMosaic container and save its result locally."""
+        import shutil
+
+        job_id = str(uuid.uuid4())
+        output_dir = self.results_dir / job_id
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        src = Path(input_path).resolve()
+        try:
+            with open(src, "rb") as fh:
+                files = {"file": (src.name, fh, "application/octet-stream")}
+                data = {
+                    "mode": mode,
+                    "mosaic_type": mosaic_type,
+                    "quality": quality,
+                }
+                async with httpx.AsyncClient(timeout=600.0) as hc:
+                    resp = await hc.post(
+                        self.remote_url + "/process",
+                        files=files,
+                        data=data,
+                    )
+            if resp.status_code != 200:
+                return {"success": False, "error": f"remote {resp.status_code}: {resp.text[:300]}"}
+
+            # The remote server streams the result file back.
+            ctype = resp.headers.get("content-type", "")
+            ext = ".mp4" if "video" in ctype else ".png"
+            out_file = output_dir / f"result{ext}"
+            out_file.write_bytes(resp.content)
+
+            remote_job = resp.headers.get("x-job-id", "")
+            print(f"[DeepMosaic] Remote result saved → {out_file} (remote job {remote_job})")
+            return {
+                "success": True,
+                "job_id": remote_job or job_id,
+                "output_path": str(out_file),
+                "stdout": "",
+                "stderr": "",
+            }
+        except Exception as e:
+            return {"success": False, "error": f"remote DeepMosaic failed: {e}"}
+
     async def process_image(
         self,
         input_path: str,
@@ -2481,6 +2603,8 @@ def patch_instance_norm_state_dict(state_dict, module, keys, i=0):
         output_format: str = "png",
     ) -> Dict[str, Any]:
         """Process a single image with DeepMosaic"""
+        if self.remote:
+            return await self._remote_process(input_path, mode, mosaic_type, quality)
         try:
             # Generate unique output filename
             job_id = str(uuid.uuid4())
@@ -2648,8 +2772,113 @@ def patch_instance_norm_state_dict(state_dict, module, keys, i=0):
             print(f"[DeepMosaic Error] {e}")
             return {"success": False, "error": str(e)}
 
+    async def process_video(
+        self,
+        input_path: str,
+        mode: str = "clean",
+        mosaic_type: str = "squa_avg",
+        quality: str = "medium",
+        start_time: str = "00:00:00",
+        last_time: str = "00:00:00",
+    ) -> Dict[str, Any]:
+        """Process a video with DeepMosaic"""
+        if self.remote:
+            return await self._remote_process(input_path, mode, mosaic_type, quality)
+        try:
+            job_id = str(uuid.uuid4())
+            output_dir = self.results_dir / job_id
+            output_dir.mkdir(parents=True, exist_ok=True)
 
-# Initialize DeepMosaic service
+            input_path = Path(input_path).resolve()
+
+            cmd = [
+                sys.executable,
+                "-u",
+                "deepmosaic.py",
+                "--media_path",
+                str(input_path),
+                "--mode",
+                mode,
+                "--result_dir",
+                str(output_dir),
+                "--temp_dir",
+                str(output_dir / "temp"),
+                "--start_time",
+                start_time,
+                "--last_time",
+                last_time,
+                "--no_preview",
+            ]
+
+            if mode == "add":
+                add_model = (
+                    self.deepmosaic_dir
+                    / "pretrained_models"
+                    / "mosaic"
+                    / "add_face.pth"
+                )
+                if add_model.exists():
+                    cmd.extend(["--model_path", str(add_model)])
+                cmd.extend(["--mosaic_mod", mosaic_type])
+            elif mode == "clean":
+                for model in (
+                    self.deepmosaic_dir / "pretrained_models" / "mosaic" / "clean_face_HD.pth",
+                    self.deepmosaic_dir / "pretrained_models" / "mosaic" / "clean_youknow_v1.pth",
+                ):
+                    if model.exists():
+                        cmd.extend(["--model_path", str(model)])
+                        break
+            elif mode == "style":
+                style_model = (
+                    self.deepmosaic_dir / "pretrained_models" / "style" / "candy.pth"
+                )
+                if style_model.exists():
+                    cmd.extend(["--model_path", str(style_model)])
+
+            print(f"[DeepMosaic] Command: {' '.join(cmd)}")
+
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                stdin=asyncio.subprocess.DEVNULL,
+                cwd=str(self.deepmosaic_dir),
+            )
+
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(), timeout=1800  # 30 min for video
+                )
+            except asyncio.TimeoutError:
+                process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=10)
+                except asyncio.TimeoutError:
+                    process.kill()
+                    await process.wait()
+                raise Exception("Processing timeout (30 minutes)")
+
+            stdout_str = stdout.decode("utf-8", errors="ignore")
+            stderr_str = stderr.decode("utf-8", errors="ignore")
+
+            if process.returncode != 0:
+                raise Exception(f"DeepMosaic error: {(stderr_str or stdout_str)[:500]}")
+
+            output_videos = list(output_dir.glob("*.mp4")) or list(output_dir.glob("*.avi"))
+            if not output_videos:
+                raise Exception("No output video generated")
+
+            return {
+                "success": True,
+                "job_id": job_id,
+                "output_path": str(output_videos[0]),
+                "stdout": stdout_str[:1000],
+                "stderr": stderr_str[:1000],
+            }
+        except Exception as e:
+            print(f"[DeepMosaic Video Error] {e}")
+            return {"success": False, "error": str(e)}
+
 try:
     deepmosaic_service = DeepMosaicService("DeepMosaics/deepmosaic.py")
     print("[INFO] DeepMosaic service initialized successfully")

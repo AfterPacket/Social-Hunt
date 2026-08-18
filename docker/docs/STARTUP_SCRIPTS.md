@@ -57,7 +57,7 @@ python start.py
 1. Double-click `start-social-hunt.bat`
 2. Or run from Command Prompt/PowerShell:
    ```cmd
-   cd C:\Git\Social-Hunt\docker
+   cd \path\to\Social-Hunt\docker
    start-social-hunt.bat
    ```
 
@@ -85,7 +85,7 @@ python start.py
 2. Type `shell:startup` and press Enter
 3. Create a shortcut to `start-social-hunt.bat` in this folder
 4. Right-click the shortcut → Properties
-5. Set "Start in" to: `C:\Git\Social-Hunt\docker`
+5. Set "Start in" to: `C:\path\to\Social-Hunt\docker`
 
 **Note**: Ensure Docker Desktop is set to start automatically:
 - Open Docker Desktop Settings
@@ -98,8 +98,8 @@ python start.py
 3. Name: "Social-Hunt Startup"
 4. Trigger: "When I log on"
 5. Action: "Start a program"
-6. Program: `C:\Git\Social-Hunt\docker\start-social-hunt.bat`
-7. Start in: `C:\Git\Social-Hunt\docker`
+6. Program: `C:\path\to\Social-Hunt\docker\start-social-hunt.bat`
+7. Start in: `C:\path\to\Social-Hunt\docker`
 8. Check "Run with highest privileges" (if needed)
 
 ### Linux

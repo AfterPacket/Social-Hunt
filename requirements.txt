@@ -5,11 +5,11 @@ httpx[socks]>=0.28.1
 PyYAML>=6.0.2
 beautifulsoup4>=4.12.3
 numpy>=1.21.6,<2.0
-face_recognition
-face_recognition_models @ git+https://github.com/ageitgey/face_recognition_models
-dlib>=19.24.0  # Or latest binary
+# face_recognition  # needs dlib C++ build; see README_RUN.md
+# face_recognition_models @ git+https://github.com/ageitgey/face_recognition_models
+# dlib>=19.24.0  # Or latest binary  # install VS "Desktop development with C++" to enable
 cryptography>=42.0.0
-pillow>=9.5.0,<10.0.0
+pillow>=12.0.0,<13.0.0
 ImageHash>=4.3.1
 python-multipart
 replicate
@@ -25,22 +25,8 @@ wheel>=0.46.2
 esptool>=5.1.0
 psutil>=5.9
 
-# You'll need to comment out these for specific gpu.
-
-# CPU
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.1.2
-torchvision==0.16.2
-iopaint==1.6.0
-
-# Nvidia
-# --extra-index-url https://download.pytorch.org/whl/cu118
-# torch==2.1.2
-# torchvision==0.16.2
-# iopaint==1.6.0
-
-# AMD
-# --extra-index-url https://download.pytorch.org/whl/rocm5.6
-# torch==2.1.2
-# torchvision==0.16.2
-# iopaint==1.6.0
+# IOPaint integration is optional and not installed by default.
+# iopaint 1.6.0 pins Pillow==9.5.0 (vulnerable), so it must be installed
+# separately in its own environment/container. See docker/docker-compose.yml
+# (the `ai` profile) for the supported standalone setup. The app detects
+# iopaint at runtime via IOPAINT_URL and degrades gracefully if absent.
