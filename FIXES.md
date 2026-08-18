@@ -713,6 +713,14 @@ root cause.
   import and adds an AVIF decoder to Pillow 9.5.0. It must be installed AFTER
   iopaint (which pins Pillow) so it binds to the pinned version.
 
+  **Installing the package alone is not enough.** `pillow-avif-plugin` needs
+  an explicit `import pillow_avif` to call `Image.register_open()` for `.avif`;
+  IOPaint never imports it, so the package can be installed and AVIF still
+  fails. `setup-ai.ps1` writes a `.pth` file (`zz_pillow_avif.pth`) into the
+  venv's site-packages containing `import pillow_avif`. `site.py` executes
+  `import` lines in `.pth` files at every interpreter startup, so the plugin
+  auto-loads before IOPaint touches PIL.
+
 - `iopaint/helper.py` (patched by `setup-ai.ps1`): `decode_base64_to_image`
   now wraps `Image.open` in a try/except that includes `bytes_len` and the
   first 16 bytes (hex) in the error message. Future unsupported-format issues

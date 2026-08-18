@@ -129,6 +129,17 @@ if ((Test-Path $IopaintPy) -and -not $Force) {
     & $IopaintPy -m pip install 'pillow-avif-plugin'
     if ($LASTEXITCODE -ne 0) {
         Write-Host '[warn] pillow-avif-plugin install failed; AVIF .jpg uploads will fail.' -ForegroundColor Yellow
+    } else {
+        # pillow-avif-plugin requires an explicit 'import pillow_avif' to
+        # register .avif/.avifs with PIL. IOPaint never imports it, so installing
+        # the package alone is not enough. A .pth file with an 'import' line is
+        # executed by site.py at every interpreter startup in this venv, so the
+        # plugin auto-loads before IOPaint touches PIL. Without this, AVIF files
+        # (commonly saved with a .jpg extension by phones/browsers) crash the
+        # inpaint endpoint with 'cannot identify image file'.
+        $PthPath = Join-Path $IopaintVenv 'Lib\site-packages\zz_pillow_avif.pth'
+        Set-Content -Path $PthPath -Value 'import pillow_avif' -NoNewline -Encoding UTF8
+        Write-Host '[info] wrote zz_pillow_avif.pth (auto-imports pillow_avif at startup)' -ForegroundColor DarkGray
     }
 
     Write-Host '[5/5] Verifying iopaint import ...'
