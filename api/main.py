@@ -38,6 +38,7 @@ from social_hunt.engine import SocialHuntEngine
 from social_hunt.face_utils import image_to_base64_uri, restore_face
 from social_hunt.plugin_loader import list_installed_plugins
 from social_hunt.registry import build_registry, list_provider_names
+from social_hunt.query import classify_query, provider_plan, select_providers
 
 app = FastAPI(title="Social-Hunt API", version="2.2.0")
 
@@ -462,6 +463,16 @@ async def api_providers():
     return {"providers": list_provider_names(registry)}
 
 
+@app.get("/sh-api/search-plan")
+async def api_search_plan(query: str):
+    query_type, normalized = classify_query(query)
+    return {
+        "query_type": query_type,
+        "normalized": normalized,
+        "providers": provider_plan(registry, query_type),
+    }
+
+
 @app.post("/sh-api/providers/reload")
 async def api_providers_reload(
     x_plugin_token: Optional[str] = Header(default=None, alias="X-Plugin-Token"),
@@ -507,10 +518,11 @@ async def api_search(req: SearchRequest):
     if len(username) > 64:
         raise HTTPException(status_code=400, detail="username too long")
 
-    if req.providers:
+    query_type, normalized = classify_query(username)
+    if req.providers is not None:
         chosen = [p for p in req.providers if p in registry]
     else:
-        chosen = list(registry.keys())
+        chosen = select_providers(registry, query_type)
 
     job_id = str(uuid.uuid4())
     JOBS[job_id] = {
@@ -519,6 +531,10 @@ async def api_search(req: SearchRequest):
         "state": "running",
         "results": [],
         "username": username,
+        "query_type": query_type,
+        "normalized": normalized,
+        "selection_mode": "manual" if req.providers is not None else "automatic",
+        "selected_providers": chosen,
         "providers_count": len(chosen),
         "results_count": 0,
         "found_count": 0,
@@ -540,7 +556,7 @@ async def api_search(req: SearchRequest):
     async def runner():
         try:
             final_res = await engine.scan_username(
-                username, req.providers, progress_callback=progress
+                username, chosen, progress_callback=progress
             )
             final_dicts = [r.to_dict() for r in final_res]
             JOBS[job_id]["results"] = final_dicts

@@ -11,6 +11,8 @@ class BaseProvider(ABC):
     timeout: int = 10
     ua_profile: str = "desktop_chrome"
     use_proxy: bool = False  # Set True on providers that benefit from proxy routing
+    query_types = {"username"}
+    auto_enabled = True
 
     @abstractmethod
     def build_url(self, username: str) -> str:
@@ -27,4 +29,6 @@ class BaseProvider(ABC):
             "name": self.name,
             "timeout": self.timeout,
             "ua_profile": self.ua_profile,
+            "query_types": sorted(self.query_types),
+            "auto_enabled": self.auto_enabled,
         }

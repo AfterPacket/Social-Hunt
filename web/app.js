@@ -704,7 +704,10 @@ async function fetchWhoami() {
   }
 }
 
+let providerSelectionMode = "automatic";
+
 function renderProviders(names) {
+  providerSelectionMode = "automatic";
   const box = document.getElementById("providers");
   box.innerHTML = names
     .map(
@@ -716,12 +719,19 @@ function renderProviders(names) {
   `,
     )
     .join("");
+  box.querySelectorAll('input[type="checkbox"][data-name]').forEach((input) => {
+    input.addEventListener("change", () => {
+      providerSelectionMode = "manual";
+    });
+  });
 }
 
 function selectedProviders() {
-  return Array.from(
+  const all = Array.from(
     document.querySelectorAll('input[type="checkbox"][data-name]'),
-  )
+  );
+  if (providerSelectionMode === "automatic") return null;
+  return all
     .filter((x) => x.checked)
     .map((x) => x.getAttribute("data-name"));
 }
@@ -742,9 +752,26 @@ function renderResults(job, containerId, opts = {}) {
     typeof opts.limit === "number" && opts.limit >= 0
       ? opts.limit
       : results.length;
-  const renderResults = results.slice(0, limit);
-  const isPartial = renderResults.length < total;
-  const rows = renderResults
+  const loadedResults = results.slice(0, limit);
+  const filter = String(opts.filter || "").toLowerCase();
+  const filteredResults = filter
+    ? loadedResults.filter((r) =>
+        [r.provider, r.status, r.error, r.url]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(filter),
+      )
+    : loadedResults;
+  const pageSize = opts.pageSize || 50;
+  const pageCount = Math.max(1, Math.ceil(filteredResults.length / pageSize));
+  const page = Math.min(Math.max(0, opts.page || 0), pageCount - 1);
+  const visibleResults = filteredResults.slice(
+    page * pageSize,
+    (page + 1) * pageSize,
+  );
+  const isPartial = loadedResults.length < total;
+  const rows = visibleResults
     .map((r) => {
       const prof = r.profile || {};
       const avatar =
@@ -822,7 +849,7 @@ function renderResults(job, containerId, opts = {}) {
   const dlBtn =
     job.state === "done"
       ? `
-    <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+    <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
       <button class="btn" id="note-btn-${job.job_id}">Save to Notes</button>
       <button class="btn" id="dl-btn-csv-${job.job_id}">Download CSV</button>
       <button class="btn" id="dl-btn-${job.job_id}">Download JSON</button>
@@ -833,14 +860,25 @@ function renderResults(job, containerId, opts = {}) {
   const partialNote = isPartial
     ? `
       <div class="muted" style="margin-bottom: 10px;">
-        Showing first ${renderResults.length} of ${total} results while scan is running.
+        Loaded ${loadedResults.length} of ${total} results while scan is running.
         Full results will render when done. You can also download JSON/CSV after completion.
       </div>
     `
     : "";
 
+  const resultToolbar = `
+    <div class="result-toolbar">
+      <input class="form-input result-filter" id="result-filter-${job.job_id}"
+        value="${escapeHtml(opts.filter || "")}" placeholder="Filter providers, status, or notes..." />
+      <span class="muted">Showing ${filteredResults.length ? page * pageSize + 1 : 0}-${Math.min((page + 1) * pageSize, filteredResults.length)} of ${filteredResults.length}</span>
+      <button class="btn btn-small" id="result-prev-${job.job_id}" ${page === 0 ? "disabled" : ""}>Previous</button>
+      <button class="btn btn-small" id="result-next-${job.job_id}" ${page >= pageCount - 1 ? "disabled" : ""}>Next</button>
+    </div>
+  `;
+
   container.innerHTML = `
     ${dlBtn}
+    ${resultToolbar}
     <div class="tablewrap">
       <table>
         <thead>
@@ -862,6 +900,23 @@ function renderResults(job, containerId, opts = {}) {
     </div>
     ${partialNote}
   `;
+
+  const rerender = (nextPage, nextFilter) =>
+    renderResults(job, containerId, {
+      limit: loadedResults.length,
+      total,
+      pageSize,
+      page: nextPage,
+      filter: nextFilter,
+    });
+  const filterInput = document.getElementById(`result-filter-${job.job_id}`);
+  if (filterInput) {
+    filterInput.oninput = () => rerender(0, filterInput.value);
+  }
+  const prevBtn = document.getElementById(`result-prev-${job.job_id}`);
+  if (prevBtn) prevBtn.onclick = () => rerender(page - 1, opts.filter || "");
+  const nextBtn = document.getElementById(`result-next-${job.job_id}`);
+  if (nextBtn) nextBtn.onclick = () => rerender(page + 1, opts.filter || "");
 
   const btn = document.getElementById(`dl-btn-${job.job_id}`);
   if (btn) {
@@ -2200,20 +2255,19 @@ async function initSearchView() {
   loadBtn.onclick = async () => {
     statusEl.textContent = "Loading providers...";
     let names = await fetchProviders();
-    names = names.filter(
-      (n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase",
-    );
     renderProviders(names);
     statusEl.textContent = `Loaded ${names.length} providers.`;
   };
 
   allBtn.onclick = () => {
+    providerSelectionMode = "all";
     document
       .querySelectorAll('input[type="checkbox"][data-name]')
       .forEach((x) => (x.checked = true));
   };
 
   noneBtn.onclick = () => {
+    providerSelectionMode = "manual";
     document
       .querySelectorAll('input[type="checkbox"][data-name]')
       .forEach((x) => (x.checked = false));
@@ -2223,9 +2277,6 @@ async function initSearchView() {
 
   // auto-load
   let names = await fetchProviders();
-  names = names.filter(
-    (n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase",
-  );
   renderProviders(names);
 
   const who = await fetchWhoami();

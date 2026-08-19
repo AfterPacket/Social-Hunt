@@ -49,9 +49,56 @@ $Root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 # workers don't crash with cp1252 UnicodeEncodeError in new console windows.
 $env:PYTHONIOENCODING = 'utf-8'
 $env:PYTHONUTF8 = '1'
+$PidFile = Join-Path $Root 'data\.ai-pids.json'
+
+if (-not $Stop) {
+# --- Tor for onion providers --------------------------------------------------
+# Onion requests are never sent directly. If a local Tor SOCKS listener is not
+# already running, start the Tor binary when Tor Browser or tor.exe is found.
+$TorPort = 9050
+$TorExe = $null
+$torCommand = Get-Command tor.exe -ErrorAction SilentlyContinue
+if ($torCommand) {
+    $TorExe = $torCommand.Source
+} else {
+    $torCandidates = @(
+        (Join-Path ${env:ProgramFiles} 'Tor Browser\Browser\TorBrowser\Tor\tor.exe'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Tor Browser\Browser\TorBrowser\Tor\tor.exe')
+    )
+    $TorExe = $torCandidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+}
+
+function Test-TorPort {
+    try {
+        $client = [System.Net.Sockets.TcpClient]::new()
+        $task = $client.ConnectAsync('127.0.0.1', $TorPort)
+        $ok = $task.Wait(250)
+        $client.Dispose()
+        return $ok -and $task.Result
+    } catch { return $false }
+}
+
+if (-not (Test-TorPort) -and $TorExe) {
+    $TorData = Join-Path $Root 'data\tor'
+    New-Item -ItemType Directory -Force -Path $TorData | Out-Null
+    Write-Host "[tor] Starting local Tor SOCKS listener on 127.0.0.1:$TorPort" -ForegroundColor Cyan
+    $torProc = Start-Process -FilePath $TorExe -ArgumentList @(
+        '--SocksPort', "127.0.0.1:$TorPort", '--DataDirectory', $TorData
+    ) -WindowStyle Hidden -PassThru
+    Save-Pid 'tor' $torProc.Id
+    Start-Sleep -Milliseconds 500
+}
+
+if (Test-TorPort) {
+    $env:SOCIAL_HUNT_PROXY = "socks5://127.0.0.1:$TorPort"
+    Write-Host "[tor] Onion routing ready via $env:SOCIAL_HUNT_PROXY" -ForegroundColor Green
+} else {
+    Write-Host '[tor] No Tor SOCKS listener detected. Onion providers will report Tor unavailable.' -ForegroundColor Yellow
+    Write-Host '      Install Tor Browser or set SOCIAL_HUNT_PROXY to a running SOCKS5 Tor endpoint.' -ForegroundColor Yellow
+}
+}
 
 # --- helpers ------------------------------------------------------------------
-$PidFile = Join-Path $Root 'data\.ai-pids.json'
 
 function Get-TrackedPids {
     if (-not (Test-Path $PidFile)) { return @() }

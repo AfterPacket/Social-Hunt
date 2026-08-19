@@ -136,6 +136,22 @@ class SocialHuntEngine:
                             prov.check(username, use_client, headers),
                             timeout=provider_timeout,
                         )
+                        if is_onion and res.status == ResultStatus.ERROR and res.error:
+                            low_error = res.error.lower()
+                            if any(
+                                marker in low_error
+                                for marker in (
+                                    "all connection attempts failed",
+                                    "connection refused",
+                                    "connecterror",
+                                    "socks",
+                                )
+                            ):
+                                res.error = (
+                                    "Tor proxy is unavailable at "
+                                    f"{tor_proxy_url}. Start Tor or verify the "
+                                    "SOCIAL_HUNT_PROXY setting."
+                                )
                     except asyncio.TimeoutError:
                         from datetime import datetime, timezone
                         res = ProviderResult(

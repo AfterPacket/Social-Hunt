@@ -31,6 +31,7 @@ class LeakCheckProvider(BaseProvider):
     name = "leakcheck"
     timeout = 15
     ua_profile = "desktop_chrome"
+    query_types = {"username", "email", "phone", "ip"}
 
     def __init__(self, api_key: Optional[str] = None):
         super().__init__()
