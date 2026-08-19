@@ -111,12 +111,12 @@ services:
   # AI SERVICES (opt-in via --profile ai)
   # ------------------------------------------------------------------
 
-  # IOPaint inpainting worker. Owns its own (old) torch + Pillow in an
+  # IOPaint inpainting worker. Owns its own torch + Pillow in an
   # isolated container. The main app talks to it via IOPAINT_URL; the IOPaint
   # web UI is exposed directly on port 8080 (open it from the dashboard's
   # "Open IOPaint WebUI" button, which opens http://<host>:8080/).
-  # NOTE: iopaint 1.6.0 pins Pillow==9.5.0 and torch==2.1.2 (known CVEs). This
-  # is isolated here on purpose and does NOT affect the main app container.
+  # IOPaint 1.6.0 has stale dependency pins, so install security-fixed
+  # overrides in this isolated worker rather than inheriting those pins.
   iopaint:
     image: python:3.11-slim
     profiles: ["ai", "ssl"]
@@ -124,6 +124,7 @@ services:
       sh -c "apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 &&
              pip install --upgrade pip &&
              pip install iopaint==1.6.0 --no-cache-dir &&
+             pip install --upgrade 'Pillow>=12.3.0' 'gradio>=6.0.0' 'diffusers>=0.38.0' 'python-socketio>=5.14.0' 'torch>=2.10.0' 'torchvision>=0.25.0' --no-cache-dir &&
              iopaint start --host 0.0.0.0 --port 8080 --device cpu"
     ports:
       - "8080:8080"
