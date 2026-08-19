@@ -9,11 +9,11 @@ numpy>=1.21.6,<2.0
 face_recognition
 dlib>=19.24.0  # Or latest binary
 cryptography>=42.0.0
-pillow>=12.0.0,<13.0.0
+pillow>=12.3.0,<13.0.0
 ImageHash>=4.3.1
 python-multipart
 replicate
-opencv_python
+opencv_python>=4.8.1.78
 matplotlib>=3.9
 tensorboardX
 protobuf==7.34.0rc1
@@ -25,7 +25,5 @@ wheel>=0.46.2
 esptool>=5.1.0
 psutil>=5.9
 
-# IOPaint is intentionally NOT installed here. iopaint 1.6.0 pins
-# Pillow==9.5.0 (vulnerable) and torch==2.1.2 (vulnerable), conflicting
-# with the secure versions above. Install iopaint in its own container
-# via docker/docker-compose.yml (the `ai` profile) instead.
+# IOPaint is intentionally NOT installed here. It has a legacy dependency
+# set and is installed separately with security-fixed overrides.

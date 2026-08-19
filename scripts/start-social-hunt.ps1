@@ -6,8 +6,8 @@
 
 .DESCRIPTION
   - Social-Hunt (port 8000)      -> .venv            (secure Pillow 12)
-  - IOPaint   (port 8080)        -> .venv-iopaint    (Pillow 9.5 / torch 2.1.2)
-  - DeepMosaic worker (port 8081)-> .venv-deepmosaic (torch 2.1.2)
+  - IOPaint   (port 8080)        -> .venv-iopaint    (security-fixed AI stack)
+  - DeepMosaic worker (port 8081)-> .venv-deepmosaic (security-fixed AI stack)
 
   The main app is launched with IOPAINT_URL and DEEPMOSAIC_URL env vars so it
   talks to the sibling workers over loopback instead of trying to spawn them as

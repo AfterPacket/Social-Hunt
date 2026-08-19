@@ -23,16 +23,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Python deps: torch CPU build + the wrapper server deps + DeepMosaics deps.
-# NOTE: iopaint/deepmosaic intentionally use torch 2.1.2 here (DeepMosaics was
-# written against old torch). This is ISOLATED in this container on purpose.
+# DeepMosaics runs in its own container, but isolation is not a substitute for
+# patching dependencies; use security-fixed Torch and image libraries here.
 RUN pip install --no-cache-dir \
     --extra-index-url https://download.pytorch.org/whl/cpu \
-    "torch==2.1.2" "torchvision==0.16.2" \
+    "torch>=2.10.0" "torchvision>=0.25.0" \
     "numpy<2.0" \
-    opencv-python-headless \
+    "opencv-python-headless>=4.8.1.78" \
     ffmpeg-python \
     tqdm \
-    pillow \
+    "pillow>=12.3.0" \
     fastapi \
     "uvicorn[standard]"
 

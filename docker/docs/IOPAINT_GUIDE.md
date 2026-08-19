@@ -6,11 +6,10 @@ Social-Hunt's AI demasking features are powered by two optional workers that run
 - **IOPaint** — interactive AI inpainting canvas. Web UI on port `8080`.
 - **DeepMosaic** — automated mosaic removal over a small HTTP API. API on port `8081`.
 
-Both workers depend on `torch` + `Pillow==9.5.0`, which are *intentionally* old
-(iopaint 1.6.0 pins them and no newer release exists). To clear the known CVEs,
-the main Social-Hunt app runs on **secure Pillow 12 with no torch** and talks to
+Both workers depend on `torch` + Pillow and install security-fixed versions in
+their isolated environments. The main Social-Hunt app has no torch and talks to
 the workers over loopback HTTP (`IOPAINT_URL` / `DEEPMOSAIC_URL`). This keeps the
-vulnerable stack isolated and out of the app's dependency graph.
+heavy AI stack out of the app's dependency graph.
 
 You can run the workers two ways: **Docker** (Linux servers) or **isolated
 venvs** (Windows / no Docker). Both produce the same wiring.
@@ -127,8 +126,8 @@ powershell -ExecutionPolicy Bypass -File scripts\setup-ai.ps1
 
 This creates:
 
-- `.venv-iopaint` — `iopaint==1.6.0` (its own torch 2.1.2 + Pillow 9.5.0)
-- `.venv-deepmosaic` — torch 2.1.2 + DeepMosaics + deps
+- `.venv-iopaint` — `iopaint==1.6.0` with security-fixed AI dependencies
+- `.venv-deepmosaic` — security-fixed torch + DeepMosaics + deps
 - Clones `DeepMosaics/` if missing (handles ZIP-download case with no `.git`)
 - Downloads DeepMosaic models (non-interactive)
 

@@ -2,11 +2,10 @@
 .SYNOPSIS
   One-time setup for the isolated AI worker venvs used by Social-Hunt on Windows
   (no Docker). Creates two separate Python environments so the vulnerable/heavy
-  torch + Pillow 9.5.0 stack never touches the main Social-Hunt .venv (which
-  stays on secure Pillow 12).
+  torch + Pillow stack never touches the main Social-Hunt .venv.
 
-  - .venv-iopaint      -> runs IOPaint 1.6.0 (pins Pillow==9.5.0, torch==2.1.2) on :8080
-  - .venv-deepmosaic   -> runs DeepMosaic worker (torch 2.1.2 + DeepMosaics) on :8081
+  - .venv-iopaint      -> runs IOPaint 1.6.0 with security-fixed dependencies on :8080
+  - .venv-deepmosaic   -> runs DeepMosaic worker with security-fixed dependencies on :8081
 
 .DESCRIPTION
   Run from any directory; resolves paths via $PSScriptRoot so the space + parens
@@ -120,10 +119,19 @@ if ((Test-Path $IopaintPy) -and -not $Force) {
     Write-Host '[2/5] Upgrading pip in .venv-iopaint ...'
     & $IopaintPy -m pip install --upgrade pip wheel | Out-Null
 
-    Write-Host '[3/5] Installing iopaint==1.6.0 (this pulls torch 2.1.2 + Pillow 9.5.0, isolated here) ...'
+    Write-Host '[3/5] Installing IOPaint 1.6.0 and replacing vulnerable dependency pins ...'
     & $IopaintPy -m pip install 'iopaint==1.6.0'
     if ($LASTEXITCODE -ne 0) {
         Write-Host '[error] iopaint install failed. Network or wheel issue.' -ForegroundColor Red
+        exit 1
+    }
+
+    # IOPaint 1.6.0 pins old, vulnerable releases. Keep the legacy application
+    # isolated, but do not install those known-vulnerable packages.
+    Write-Host '[3.1/5] Installing security-fixed AI dependencies ...'
+    & $IopaintPy -m pip install --upgrade 'Pillow>=12.3.0' 'gradio>=6.0.0' 'diffusers>=0.38.0' 'python-socketio>=5.14.0' 'torch>=2.10.0' 'torchvision>=0.25.0'
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '[error] security-fixed AI dependency install failed.' -ForegroundColor Red
         exit 1
     }
 
@@ -162,14 +170,14 @@ if ((Test-Path $IopaintPy) -and -not $Force) {
         Write-Host '[info] Skipping CUDA torch upgrade (no -GPU flag). SD demask will run on CPU.' -ForegroundColor DarkGray
     }
 
-    # pillow-avif-plugin: Pillow 9.5.0 (pinned by iopaint 1.6.0) cannot decode
+    # pillow-avif-plugin: the IOPaint integration cannot decode
     # AVIF images. Browsers and phone cameras increasingly save .jpg files
     # that are actually AVIF (magic bytes 'ftypavif'); the WebUI canvas renders
     # them fine via native browser AVIF support, but the backend Image.open()
     # raises UnidentifiedImageError -> 500 'cannot identify image file'. The
     # plugin registers itself on PIL import, so it must be installed AFTER
     # iopaint (which pins Pillow).
-    Write-Host '[4/5] Installing pillow-avif-plugin (adds AVIF decode to Pillow 9.5.0) ...'
+    Write-Host '[4/5] Installing pillow-avif-plugin (adds AVIF decode) ...'
     & $IopaintPy -m pip install 'pillow-avif-plugin'
     if ($LASTEXITCODE -ne 0) {
         Write-Host '[warn] pillow-avif-plugin install failed; AVIF .jpg uploads will fail.' -ForegroundColor Yellow
@@ -368,15 +376,15 @@ if ((Test-Path $DmPy) -and -not $Force) {
     Write-Host '[2/6] Upgrading pip in .venv-deepmosaic ...'
     & $DmPy -m pip install --upgrade pip wheel | Out-Null
 
-    Write-Host '[3/6] Installing torch 2.1.2 (CPU) + torchvision 0.16.2 ...'
-    & $DmPy -m pip install --extra-index-url https://download.pytorch.org/whl/cpu 'torch==2.1.2' 'torchvision==0.16.2'
+    Write-Host '[3/6] Installing security-fixed torch (CPU) + torchvision ...'
+    & $DmPy -m pip install --extra-index-url https://download.pytorch.org/whl/cpu 'torch>=2.10.0' 'torchvision>=0.25.0'
     if ($LASTEXITCODE -ne 0) {
         Write-Host '[error] torch install failed.' -ForegroundColor Red
         exit 1
     }
 
     Write-Host '[4/6] Installing DeepMosaic runtime deps (opencv, ffmpeg, fastapi, uvicorn, gdown) ...'
-    & $DmPy -m pip install 'opencv-python-headless' 'ffmpeg-python' 'tqdm' 'pillow' 'numpy<2.0' 'fastapi' 'uvicorn[standard]' 'python-multipart' 'aiofiles' 'gdown'
+    & $DmPy -m pip install 'opencv-python-headless>=4.8.1.78' 'ffmpeg-python' 'tqdm' 'pillow>=12.3.0' 'numpy<2.0' 'fastapi' 'uvicorn[standard]' 'python-multipart' 'aiofiles' 'gdown'
     if ($LASTEXITCODE -ne 0) {
         Write-Host '[error] DeepMosaic deps install failed.' -ForegroundColor Red
         exit 1

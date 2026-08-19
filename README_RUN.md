@@ -202,7 +202,7 @@ Set a Replicate API token in either:
 - `REPLICATE_API_TOKEN` in your environment
 
 ### IOPaint (interactive inpainting)
-IOPaint pins `Pillow==9.5.0` / `torch==2.1.2`, so it runs in its own venv
+IOPaint has a legacy dependency set, so it runs in its own venv
 (Windows) or container (Docker `--profile ai`). Start the workers:
 
 - **Docker**: `docker compose --profile ai up -d --build` (IOPaint on `:8080`)
