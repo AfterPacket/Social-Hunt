@@ -36,6 +36,8 @@ services:
       # unreachable. Only set when using --profile ai.
       - IOPAINT_URL=${IOPAINT_URL:-http://iopaint:8080}
       - DEEPMOSAIC_URL=${DEEPMOSAIC_URL:-http://deepmosaic:8081}
+      # Onion providers use Tor automatically; clearnet providers stay direct.
+      - SOCIAL_HUNT_PROXY=${SOCIAL_HUNT_PROXY:-socks5://tor:9050}
 
     volumes:
       # Persist search history, settings, and job results
@@ -135,6 +137,15 @@ services:
           memory: 4G
         reservations:
           memory: 2G
+
+  # Tor is used only for providers whose target hostname ends in .onion.
+  tor:
+    build:
+      context: ./tor
+    profiles: ["ai", "tor"]
+    expose:
+      - "9050"
+    restart: unless-stopped
 
   # DeepMosaic worker. Built from docker/deepmosaic/Dockerfile; owns torch +
   # the DeepMosaics submodule + model weights. The main app calls it via

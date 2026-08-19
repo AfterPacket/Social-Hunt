@@ -15,6 +15,15 @@ from .types import ProviderResult, ResultStatus
 from .ua import UA_PROFILES, merge_headers
 
 
+def _is_onion_url(url: str) -> bool:
+    """Return True only when the URL hostname is an onion service."""
+    try:
+        host = (httpx.URL(url).host or "").rstrip(".").lower()
+    except Exception:
+        return False
+    return host == ".onion" or host.endswith(".onion")
+
+
 class SocialHuntEngine:
     def __init__(
         self,
@@ -47,30 +56,37 @@ class SocialHuntEngine:
         # SOCIAL_HUNT_CLEARNET_PROXY — optional residential/HTTP proxy for clearnet
         #                              providers that set use_proxy=True (e.g. BreachVIP)
         #                          e.g. http://user:pass@proxy.example.com:8080
-        tor_proxy_url = os.getenv("SOCIAL_HUNT_PROXY")
+        tor_proxy_url = (
+            os.getenv("SOCIAL_HUNT_PROXY")
+            or os.getenv("SOCIAL_HUNT_TOR_PROXY")
+            or "socks5://127.0.0.1:9050"
+        )
         clearnet_proxy_url = os.getenv("SOCIAL_HUNT_CLEARNET_PROXY")
 
         async with AsyncExitStack() as stack:
             # Default direct client
-            client_direct = await stack.enter_async_context(httpx.AsyncClient())
+            client_direct = await stack.enter_async_context(
+                httpx.AsyncClient(trust_env=False)
+            )
 
             # Tor client — .onion URLs only
             client_tor = None
             if tor_proxy_url:
                 client_tor = await stack.enter_async_context(
-                    httpx.AsyncClient(proxy=tor_proxy_url)
+                    httpx.AsyncClient(proxy=tor_proxy_url, trust_env=False)
                 )
 
             # Clearnet proxy client — for providers that opt in via use_proxy=True
             client_clearnet_proxy = None
             if clearnet_proxy_url:
                 client_clearnet_proxy = await stack.enter_async_context(
-                    httpx.AsyncClient(proxy=clearnet_proxy_url)
+                    httpx.AsyncClient(proxy=clearnet_proxy_url, trust_env=False)
                 )
 
             async def run_one(name: str) -> ProviderResult:
                 prov = self.registry[name]
                 url = prov.build_url(username)
+                is_onion = _is_onion_url(url)
 
                 base_headers = UA_PROFILES.get("desktop_chrome", {})
                 prof_headers = UA_PROFILES.get(
@@ -84,8 +100,30 @@ class SocialHuntEngine:
                 #   .onion URLs → Tor proxy (SOCIAL_HUNT_PROXY)
                 #   use_proxy providers → clearnet proxy (SOCIAL_HUNT_CLEARNET_PROXY)
                 #   fallback → direct
-                if ".onion" in url and client_tor:
+                if is_onion and client_tor:
                     use_client = client_tor
+                elif is_onion:
+                    from datetime import datetime, timezone
+
+                    res = ProviderResult(
+                        provider=prov.name,
+                        username=username,
+                        url=url,
+                        status=ResultStatus.ERROR,
+                        http_status=None,
+                        elapsed_ms=0,
+                        evidence={},
+                        profile={},
+                        error=(
+                            "Tor is required for this .onion provider, but the Tor "
+                            "proxy could not be initialized. Start Tor or set "
+                            "SOCIAL_HUNT_PROXY."
+                        ),
+                        timestamp_iso=datetime.now(timezone.utc).isoformat(),
+                    )
+                    if progress_callback:
+                        progress_callback(res)
+                    return res
                 elif getattr(prov, "use_proxy", False) and client_clearnet_proxy:
                     use_client = client_clearnet_proxy
                 else:
