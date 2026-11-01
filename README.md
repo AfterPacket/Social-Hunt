@@ -16,7 +16,9 @@
   - [Docker + Reverse Proxy](#docker--bundled-reverse-proxy-nginx-or-apache)
   - [Docker + SSL](#docker--ssl-nginx--iopaint)
   - [Manual Install](#manual-install)
-  - [Raspberry Pi 5 Setup](#raspberry-pi-5-setup)
+- [Updating a development machine](#updating-a-development-machine)
+- [Recent scan and dependency fixes](#recent-scan-and-dependency-fixes)
+- [Raspberry Pi 5 Setup](#raspberry-pi-5-setup)
 - [CLI Usage](#cli-usage)
 - [Configuration](#configuration)
 - [Login Security](#login-security)
@@ -87,7 +89,7 @@
 ### Docker (recommended)
 
 ```bash
-git clone https://github.com/AfterPacket/Social-Hunt.git
+git clone --branch dev https://repo.lassiter.eu/AfterPacket/Social-Hunt.git
 cd Social-Hunt/docker
 docker compose up -d --build
 ```
@@ -138,8 +140,9 @@ Open `https://your-domain`.
 ### Manual install
 
 ```bash
-git clone https://github.com/AfterPacket/Social-Hunt.git
+git clone --branch dev https://repo.lassiter.eu/AfterPacket/Social-Hunt.git
 cd Social-Hunt
+# Use a Python 3.11 virtual environment.
 python -m pip install -r requirements.txt
 # Optional — Tor/SOCKS support:
 python -m pip install httpx[socks]
@@ -152,7 +155,134 @@ For a detailed walkthrough (virtualenv, tokens, reverse proxy), see [`README_RUN
 
 ---
 
-### Raspberry Pi 5 Setup
+## Updating a development machine
+
+Run Git commands from your actual checkout, not a ZIP extraction, virtual environment, or `docker/` subdirectory. Stop the application before upgrading packages. Back up local settings, API credentials, and application data **outside the repository**; never commit them to share an update.
+
+### 1. Check the checkout and remote
+
+```bash
+git rev-parse --show-toplevel
+git status --short --branch
+git remote -v
+```
+
+If Git reports `not a git repository`, do not run `git init` on the extracted folder. Clone into a **new directory**, keeping the old folder intact:
+
+```bash
+git clone --branch dev https://repo.lassiter.eu/AfterPacket/Social-Hunt.git Social-Hunt-dev
+cd Social-Hunt-dev
+```
+
+Migrate required local configuration privately after checking its destination; do not copy the old folder wholesale over the new checkout. Use a fresh virtual environment rather than moving an existing one.
+
+If `origin` still points to the GitHub mirror, and this checkout is intended to use the development repository, change it:
+
+```bash
+git remote set-url origin https://repo.lassiter.eu/AfterPacket/Social-Hunt.git
+```
+
+### 2. Preserve local edits, then update `dev`
+
+If `git status` shows uncommitted edits, save them locally before switching branches:
+
+```bash
+git stash push --include-untracked -m "local edits before dev update"
+```
+
+Run that command only if there are edits to preserve. The stash is local and is not sent by a normal push. Ignored files are not included, so keep your separate configuration/data backup. Do not use `git add .` or commit credentials just to make a pull succeed. Review dirty submodules separately; a parent stash does not preserve changes inside them.
+
+Then:
+
+```bash
+git switch dev
+git branch backup/dev-before-update
+git fetch origin
+git log --oneline --left-right dev...origin/dev
+```
+
+Choose a different backup name if it already exists. Keep this backup local; do not use `git push --all`.
+
+For a machine with **no local-only commits**, update with:
+
+```bash
+git merge --ff-only origin/dev
+```
+
+If Git reports divergent branches or says it needs a reconciliation strategy, inspect the log above. `<` marks local-only commits and `>` marks remote-only commits. To keep **unpublished local commits**, replay them on the updated remote:
+
+```bash
+git rebase origin/dev
+```
+
+Do not rebase commits other people already use without coordinating. For shared local history, use a merge instead (`git merge origin/dev`); inspect the resulting changes before pushing.
+
+### 3. Handle rebase conflicts without losing work
+
+If `git status` says a rebase is already in progress, finish or abort that rebase before starting another pull:
+
+```bash
+git status
+```
+
+Resolve each conflicted file, remove conflict markers, and stage **only the reviewed files**:
+
+```bash
+git add path/to/resolved-file
+git rebase --continue
+```
+
+Repeat until complete. To cancel and return to the state before the rebase:
+
+```bash
+git rebase --abort
+```
+
+Do not run `git reset --hard`, `git clean -fd`, or force-push as an update fix. Do not use `git rebase --skip` unless you intentionally want to discard the affected commit. A pull/rebase message is not a request to rebase IOPaint or the other submodules.
+
+If you created a stash in step 2, restore it after updating:
+
+```bash
+git stash list
+git stash apply 'stash@{0}'
+```
+
+Confirm that the selected stash is yours before applying it. Keep it until the restored edits are verified; applying can also produce conflicts. Do not blindly stage a settings file or API token when resolving them. If you stashed edits on another branch, apply them on that branch instead.
+
+### 4. Install the updated app and restart
+
+For a manual install, activate the app's **Python 3.11 virtual environment**, then:
+
+```bash
+python -m pip install --upgrade -r requirements.txt
+python -m pip check
+python run.py
+```
+
+For Docker, ensure the main service uses a source build from the updated checkout. The default Compose service may use `afterpacket/social-hunt:latest`; `--build` alone cannot rebuild a service whose `build:` block is commented out. Enable the documented `build:` block in `docker/docker-compose.yml` before running:
+
+```bash
+cd docker
+docker compose up -d --build --force-recreate
+```
+
+Recreate the optional IOPaint service separately if used. See the [dependency update guide](docs/SECURITY_DEPENDENCY_UPDATE.md) before enabling it. Restarting the main app does not upgrade a separate worker environment.
+
+After restart, hard-refresh the browser (`Ctrl+Shift+R`). Push only intentional, reviewed source changes with `git push origin dev`; updating a machine does not itself require a push. Inspect outgoing commits for private information first. Never paste API keys, settings contents, or credentials into an issue or chat when asking for help.
+
+## Recent scan and dependency fixes
+
+- Live username scans now load every returned result instead of stopping at 300; rows are not limited to a default 50-row page.
+- Result filters survive live refreshes and scan completion.
+- External HTTPS profile images are permitted by the app's image policy; invalid or failed images have placeholders.
+- HTTP authentication failures, access denials, and rate limits are reported as unconfirmed/blocked rather than overridden by profile-looking text. Ordinary Cloudflare asset references alone no longer mark a site blocked. This does not bypass site protections.
+- Main dependency files require **Pillow >=13.0.0,<14.0.0**. The optional IOPaint startup command upgrades to **Gradio >=6.16.0,<7.0.0** and patched Pillow. Existing environments must be upgraded/recreated.
+
+**IOPaint remains outstanding:** its upstream submodule still pins vulnerable Pillow and Gradio releases. Parent-repository overrides do not fix the submodule manifest or prove AI-worker compatibility. Updating that source requires a writable maintained fork or an explicitly approved in-repository copy. See [security dependency status and deployment steps](docs/SECURITY_DEPENDENCY_UPDATE.md). Do not mark those manifest alerts resolved yet.
+
+---
+
+## Raspberry Pi 5 Setup
 
 Social-Hunt runs on Raspberry Pi 5 (Raspberry Pi OS Bookworm, 64-bit). DeepMosaic is not recommended on Pi due to storage and compute constraints — all other features work.
 
