@@ -379,10 +379,15 @@
         }
 
         // Open IOPaint WebUI
+        // Open the IOPaint server directly on its own port. We must NOT proxy
+        // it under /iopaint/ on the Social-Hunt port: IOPaint's WebUI makes
+        // absolute requests to /api/v1/... and /socket.io/..., which would all
+        // hit Social-Hunt (404) instead of IOPaint. Opening the real port is
+        // the only way the IOPaint canvas, model selector, and WebSocket sync
+        // work correctly.
         function openIOPaint() {
-            const port = serverPort.textContent || portInput.value;
-            void port;
-            window.open(`/iopaint/?v=${Date.now()}`, "_blank");
+            const port = serverPort.textContent || portInput.value || 8080;
+            window.open(`http://127.0.0.1:${port}/?v=${Date.now()}`, "_blank");
         }
 
         // Event listeners

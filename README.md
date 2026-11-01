@@ -15,6 +15,7 @@
   - [Docker (recommended)](#docker-recommended)
   - [Docker + Reverse Proxy](#docker--bundled-reverse-proxy-nginx-or-apache)
   - [Docker + SSL](#docker--ssl-nginx--iopaint)
+  - [Non-Docker (Windows)](#non-docker-windows)
   - [Manual Install](#manual-install)
 - [Updating a development machine](#updating-a-development-machine)
 - [Recent scan and dependency fixes](#recent-scan-and-dependency-fixes)
@@ -80,7 +81,7 @@
 - **Frontend:** Vanilla HTML / CSS / JS — no heavy framework, fast loads
 - **Core engine:** Async concurrency with per-provider heuristics and status detection
 - **Storage:** JSON flat-files for settings and job results; notes encrypted in browser localStorage
-- **Optional services:** Replicate (cloud AI), IOPaint (interactive inpainting), DeepMosaic (automated mosaic removal)
+- **Optional services:** Replicate (cloud AI), IOPaint (interactive inpainting), DeepMosaic (automated mosaic removal), local SD inpainting (demask on GPU)
 
 ---
 
@@ -114,17 +115,20 @@ docker compose --profile apache up -d --build
 
 Open `http://localhost/`.
 
-To include IOPaint behind the same proxy:
+To include the AI workers (IOPaint + DeepMosaic) alongside the proxy:
 
 ```bash
-docker compose --profile nginx --profile iopaint up -d --build
+docker compose --profile nginx --profile ai up -d --build
 ```
 
 ---
 
-### Docker + SSL (nginx + IOPaint)
+### Docker + SSL (nginx + AI workers)
 
-HTTPS termination — routes `/` to Social-Hunt and `/iopaint` to IOPaint.
+HTTPS termination. Social-Hunt serves `/`; the AI workers run in sibling
+containers and are reached over the internal network (`IOPAINT_URL`,
+`DEEPMOSAIC_URL`). IOPaint's web UI is opened directly on port `8080` from the
+dashboard (separate origin) — it is not proxied under a subpath.
 
 ```bash
 cd Social-Hunt/docker
@@ -134,6 +138,50 @@ docker compose --profile ssl up -d
 ```
 
 Open `https://your-domain`.
+
+---
+
+### Non-Docker (Windows)
+
+For Windows machines without Docker, two PowerShell scripts in `scripts/` create
+isolated Python environments for the AI workers (IOPaint, DeepMosaic) and launch
+all four services as background processes. The main app stays on secure
+Pillow 12 with no torch; the workers keep their own (legacy) torch + Pillow in
+separate venvs. The app reaches them over loopback HTTP.
+
+One-time setup (creates `.venv-iopaint` and `.venv-deepmosaic`, clones
+DeepMosaics, downloads models):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup-ai.ps1
+```
+
+For GPU-accelerated SD demasking (recommended if you have an NVIDIA GPU such
+as an RTX 4090), add the `-GPU` flag so the CUDA build of torch is installed in
+`.venv-iopaint`. Without it, `iopaint==1.6.0` pulls CPU-only torch and the SD
+demask worker silently falls back to CPU (~13 min/image vs ~30 s on a 4090):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup-ai.ps1 -GPU
+```
+
+Start everything (Social-Hunt :8000, IOPaint :8080, IOPaint SD :8082,
+DeepMosaic :8081):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start-social-hunt.ps1
+```
+
+Stop everything:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start-social-hunt.ps1 -Stop
+```
+
+Use `127.0.0.1` (not `localhost`) — uvicorn binds IPv4 and Windows often
+resolves `localhost` to IPv6 `::1`, which is not served. See
+[`docker/docs/IOPAINT_GUIDE.md`](docker/docs/IOPAINT_GUIDE.md) for details and
+`FIXES.md` for why the workers are isolated.
 
 ---
 
@@ -156,6 +204,14 @@ For a detailed walkthrough (virtualenv, tokens, reverse proxy), see [`README_RUN
 ---
 
 ## Updating a development machine
+
+**Update System now uses fast-forward-only updates**, with preflight checks for
+unfinished Git operations, local edits, hidden index flags, and divergent
+commits. It never automatically stashes, rebases, resets, commits, or pushes.
+Failures show an actionable message rather than starting another merge. This
+behavior takes effect after installing the update and restarting the server.
+See [safe updates and Pi recovery](docs/SAFE_UPDATES.md) for deployment setup,
+private configuration migration, and the one-time divergent-history recovery.
 
 Run Git commands from your actual checkout, not a ZIP extraction, virtual environment, or `docker/` subdirectory. Stop the application before upgrading packages. Back up local settings, API credentials, and application data **outside the repository**; never commit them to share an update.
 
@@ -412,6 +468,10 @@ All settings can be set as environment variables (useful for Docker / CI):
 | `SOCIAL_HUNT_BOOTSTRAP_SECRET` | Secure secret for bootstrap endpoint |
 | `SOCIAL_HUNT_ENABLE_WEB_PLUGIN_UPLOAD` | Enable plugin upload via dashboard (`1`) |
 | `SOCIAL_HUNT_FACE_AI_URL` | Self-hosted face AI endpoint URL |
+| `IOPAINT_URL` | IOPaint lama worker URL (default `http://127.0.0.1:8080`) |
+| `IOPAINT_SD_URL` | IOPaint SD demask worker URL (default `http://127.0.0.1:8082`) |
+| `DEEPMOSAIC_URL` | DeepMosaic worker URL (default `http://127.0.0.1:8081`) |
+| `REPLICATE_API_TOKEN` | Replicate API token (fallback for demask when local SD is down) |
 | `HCAPTCHA_SECRET` | hCaptcha server secret (enables captcha on login) |
 | `HCAPTCHA_SITEKEY` | hCaptcha site key (sent to frontend) |
 
@@ -551,11 +611,31 @@ Each card shows the state name, portal domain, and a direct link to that state's
 
 ### AI Demasking
 
-Removes mosaic censoring and restores faces using three different engines.
+Removes mosaic censoring and restores faces using several engines. The
+local engines (IOPaint, DeepMosaic, SD demask) run in **isolated environments**
+with their own torch + Pillow, separate from the main app — see
+[`docker/docs/IOPAINT_GUIDE.md`](docker/docs/IOPAINT_GUIDE.md) for setup.
 
-#### Replicate API (cloud, recommended)
+#### Local SD demask (GPU, no external API)
 
-Uses state-of-the-art models hosted on [Replicate](https://replicate.com). Requires a Replicate API key.
+Runs a local Stable Diffusion inpainting model (`Sanster/Realistic_Vision_V1.4-inpainting`)
+on your GPU via a dedicated IOPaint instance on port `8082`. No Replicate token
+needed — the entire pipeline runs locally. Requires `setup-ai.ps1 -GPU` so the
+CUDA build of torch is installed in `.venv-iopaint`. On an RTX 4090 a 75-step
+inpainting takes ~30 s (vs ~13 min on CPU).
+
+1. Run `powershell -ExecutionPolicy Bypass -File scripts\setup-ai.ps1 -GPU`
+2. Start all services: `powershell -ExecutionPolicy Bypass -File scripts\start-social-hunt.ps1`
+3. Go to **Demasking → Upload** an image and click **Process**.
+4. The app uses the local SD worker automatically; Replicate is only used as a
+   fallback if the local worker is down.
+
+> **Note:** Demasking a physical face covering (mask, balaclava) hallucinates a
+> plausible face via SD inpainting — it cannot recover the real face underneath.
+
+#### Replicate API (cloud, fallback)
+
+Uses state-of-the-art models hosted on [Replicate](https://replicate.com). Requires a Replicate API key. Used automatically when the local SD worker is not available.
 
 1. Add `replicate_key` in Settings.
 2. Go to **Demasking → Upload** an image.
@@ -564,18 +644,24 @@ Uses state-of-the-art models hosted on [Replicate](https://replicate.com). Requi
 
 #### IOPaint (interactive)
 
-Runs a local [IOPaint](https://github.com/Sanster/IOPaint) inpainting server accessible from the dashboard.
+Runs a local [IOPaint](https://github.com/Sanster/IOPaint) inpainting server
+accessible from the dashboard. IOPaint pins `Pillow==9.5.0` and pulls
+torch (currently 2.13.0), so it runs in its own venv (Windows) or container
+(Docker `--profile ai`).
 
-1. Go to **Demasking → IOPaint Inpainting**.
-2. Select model and device (CPU / CUDA / MPS).
-3. Click **Start Server** — then **Open IOPaint** to use the interactive canvas.
-4. Click **Stop Server** when done.
+1. Start the AI workers — see [`docker/docs/IOPAINT_GUIDE.md`](docker/docs/IOPAINT_GUIDE.md).
+2. Go to **Demasking → IOPaint Inpainting**.
+3. Click **Open IOPaint WebUI** to use the interactive canvas on port `8080`.
 
 #### DeepMosaic (automated)
 
 Automated mosaic removal using local [DeepMosaic](https://github.com/HypoX64/DeepMosaic) models.
+Runs in its own venv/container (same `--profile ai`).
 
-1. Download models: `python download_deepmosaic_models.py`
+1. Start the AI workers and ensure models are downloaded:
+   ```bash
+   python download_deepmosaic_models.py
+   ```
 2. Go to **Demasking → DeepMosaic**, upload image/video, configure, and process.
 3. Download the result directly.
 
@@ -771,27 +857,37 @@ Social-Hunt/
 |---|---|
 | [`README.md`](README.md) | This file — full feature overview and setup guide |
 | [`README_RUN.md`](README_RUN.md) | Detailed run / deployment walkthrough |
+| [`FIXES.md`](FIXES.md) | Postmortem of non-obvious bugs (IOPaint/Pillow isolation, path truncation, etc.) |
 | [`PLUGINS.md`](PLUGINS.md) | Provider pack authoring guide |
 | [`APACHE_SETUP.md`](APACHE_SETUP.md) | Apache reverse proxy configuration |
 | [`NGINX_SETUP.md`](NGINX_SETUP.md) | Nginx reverse proxy configuration |
-| [`docker/docs/`](docker/docs/) | Docker-specific guides (SSL, IOPaint, dev updates) |
+| [`docker/docs/`](docker/docs/) | Docker-specific guides (AI workers, SSL, dev updates) |
 | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Release history |
 | [`docs/CANARY.md`](docs/CANARY.md) | Canary warrant statement |
 | [`SECURITY.md`](SECURITY.md) | Security policy and responsible disclosure |
 
 ---
 
-## Reverse Proxy Notes (IOPaint on same domain)
+## Reverse Proxy Notes (AI workers)
 
-When running both Social-Hunt and IOPaint behind the same nginx reverse proxy, requests are split by path:
+When using the bundled nginx or Apache profile, Social-Hunt serves `/` and its
+API is under `/sh-api/`. The AI workers (IOPaint, DeepMosaic) run in sibling
+containers and are reached by the main app over the internal docker network via
+`IOPAINT_URL` / `DEEPMOSAIC_URL` — they are **not** proxied through nginx.
+
+IOPaint's web UI is a single-page app that assumes it is served at site root, so
+it is opened directly on its own port (`http://<host>:8080/`) from the dashboard
+rather than under a subpath. Proxying it under `/iopaint/` breaks its internal
+`/assets/` and `/api/` calls. See `FIXES.md` for the full reasoning.
 
 - `/` → Social-Hunt (`social-hunt:8000`)
-- `/iopaint/` → IOPaint (`iopaint:8080`)
 - `/sh-api/` → Social-Hunt API (`social-hunt:8000`)
+- IOPaint WebUI → direct port `8080` (separate origin, not proxied)
+- IOPaint SD demask → direct port `8082` (not proxied)
+- DeepMosaic API → direct port `8081` (not proxied)
 
-The `nginx.conf` in `docker/` handles this automatically when using the `nginx` or `ssl` profile.
-
-> **Important:** Do not expose the `/api/` path prefix externally — it is reserved for IOPaint's internal API. Social-Hunt uses `/sh-api/` exclusively.
+> **Important:** Social-Hunt uses `/sh-api/` exclusively. Do not add a global
+> `/api/` proxy rule — it collides with IOPaint's internal `/api/` namespace.
 
 ---
 

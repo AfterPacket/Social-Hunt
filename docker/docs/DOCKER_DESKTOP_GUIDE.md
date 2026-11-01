@@ -10,7 +10,7 @@ This guide shows you how to run Social-Hunt using Docker Desktop's graphical int
 
 ### Windows Users:
 1. Open File Explorer
-2. Navigate to: `C:\Git\Social-Hunt\docker`
+2. Navigate to: `C:\path\to\Social-Hunt\docker`
 3. **Double-click `start.bat`**
 4. A window will open and start everything automatically
 5. Access at: http://localhost:8000
@@ -43,7 +43,7 @@ Docker Desktop's GUI doesn't have a direct "Compose Up" button, but here are you
 
 3. **Run the commands**:
    ```bash
-   cd /c/Git/Social-Hunt/docker
+   cd /c/path/to/Social-Hunt/docker
    docker compose up -d
    ```
 
@@ -61,14 +61,14 @@ Docker Desktop's GUI doesn't have a direct "Compose Up" button, but here are you
    
 4. **Navigate and start**:
    ```powershell
-   cd C:\Git\Social-Hunt\docker
+   cd C:\path\to\Social-Hunt\docker
    docker compose up -d
    ```
 
 ### Method 3: Right-Click in File Explorer (Easiest!)
 
 1. **Open File Explorer**
-   - Navigate to: `C:\Git\Social-Hunt\docker`
+   - Navigate to: `C:\path\to\Social-Hunt\docker`
 
 2. **Open PowerShell Here**:
    - Hold `Shift` key
@@ -189,7 +189,7 @@ Once your containers are running, you can manage them through Docker Desktop:
 
 #### Using PowerShell:
 ```powershell
-cd C:\Git\Social-Hunt\docker
+cd C:\path\to\Social-Hunt\docker
 docker compose down
 docker compose pull
 docker compose up -d
@@ -369,9 +369,10 @@ A: Don't use `http://0.0.0.0:8000` - use `http://localhost:8000` instead.
    - It handles everything automatically
 
 3. **Review Other Documentation**:
-   - `START_HERE.md` - Quick start guide
-   - `STARTUP_SCRIPTS.md` - All startup methods
-   - `README_DOCKER.md` - Docker details
+   - `README_DOCKER.md` - Docker details and configuration
+   - `STARTUP_SCRIPTS.md` - All startup methods and auto-start
+   - `IOPAINT_GUIDE.md` - AI workers (IOPaint + DeepMosaic)
+   - `../README.md` - Main project README
 
 4. **Check GitHub Issues**:
    - https://github.com/AfterPacket/Social-Hunt/issues

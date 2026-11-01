@@ -703,7 +703,10 @@ async function fetchWhoami() {
   }
 }
 
+let providerSelectionMode = "automatic";
+
 function renderProviders(names) {
+  providerSelectionMode = "automatic";
   const box = document.getElementById("providers");
   box.innerHTML = names
     .map(
@@ -715,12 +718,19 @@ function renderProviders(names) {
   `,
     )
     .join("");
+  box.querySelectorAll('input[type="checkbox"][data-name]').forEach((input) => {
+    input.addEventListener("change", () => {
+      providerSelectionMode = "manual";
+    });
+  });
 }
 
 function selectedProviders() {
-  return Array.from(
+  const all = Array.from(
     document.querySelectorAll('input[type="checkbox"][data-name]'),
-  )
+  );
+  if (providerSelectionMode === "automatic") return null;
+  return all
     .filter((x) => x.checked)
     .map((x) => x.getAttribute("data-name"));
 }
@@ -2266,20 +2276,19 @@ async function initSearchView() {
   loadBtn.onclick = async () => {
     statusEl.textContent = "Loading providers...";
     let names = await fetchProviders();
-    names = names.filter(
-      (n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase",
-    );
     renderProviders(names);
     statusEl.textContent = `Loaded ${names.length} providers.`;
   };
 
   allBtn.onclick = () => {
+    providerSelectionMode = "all";
     document
       .querySelectorAll('input[type="checkbox"][data-name]')
       .forEach((x) => (x.checked = true));
   };
 
   noneBtn.onclick = () => {
+    providerSelectionMode = "manual";
     document
       .querySelectorAll('input[type="checkbox"][data-name]')
       .forEach((x) => (x.checked = false));
@@ -2289,9 +2298,6 @@ async function initSearchView() {
 
   // auto-load
   let names = await fetchProviders();
-  names = names.filter(
-    (n) => n !== "hibp" && n !== "breachvip" && n !== "snusbase",
-  );
   renderProviders(names);
 
   const who = await fetchWhoami();
@@ -2937,7 +2943,7 @@ function initSettingsView() {
 
   if (updateBtn) {
     updateBtn.onclick = async () => {
-      if (!confirm("Are you sure you want to pull updates from GitHub?"))
+      if (!confirm("Update from this branch's configured remote? Only clean, fast-forward updates are allowed; local edits and unfinished Git operations will block the update."))
         return;
 
       updateBtn.disabled = true;
@@ -2954,13 +2960,10 @@ function initSettingsView() {
         if (j.ok) {
           updateLog.textContent =
             (j.stdout || "") + "\n" + (j.message || "Update finished.");
-          alert(
-            "Update successful. Please restart the server manually if necessary.",
-          );
+          alert(j.message || "Update complete. Restart the server if code changed.");
         } else {
-          updateLog.textContent =
-            (j.stderr || "") + "\n" + (j.error || "Update failed.");
-          alert("Update failed.");
+          updateLog.textContent = [j.message, j.error, j.stderr].filter(Boolean).join("\n") || "Update could not complete.";
+          alert(j.message || j.error || "Update could not complete. See the update log.");
         }
       } catch (e) {
         updateLog.textContent = "Error: " + e.message;
@@ -3374,6 +3377,9 @@ async function initDemaskView() {
   const actions = document.getElementById("demaskActions");
   const downloadBtn = document.getElementById("downloadDemaskBtn");
   const saveToNotesBtn = document.getElementById("saveDemaskToNotesBtn");
+  const targetMarker = document.getElementById("demaskTargetMarker");
+  const targetHint = document.getElementById("demaskTargetHint");
+  let targetPoint = null;
 
   if (!uploadInput) return;
 
@@ -3384,9 +3390,28 @@ async function initDemaskView() {
     reader.onload = (ev) => {
       originalPreview.src = ev.target.result;
       previewContainer.style.display = "block";
-      startBtn.disabled = false;
+      targetPoint = null;
+      targetMarker.style.display = "none";
+      startBtn.disabled = true;
+      targetHint.textContent = "Click the one covered face you want to reconstruct.";
     };
     reader.readAsDataURL(file);
+  };
+
+  previewContainer.onclick = (e) => {
+    if (!originalPreview.naturalWidth) return;
+    const rect = originalPreview.getBoundingClientRect();
+    targetPoint = {
+      x: (e.clientX - rect.left) * (originalPreview.naturalWidth / rect.width),
+      y: (e.clientY - rect.top) * (originalPreview.naturalHeight / rect.height),
+    };
+    const containerRect = previewContainer.getBoundingClientRect();
+    targetMarker.style.left = `${e.clientX - containerRect.left}px`;
+    targetMarker.style.top = `${e.clientY - containerRect.top}px`;
+    targetMarker.style.display = "block";
+    targetHint.textContent = "Target selected. Click again to choose a different face.";
+    statusEl.textContent = "Target face selected.";
+    startBtn.disabled = false;
   };
 
   startBtn.onclick = async () => {
@@ -3402,6 +3427,8 @@ async function initDemaskView() {
 
     const fd = new FormData();
     fd.append("file", file);
+    fd.append("target_x", String(targetPoint.x));
+    fd.append("target_y", String(targetPoint.y));
 
     try {
       const res = await fetch("/sh-api/demask", {
@@ -3639,14 +3666,19 @@ async function initIOPaintView() {
   }
 
   // Open IOPaint WebUI
+  // IOPaint runs in its own container and is exposed directly on its own port
+  // (default 8080). Opening it on a separate origin avoids path interference
+  // with Social-Hunt's /sh-api and / routes. When running locally without the
+  // container, this falls back to the current host + the detected port.
   function openIOPaint() {
     const port = serverPort
       ? serverPort.textContent
       : portInput
         ? portInput.value
         : "8080";
-    void port;
-    window.open("/iopaint/", "_blank");
+    const host = window.location.hostname || "localhost";
+    const url = `http://${host}:${port || 8080}/`;
+    window.open(url, "_blank");
   }
 
   // Add toast function if not exists
@@ -3816,16 +3848,27 @@ async function initDeepMosaicView() {
         });
 
         if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
+          // Surface the backend detail (e.g. "Models missing...") instead of
+          // a generic 500 so the user can actually diagnose the failure.
+          let detail = `Server error: ${response.status}`;
+          try {
+            const errBody = await response.json();
+            if (errBody && errBody.detail) detail = String(errBody.detail);
+          } catch (_) {
+            try {
+              const errText = await response.text();
+              if (errText) detail = errText.slice(0, 300);
+            } catch (_) {}
+          }
+          throw new Error(detail);
         }
 
         // Get the blob (image or video)
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
-        const filename = response.headers.get("content-disposition");
-        const jobMatch = filename && filename.match(/deepmosaic_(\w+)_/);
-        currentJobId = jobMatch ? jobMatch[1] : Date.now().toString();
+        // The real job id is sent in the X-Job-ID header.
+        currentJobId = response.headers.get("x-job-id") || Date.now().toString();
 
         // Show results
         resultsDiv.style.display = "block";

@@ -34,8 +34,12 @@
 <div class="card">
     <h3>System Update</h3>
     <p class="muted">
-        Pull the latest updates from GitHub. Your local settings and data are
-        protected.
+        Update from this branch's configured remote using fast-forward only.
+        Local edits, divergent commits, or unfinished merges/rebases block the
+        update instead of starting a conflict. No automatic stashing, resets,
+        rebases, or pushes are performed. Keep private settings outside tracked
+        files and machine-specific Docker changes in ignored local overrides.
+        Restart the server after a successful source update.
     </p>
     <div class="row">
         <button class="btn" id="updateBtn" type="button">Update System</button>

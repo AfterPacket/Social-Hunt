@@ -1,8 +1,14 @@
 ﻿.venv/
+.venv-iopaint/
+.venv-deepmosaic/
 __pycache__/
 *.pyc
 *.log
 .env
+
+# Third-party AI worker repos — cloned on demand by scripts/setup-ai.ps1
+# or `git submodule update --init DeepMosaics`. Do not commit their contents.
+DeepMosaics/
 
 # Local Data & Persistence - Keep structure but ignore contents
 data/*
@@ -23,6 +29,12 @@ web/views/demask.html.real
 # Local backups
 _backup_*/
 data/settings.json
+
+# Device-specific Docker overrides (do not edit tracked Compose defaults)
+docker/docker-compose.override.yml
+docker/docker-compose.override.yaml
+docker/compose.override.yml
+docker/compose.override.yaml
 
 # Docker SSL artifacts
 docker/ssl/ssl.env

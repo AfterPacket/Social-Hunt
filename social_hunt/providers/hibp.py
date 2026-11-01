@@ -21,6 +21,7 @@ class HIBPProvider(BaseProvider):
     name = "hibp"
     timeout = 15
     ua_profile = "desktop_chrome"
+    query_types = {"email"}
     api_key: Optional[str] = None
 
     def __init__(self, api_key: Optional[str] = None):

@@ -115,115 +115,51 @@ sudo apt -y install certbot python3-certbot-apache
 sudo certbot --apache -d osint.example.com
 ```
 
-## 6b) Example: Social-Hunt at / + IOPaint at /iopaint
+## 6b) Exposing the AI workers (IOPaint, DeepMosaic)
 
-If you want IOPaint under the same domain, the safest approach is to move the
-Social-Hunt API to `/sh-api` (so IOPaint can use `/api` and `/socket.io`).
+The AI workers run in isolated environments (their own venvs or containers) and
+the Social-Hunt app reaches them over loopback (`IOPAINT_URL`,
+`DEEPMOSAIC_URL`). They do **not** need to be proxied through Apache for the app
+to use them — the dashboard's "Open IOPaint WebUI" button opens IOPaint directly
+on port `8080`.
 
-```apache
-<VirtualHost *:80>
-  ServerName osint.example.com
-  Redirect permanent / https://osint.example.com/
-</VirtualHost>
+> **Do not proxy IOPaint under `/iopaint/`.** IOPaint is a single-page app that
+> assumes it is served at site root. Its internal `/assets/` and `/api/` calls
+> are absolute, so a subpath proxy breaks them. Use a separate subdomain (or the
+> raw port `8080`) instead. See `FIXES.md` for the full reasoning.
 
-<VirtualHost *:443>
-  ServerName osint.example.com
-  SSLEngine on
-  SSLCertificateFile /etc/ssl/your_cert/ssl.combined
-  SSLCertificateKeyFile /etc/ssl/your_cert/ssl.key
-
-  ProxyPreserveHost On
-  RequestHeader set X-Forwarded-Proto "https"
-  RequestHeader set X-Forwarded-Host "%{Host}i"
-
-  # IOPaint UI + assets + API + socket.io
-  ProxyPass        /iopaint/ http://127.0.0.1:8080/
-  ProxyPassReverse /iopaint/ http://127.0.0.1:8080/
-  ProxyPass        /assets/ http://127.0.0.1:8080/assets/
-  ProxyPassReverse /assets/ http://127.0.0.1:8080/assets/
-  ProxyPass        /api/ http://127.0.0.1:8080/api/
-  ProxyPassReverse /api/ http://127.0.0.1:8080/api/
-  ProxyPass        /socket.io/ http://127.0.0.1:8080/socket.io/
-  ProxyPassReverse /socket.io/ http://127.0.0.1:8080/socket.io/
-
-  # Allow large uploads + disable ModSecurity for IOPaint API if needed
-  <LocationMatch "^/api/">
-    LimitRequestBody 0
-    <IfModule mod_security2.c>
-      SecRuleEngine Off
-    </IfModule>
-  </LocationMatch>
-
-  # Social-Hunt API (moved to /sh-api)
-  ProxyPass        /sh-api/ http://127.0.0.1:8000/sh-api/
-  ProxyPassReverse /sh-api/ http://127.0.0.1:8000/sh-api/
-
-  # Social-Hunt app
-  ProxyPass        / http://127.0.0.1:8000/
-  ProxyPassReverse / http://127.0.0.1:8000/
-
-  # Allow PUT/POST/etc for /sh-api if ModSecurity blocks methods
-  <LocationMatch "^/sh-api/">
-    <IfModule mod_security2.c>
-      SecRuleRemoveById 911100
-    </IfModule>
-  </LocationMatch>
-</VirtualHost>
-```
-
-### SSL version of the example (recommended)
+If you want IOPaint's web UI on the same TLS domain without a port number, use a
+separate subdomain VirtualHost:
 
 ```apache
 <VirtualHost *:443>
-  ServerName osint.example.com
+  ServerName iopaint.example.com
 
   SSLEngine on
   SSLCertificateFile /etc/ssl/your_cert/ssl.combined
   SSLCertificateKeyFile /etc/ssl/your_cert/ssl.key
 
-  # Modern TLS only
   SSLProtocol -all +TLSv1.2 +TLSv1.3
   SSLCipherSuite HIGH:!aNULL:!MD5:!3DES
   SSLHonorCipherOrder On
 
   ProxyPreserveHost On
   RequestHeader set X-Forwarded-Proto "https"
-  RequestHeader set X-Forwarded-Host "%{Host}i"
 
-  # IOPaint UI + assets + API + socket.io
-  ProxyPass        /iopaint/ http://127.0.0.1:8080/
-  ProxyPassReverse /iopaint/ http://127.0.0.1:8080/
-  ProxyPass        /assets/ http://127.0.0.1:8080/assets/
-  ProxyPassReverse /assets/ http://127.0.0.1:8080/assets/
-  ProxyPass        /api/ http://127.0.0.1:8080/api/
-  ProxyPassReverse /api/ http://127.0.0.1:8080/api/
-  ProxyPass        /socket.io/ http://127.0.0.1:8080/socket.io/
-  ProxyPassReverse /socket.io/ http://127.0.0.1:8080/socket.io/
+  LimitRequestBody 0
 
-  # Allow large uploads + disable ModSecurity for IOPaint API if needed
-  <LocationMatch "^/api/">
-    LimitRequestBody 0
-    <IfModule mod_security2.c>
-      SecRuleEngine Off
-    </IfModule>
-  </LocationMatch>
-
-  # Social-Hunt API (moved to /sh-api)
-  ProxyPass        /sh-api/ http://127.0.0.1:8000/sh-api/
-  ProxyPassReverse /sh-api/ http://127.0.0.1:8000/sh-api/
-
-  # Social-Hunt app
-  ProxyPass        / http://127.0.0.1:8000/
-  ProxyPassReverse / http://127.0.0.1:8000/
-
-  # Allow PUT/POST/etc for /sh-api if ModSecurity blocks methods
-  <LocationMatch "^/sh-api/">
-    <IfModule mod_security2.c>
-      SecRuleRemoveById 911100
-    </IfModule>
-  </LocationMatch>
+  ProxyPass        / http://127.0.0.1:8080/
+  ProxyPassReverse / http://127.0.0.1:8080/
 </VirtualHost>
 ```
+
+DeepMosaic has no web UI — leave it on `127.0.0.1:8081` and set
+`DEEPMOSAIC_URL=http://127.0.0.1:8081` on the Social-Hunt process. It does not
+need an Apache vhost.
+
+On the main Social-Hunt vhost, do **not** add a global `/api/` proxy rule — it
+collides with IOPaint's internal `/api/` namespace. Social-Hunt uses `/sh-api/`
+exclusively.
 
 ## 7) (Recommended) Put auth in front of it (so it can't be abused)
 
