@@ -57,7 +57,7 @@ async def add_security_headers(request: Request, call_next):
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://js.hcaptcha.com; "
         "style-src 'self' 'unsafe-inline' https://newassets.hcaptcha.com; "
-        "img-src 'self' data: blob: https://newassets.hcaptcha.com; "
+        "img-src 'self' data: blob: https:; "
         "connect-src 'self' https://hcaptcha.com https://newassets.hcaptcha.com; "
         "frame-src 'self' https://newassets.hcaptcha.com; "
         "font-src 'self' data:; "

@@ -310,7 +310,6 @@ const HISTORY_MAX = 200;
 const KEY_SEARCH_HISTORY = "socialhunt_search_history";
 const KEY_REVERSE_HISTORY = "sh_reverse_history";
 const KEY_DEMASK_HISTORY = "sh_demask_history";
-const RESULTS_RENDER_LIMIT = 300;
 const RESULTS_RENDER_INTERVAL_MS = 2000;
 const RESULTS_POLL_INTERVAL_MS = 2000;
 
@@ -733,6 +732,10 @@ function renderResults(job, containerId, opts = {}) {
     return;
   }
 
+  if (container.dataset.resultJob !== String(job.job_id)) {
+    container.dataset.resultJob = String(job.job_id);
+    container.dataset.resultFilter = "";
+  }
   const results = job.results || [];
   const total =
     typeof opts.total === "number" && opts.total >= 0
@@ -742,16 +745,46 @@ function renderResults(job, containerId, opts = {}) {
     typeof opts.limit === "number" && opts.limit >= 0
       ? opts.limit
       : results.length;
-  const renderResults = results.slice(0, limit);
-  const isPartial = renderResults.length < total;
-  const rows = renderResults
+  const loadedResults = results.slice(0, limit);
+  const filterValue = opts.filter ?? container.dataset.resultFilter ?? "";
+  container.dataset.resultFilter = filterValue;
+  const filter = String(filterValue).toLowerCase();
+  const filteredResults = filter
+    ? loadedResults.filter((r) =>
+        [r.provider, r.status, r.error, r.url]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(filter),
+      )
+    : loadedResults;
+  // Show every returned result, including while the scan is running.
+  const pageSize = opts.pageSize || Math.max(1, filteredResults.length);
+  const pageCount = Math.max(1, Math.ceil(filteredResults.length / pageSize));
+  const page = Math.min(Math.max(0, opts.page || 0), pageCount - 1);
+  const visibleResults = filteredResults.slice(
+    page * pageSize,
+    (page + 1) * pageSize,
+  );
+  const isPartial = loadedResults.length < total;
+  const rows = visibleResults
     .map((r) => {
       const prof = r.profile || {};
-      const avatar =
-        prof.avatar_url && prof.avatar_url !== "undefined"
-          ? `<img src="${prof.avatar_url}" alt="" class="avatar"/>`
-          : "";
-      const name = prof.display_name ? `${prof.display_name}` : "";
+      let avatarUrl = "";
+      if (typeof prof.avatar_url === "string" && prof.avatar_url.trim() &&
+          prof.avatar_url !== "undefined") {
+        try {
+          const parsed = new URL(prof.avatar_url.replace(/&amp;/g, "&"), r.url);
+          if (parsed.protocol === "https:" ||
+              (parsed.protocol === "http:" && location.protocol === "http:")) {
+            avatarUrl = parsed.href;
+          }
+        } catch (_) { /* Invalid image URL: use the placeholder. */ }
+      }
+      const avatar = avatarUrl
+        ? `<img src="${escapeHtml(avatarUrl)}" alt="Profile image" class="avatar" loading="lazy" referrerpolicy="no-referrer"/><span class="muted" hidden>Image unavailable</span>`
+        : '<span class="muted">No image</span>';
+      const name = prof.display_name ? escapeHtml(String(prof.display_name)) : "";
       const followers = prof.followers ?? prof.subscribers ?? "";
       const following = prof.following ?? "";
       const created = prof.created_at ?? "";
@@ -822,7 +855,7 @@ function renderResults(job, containerId, opts = {}) {
   const dlBtn =
     job.state === "done"
       ? `
-    <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+    <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
       <button class="btn" id="note-btn-${job.job_id}">Save to Notes</button>
       <button class="btn" id="dl-btn-csv-${job.job_id}">Download CSV</button>
       <button class="btn" id="dl-btn-${job.job_id}">Download JSON</button>
@@ -833,14 +866,28 @@ function renderResults(job, containerId, opts = {}) {
   const partialNote = isPartial
     ? `
       <div class="muted" style="margin-bottom: 10px;">
-        Showing first ${renderResults.length} of ${total} results while scan is running.
-        Full results will render when done. You can also download JSON/CSV after completion.
+        Loaded ${loadedResults.length} of ${total} results.
       </div>
     `
     : "";
 
+  const resultToolbar = `
+    <div class="result-toolbar">
+      <input class="form-input result-filter" id="result-filter-${job.job_id}"
+        value="${escapeHtml(filterValue)}" placeholder="Filter providers, status, or notes..." />
+      <span class="muted">Showing ${filteredResults.length ? page * pageSize + 1 : 0}-${Math.min((page + 1) * pageSize, filteredResults.length)} of ${filteredResults.length}</span>
+      <button class="btn btn-small" id="result-prev-${job.job_id}" ${page === 0 ? "disabled" : ""}>Previous</button>
+      <button class="btn btn-small" id="result-next-${job.job_id}" ${page >= pageCount - 1 ? "disabled" : ""}>Next</button>
+    </div>
+  `;
+
+  const activeFilter = document.activeElement;
+  const restoreFilterFocus = activeFilter?.id === `result-filter-${job.job_id}`;
+  const selectionStart = restoreFilterFocus ? activeFilter.selectionStart : 0;
+  const selectionEnd = restoreFilterFocus ? activeFilter.selectionEnd : 0;
   container.innerHTML = `
     ${dlBtn}
+    ${resultToolbar}
     <div class="tablewrap">
       <table>
         <thead>
@@ -862,6 +909,34 @@ function renderResults(job, containerId, opts = {}) {
     </div>
     ${partialNote}
   `;
+
+  container.querySelectorAll("img.avatar").forEach((image) => {
+    image.onerror = () => {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    };
+  });
+
+  const rerender = (nextPage, nextFilter) =>
+    renderResults(job, containerId, {
+      limit: loadedResults.length,
+      total,
+      pageSize: opts.pageSize,
+      page: nextPage,
+      filter: nextFilter,
+    });
+  const filterInput = document.getElementById(`result-filter-${job.job_id}`);
+  if (filterInput) {
+    filterInput.oninput = () => rerender(0, filterInput.value);
+    if (restoreFilterFocus) {
+      filterInput.focus({ preventScroll: true });
+      filterInput.setSelectionRange(selectionStart, selectionEnd);
+    }
+  }
+  const prevBtn = document.getElementById(`result-prev-${job.job_id}`);
+  if (prevBtn) prevBtn.onclick = () => rerender(page - 1, filterValue);
+  const nextBtn = document.getElementById(`result-next-${job.job_id}`);
+  if (nextBtn) nextBtn.onclick = () => rerender(page + 1, filterValue);
 
   const btn = document.getElementById(`dl-btn-${job.job_id}`);
   if (btn) {
@@ -1476,7 +1551,7 @@ async function monitorJob(
 
     let job;
     try {
-      job = await fetchJob(jobId, { limit: RESULTS_RENDER_LIMIT });
+      job = await fetchJob(jobId);
       errorCount = 0;
     } catch (e) {
       if (++errorCount > 5) {
@@ -1554,15 +1629,11 @@ async function monitorJob(
       if (shouldRender) {
         if (isBreach) renderBreachView(job, containerId);
         else {
-          const limit =
-            results.length > RESULTS_RENDER_LIMIT
-              ? RESULTS_RENDER_LIMIT
-              : results.length;
           const total =
             job.results_total ??
             job.results_count ??
             (Array.isArray(results) ? results.length : 0);
-          renderResults(job, containerId, { limit, total });
+          renderResults(job, containerId, { total });
         }
         lastRenderAt = now;
         lastRenderCount = count;
@@ -1594,7 +1665,6 @@ window.loadJob = async function (jobId) {
   try {
     const job = await fetchJob(jobId, {
       headers: authHeaders(),
-      limit: RESULTS_RENDER_LIMIT,
     });
 
     if (job.state === "running") {
@@ -1602,11 +1672,7 @@ window.loadJob = async function (jobId) {
       if (isBreach) renderBreachView(job, containerId);
       else {
         const count = job.results_total ?? (job.results || []).length;
-        const limit =
-          (job.results || []).length > RESULTS_RENDER_LIMIT
-            ? RESULTS_RENDER_LIMIT
-            : (job.results || []).length;
-        renderResults(job, containerId, { limit, total: count });
+        renderResults(job, containerId, { total: count });
       }
       await monitorJob(jobId, containerId, statusId, isBreach);
     } else {

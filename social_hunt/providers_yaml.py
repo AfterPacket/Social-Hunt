@@ -14,7 +14,9 @@ BLOCK_HINTS = [
     "unusual traffic",
     "access denied",
     "temporarily blocked",
-    "cloudflare",
+    "<title>just a moment",
+    "<title>attention required! | cloudflare",
+    "sorry, you have been blocked",
     "security check",
     "please enable cookies",
 ]
@@ -70,11 +72,27 @@ class PatternProvider(BaseProvider):
                 text, success_patterns=success_patterns, error_patterns=error_patterns
             )
 
-            # small platform hints
-            if self.name == "tiktok" and f"@{username.lower()}" in text:
-                status = ResultStatus.FOUND
-            if self.name == "github" and f"users/{username.lower()}" in text:
-                status = ResultStatus.FOUND
+            # HTTP failures take precedence over page text and platform hints.
+            error = None
+            if resp.status_code in (401, 403, 429):
+                status = ResultStatus.BLOCKED
+                error = {
+                    401: "Site requires authentication; profile existence is unconfirmed.",
+                    403: "Site denied access; profile existence is unconfirmed.",
+                    429: "Site rate limit reached; try again later.",
+                }[resp.status_code]
+            elif resp.status_code in (404, 410):
+                status = ResultStatus.NOT_FOUND
+            elif resp.status_code >= 400:
+                status = ResultStatus.ERROR
+                error = f"Site returned HTTP {resp.status_code}; profile existence is unconfirmed."
+            elif status == ResultStatus.BLOCKED:
+                error = "Site returned an access challenge; profile existence is unconfirmed."
+            elif 200 <= resp.status_code < 300:
+                if self.name == "tiktok" and f"@{username.lower()}" in text:
+                    status = ResultStatus.FOUND
+                if self.name == "github" and f"users/{username.lower()}" in text:
+                    status = ResultStatus.FOUND
 
             elapsed = int((time.monotonic() - start) * 1000)
             # Metadata extraction is best-effort and should never change FOUND/NOT_FOUND decisions.
@@ -98,7 +116,8 @@ class PatternProvider(BaseProvider):
                 http_status=resp.status_code,
                 elapsed_ms=elapsed,
                 evidence={"len": len(text)},
-                profile=profile,
+                profile=profile if status in (ResultStatus.FOUND, ResultStatus.UNKNOWN) else {},
+                error=error,
                 timestamp_iso=ts,
             )
         except Exception as e:
