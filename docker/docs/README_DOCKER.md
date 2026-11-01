@@ -29,7 +29,8 @@ Social-Hunt is a sophisticated social media monitoring and analysis platform tha
 - **apache-proxy**: Optional Apache reverse proxy (use with `--profile apache`)
 - **nginx-ssl**: Nginx with SSL support (use with `--profile ssl`)
 - **certbot**: Let's Encrypt certificate helper (use with `--profile certbot`)
-- **iopaint**: Optional AI inpainting service (use with `--profile iopaint`)
+- **iopaint**: Optional AI inpainting service (use with `--profile ai`)
+- **deepmosaic**: Optional automated mosaic removal service (use with `--profile ai`)
 
 ## Deployment Options
 
@@ -37,6 +38,16 @@ Social-Hunt is a sophisticated social media monitoring and analysis platform tha
 ```bash
 docker compose up -d
 ```
+
+### With AI Workers (IOPaint + DeepMosaic)
+```bash
+docker compose --profile ai up -d --build
+```
+
+The main app stays on secure Pillow 12 (no torch) and reaches the AI workers
+over the internal docker network via `IOPAINT_URL` / `DEEPMOSAIC_URL`. IOPaint's
+web UI is exposed directly on port 8080 (open it from the dashboard). See
+`IOPAINT_GUIDE.md` for details.
 
 ### With Nginx Reverse Proxy
 ```bash
@@ -53,6 +64,11 @@ docker compose --profile proxy --profile apache up -d
 python setup_ssl.py
 docker compose --profile certbot run --rm --service-ports certbot
 docker compose --profile ssl up -d
+```
+
+To combine a reverse proxy with the AI workers, add both profiles, e.g.:
+```bash
+docker compose --profile nginx --profile ai up -d --build
 ```
 
 

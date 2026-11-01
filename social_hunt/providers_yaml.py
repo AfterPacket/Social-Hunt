@@ -26,6 +26,14 @@ class PatternProvider(BaseProvider):
         self._url_tpl = str(cfg["url"])
         self.timeout = int(cfg.get("timeout", 10))
         self.ua_profile = str(cfg.get("ua_profile", "desktop_chrome"))
+        self.auto_enabled = bool(cfg.get("auto", False))
+        configured_types = cfg.get("query_types")
+        if isinstance(configured_types, (list, tuple, set)):
+            self.query_types = {
+                str(item).strip().lower()
+                for item in configured_types
+                if str(item).strip()
+            }
         self.success_patterns: List[str] = list(cfg.get("success_patterns", []))
         self.error_patterns: List[str] = list(cfg.get("error_patterns", []))
         self.note = cfg.get("note")

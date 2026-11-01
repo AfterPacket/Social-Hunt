@@ -1,5 +1,6 @@
 # download_deepmosaic_models.py
 import os
+import argparse
 import requests
 from pathlib import Path
 import time
@@ -7,34 +8,73 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import sys
 import re
 import subprocess
-import rarfile
 import shutil
 
-# Model URLs with their original filenames and target subdirectories
-MODEL_URLS = [
+# When --yes is passed, every ask() prompt auto-answers 'y' so the script runs
+# end-to-end with no stdin (required by scripts/setup-ai.ps1 and CI).
+auto_yes = False
+
+
+def _ensure_rarfile():
+    """Import rarfile lazily, installing it on demand if missing."""
+    try:
+        import rarfile  # noqa: F401
+        return True
+    except ImportError:
+        print("Installing rarfile module...")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "rarfile"])
+            import rarfile  # noqa: F401
+            return True
+        except Exception as e:
+            print(f"Could not install rarfile: {e}")
+            return False
+
+
+def ask(prompt: str, default: str = 'y'):
+    """Prompt wrapper that honors the global auto_yes flag."""
+    if auto_yes:
+        print(f"{prompt.strip()} -> {default} (--yes)")
+        return default
+    try:
+        return input(prompt).strip().lower() or default
+    except EOFError:
+        # No stdin available (e.g. piped from DEVNULL); fall back to default.
+        print(f"{prompt.strip()} -> {default} (no stdin)")
+        return default
+
+# Model sources: (relative_path, google_drive_file_id)
+# The models are hosted on the official DeepMosaics Google Drive folder:
+#   https://drive.google.com/drive/folders/1LTERcN33McoiztYEwBxMuRjjgxh4DEPs
+# We download each file by its Google Drive ID via gdown, then place it at
+# the relative_path under pretrained_models/.
+# The old catbox.moe mirror links are dead (404), so Google Drive is the only
+# reliable source. Baidu Cloud (百度云) also works but requires a CN account.
+MODEL_SOURCES = [
     # MOSAIC models (go to mosaic/ subdirectory)
-    ("mosaic/add_face.pth", "https://files.catbox.moe/6zj9ly.pth"),
-    ("mosaic/add_youknow.pth", "https://files.catbox.moe/1xawn9.pth"),
-    ("mosaic/clean_youknow_resnet_9blocks.pth", "https://files.catbox.moe/lvyj6g.pth"),
-    ("mosaic/mosaic_position.pth", "https://files.catbox.moe/z40yji.pth"),
-    ("mosaic/clean_youknow_video.pth", "https://files.catbox.moe/b4ntro.pth"),
-    ("mosaic/edges2cat.pth", "https://files.catbox.moe/7z0q3m.pth"),
-    
+    ("mosaic/add_face.pth", "1nzVqPw8u_9SoGZv2jH1K9e7klAP6EG-v"),
+    ("mosaic/add_youknow.pth", "1CP4wcSQ-uyaSUMCOyXVxFJz83vJIpjBn"),
+    ("mosaic/clean_youknow_resnet_9blocks.pth", "1O0_wjcl4o_NcjCMhFNsHgbBg7AlvQFAp"),
+    ("mosaic/mosaic_position.pth", "11uUaHPVq5zubGP9_xAOb5O1vPu9GK0XR"),
+    ("mosaic/clean_face_HD.pth", "1uoMkIy2lBQ3pVqRFNAg5gmnNWdkIZXhH"),
+    ("mosaic/clean_youknow_video.pth", "1ulct4RhRxQp1v5xwEmUH7xz7AK42Oqlw"),
+    ("mosaic/edges2cat.pth", "1PHJ_qipgNqDWyojhXmwOLr5ACkOQenjY"),
+
     # STYLE models (go to style/ subdirectory)
-    ("style/style_apple2orange.pth", "https://files.catbox.moe/6ppy8s.pth"),
-    ("style/style_cezanne.pth", "https://files.catbox.moe/pftq0p.pth"),
-    ("style/style_monet.pth", "https://files.catbox.moe/3rszwv.pth"),
-    ("style/style_orange2apple.pth", "https://files.catbox.moe/4uu8vh.pth"),
-    ("style/style_summer2winter.pth", "https://files.catbox.moe/f7baan.pth"),
-    ("style/style_ukiyoe.pth", "https://files.catbox.moe/qhgfs5.pth"),
-    ("style/style_vangogh.pth", "https://files.catbox.moe/pohxvj.pth"),
-    ("style/style_winter2summer.pth", "https://files.catbox.moe/irs3o8.pth"),
-    
-    # RAR file for mosaic models (will be extracted to mosaic/)
-    ("clean_face_HD.pth.part1.rar", "https://files.catbox.moe/w5w75v.rar"),
-    ("clean_face_HD.pth.part2.rar", "https://files.catbox.moe/yfl9h3.rar"),
-    ("clean_face_HD.pth.part3.rar", "https://files.catbox.moe/cipo3s.rar"),
-    ("clean_face_HD.pth.part4.rar", "https://files.catbox.moe/79aqe4.rar"),
+    ("style/style_monet.pth", "1yKNB94O9E6AUUF5qCk5xw6Txdw5gd4B3"),
+    ("style/style_apple2orange.pth", "1BhCFv5rlaj1w-TDtRTmn-MtwtyIkKkm-"),
+    ("style/style_cezanne.pth", "1j2OWfARUT5fy5uECO_DeHBySf8gngqxS"),
+    ("style/style_orange2apple.pth", "1GxgcnOkgaREv22SBdHPQ_WBsQOWHaBgJ"),
+    ("style/style_summer2winter.pth", "1B0RGCvJTr5TdJdj0lvhQCG-tgBBN7ccw"),
+    ("style/style_ukiyoe.pth", "19ckGggafZYeOvRYUF--I_boEuIunZZhs"),
+    ("style/style_vangogh.pth", "11md_SLUnfnYcPlLzqa0ZWUNOaZYYW3Ka"),
+    ("style/style_winter2summer.pth", "1q2u_gsMTS5d49SVyuDjuqPkjDaPsvxzI"),
+]
+
+# Kept for backward compatibility with older code that references MODEL_URLS.
+# Each entry maps to (relative_path, url) where url is the Google Drive view link.
+MODEL_URLS = [
+    (rel, f"https://drive.google.com/uc?id={fid}") for rel, fid in MODEL_SOURCES
 ]
 
 # Target directory paths
@@ -142,40 +182,47 @@ def check_existing_files_and_skip():
     return files_to_download
 
 def download_file_thread(filename, url, dest_path, progress_dict):
-    """Download a file in a thread with progress tracking."""
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-    
+    """Download a single file. Uses gdown for Google Drive links, requests for direct URLs."""
     progress_dict[filename] = {'status': 'downloading', 'progress': 0, 'size': 0}
-    
+
     try:
-        # Ensure parent directory exists
         dest_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        response = requests.get(url, headers=headers, stream=True, timeout=60)
-        response.raise_for_status()
-        
-        total_size = int(response.headers.get('content-length', 0))
-        downloaded = 0
-        
-        with open(dest_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    if total_size > 0:
-                        progress = (downloaded / total_size) * 100
-                        progress_dict[filename] = {
-                            'status': 'downloading', 
-                            'progress': progress, 
-                            'size': total_size,
-                            'downloaded': downloaded
-                        }
-        
-        progress_dict[filename] = {'status': 'completed', 'progress': 100, 'size': total_size}
+
+        # Google Drive links are handled by gdown (handles confirm tokens, quotas).
+        if 'drive.google.com' in url or url.startswith('gdown:'):
+            import gdown
+            file_id = url.split('id=')[-1].split('&')[0] if 'id=' in url else url.replace('gdown:', '')
+            gdown.download(id=file_id, output=str(dest_path), quiet=True, fuzzy=True)
+        else:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            response = requests.get(url, headers=headers, stream=True, timeout=60)
+            response.raise_for_status()
+            total_size = int(response.headers.get('content-length', 0))
+            downloaded = 0
+            with open(dest_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 0:
+                            progress = (downloaded / total_size) * 100
+                            progress_dict[filename] = {
+                                'status': 'downloading',
+                                'progress': progress,
+                                'size': total_size,
+                                'downloaded': downloaded
+                            }
+
+        # Verify the download produced a non-empty file.
+        if not dest_path.exists() or dest_path.stat().st_size < 1024:
+            raise RuntimeError('Downloaded file is missing or too small')
+
+        size_mb = dest_path.stat().st_size / (1024 * 1024)
+        progress_dict[filename] = {'status': 'completed', 'progress': 100, 'size': dest_path.stat().st_size}
         return True, filename, None
-        
+
     except Exception as e:
         progress_dict[filename] = {'status': 'failed', 'error': str(e)}
         return False, filename, str(e)
@@ -348,7 +395,7 @@ def extract_rar_files():
         print("Skipping extraction of RAR files...")
         
         # Ask user if they want to extract anyway
-        response = input("Extract RAR files anyway? (y/n): ").lower()
+        response = ask("Extract RAR files anyway? (y/n): ", default='n')
         if response != 'y':
             print("Skipping all RAR file extraction.")
             # Record that all RAR files were skipped
@@ -410,7 +457,7 @@ def extract_rar_files():
             
             if existing_files:
                 print(f"  {len(existing_files)} file(s) already exist in target directory")
-                response = input(f"  Overwrite existing files? (y/n): ").lower()
+                response = ask("  Overwrite existing files? (y/n): ", default='n')
                 if response != 'y':
                     print(f"  Skipping extraction of {rar_file.name}")
                     skipped_extractions.append(rar_file.name)
@@ -598,8 +645,18 @@ def analyze_file_types(model_urls):
         print(f"    Will extract clean_face_HD.pth to mosaic directory")
 
 def main():
+    global auto_yes
+    parser = argparse.ArgumentParser(description="Download and extract DeepMosaics model weights.")
+    parser.add_argument('--yes', '-y', action='store_true',
+                        help="Non-interactive mode: auto-answer 'y' to all prompts. "
+                             "Required for scripts/CI that run with no stdin.")
+    args = parser.parse_args()
+    auto_yes = args.yes
+
     print("=" * 70)
     print("DEEPMOSAICS MODEL DOWNLOADER & EXTRACTOR")
+    if AUTO_YES:
+        print("  (non-interactive --yes mode)")
     print("=" * 70)
     print("This script will:")
     print("1. Check if DeepMosaics directory exists")
@@ -617,6 +674,9 @@ def main():
     # Setup directories
     print("\n📁 Setting up directory structure...")
     base_dir, mosaic_dir, style_dir = setup_directories()
+    
+    # Ensure rarfile is available before we hit the RAR extraction phase.
+    _ensure_rarfile()
     
     # Analyze file types
     analyze_file_types(MODEL_URLS)
@@ -647,7 +707,7 @@ def main():
             if filename.endswith('.rar'):
                 print(f"         (Will extract clean_face_HD.pth to mosaic/)")
         
-        response = input("\nDo you want to continue? (y/n): ")
+        response = ask("\nDo you want to continue? (y/n): ")
         if response.lower() != 'y':
             print("Exiting...")
             return
@@ -663,7 +723,7 @@ def main():
         if successful < len(files_to_download):
             print(f"\n⚠  Only {successful}/{len(files_to_download)} files downloaded successfully")
             if failed_files:
-                response = input("Try to re-download failed files? (y/n): ")
+                response = ask("Try to re-download failed files? (y/n): ")
                 if response.lower() == 'y':
                     # Re-download failed files
                     for rel_path, error in failed_files:
@@ -694,7 +754,7 @@ def main():
         
         if not all_valid:
             print(f"\n⚠  Some files failed verification.")
-            response = input("Continue anyway? (y/n): ")
+            response = ask("Continue anyway? (y/n): ")
             if response.lower() != 'y':
                 print("Exiting...")
                 return
@@ -710,7 +770,7 @@ def main():
         # Check if RAR files exist
         rar_files = list(base_dir.glob("*.rar"))
         if rar_files:
-            response = input(f"\nFound {len(rar_files)} .rar files. Extract them anyway? (y/n): ")
+            response = ask(f"\nFound {len(rar_files)} .rar files. Extract them anyway? (y/n): ")
             if response.lower() != 'y':
                 print("Skipping RAR extraction.")
                 extraction_success = True
@@ -771,7 +831,7 @@ def main():
         if len(rar_files) > 10:
             print(f"  ... and {len(rar_files) - 10} more .rar files")
         
-        response = input("\nDelete downloaded .rar files to save space? (y/n): ")
+        response = ask("\nDelete downloaded .rar files to save space? (y/n): ")
         if response.lower() == 'y':
             deleted_count = 0
             for rar_file in rar_files:

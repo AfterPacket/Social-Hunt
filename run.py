@@ -21,7 +21,11 @@ def main():
     reload = os.getenv("SOCIAL_HUNT_RELOAD", "0") == "1"
 
     print("=" * 50)
-    print("      🕵️‍♂️ Social-Hunt OSINT Framework")
+    try:
+        print("      🕵️‍♂️ Social-Hunt OSINT Framework")
+    except UnicodeEncodeError:
+        # Console may use cp1252 or another non-UTF-8 code page on Windows.
+        print("      Social-Hunt OSINT Framework")
     print("=" * 50)
     print(f"[*] Starting server on {host}:{port}")
     print(f"[*] Dashboard: http://{'localhost' if host == '0.0.0.0' else host}:{port}")

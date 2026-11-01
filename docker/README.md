@@ -29,20 +29,17 @@ docker/
 ├── start.bat                   # ← Windows launcher (just double-click!)
 ├── start.sh                    # ← Linux/macOS launcher
 ├── start.py                    # ← Universal Python script (works on all OS)
-├── START_HERE.md               # ← Quick start guide
 │
 ├── docker-compose.yml          # Docker services configuration
 ├── Dockerfile                  # Docker image build instructions
-├── nginx.conf                  # Nginx reverse proxy config
+├── nginx.conf                  # Nginx reverse proxy config (optional, for the `nginx`/`ssl` profiles)
 ├── setup_ssl.py                # SSL certificate setup script
 │
 ├── docs/                       # 📚 All documentation
-│   ├── DEV_UPDATE.md          # Development team update
-│   ├── DOCKER_DESKTOP_GUIDE.md # GUI usage guide
-│   ├── IOPAINT_GUIDE.md       # IOPaint setup guide
-│   ├── OVERVIEW.md            # Project overview
-│   ├── README_DOCKER.md       # Detailed Docker docs
-│   └── STARTUP_SCRIPTS.md     # Auto-startup configuration
+│   ├── IOPAINT_GUIDE.md       # AI workers (IOPaint + DeepMosaic) setup guide
+│   ├── DOCKER_DESKTOP_GUIDE.md # Docker Desktop GUI usage guide
+│   ├── README_DOCKER.md       # Detailed Docker docs (env vars, volumes, troubleshooting)
+│   └── STARTUP_SCRIPTS.md     # Auto-startup configuration (systemd/cron/task scheduler)
 │
 ├── scripts/                    # 🔧 Advanced/alternative scripts
 │   ├── start-social-hunt.bat  # Windows-specific script
@@ -71,17 +68,15 @@ docker/
 ## 📚 Documentation
 
 ### Getting Started
-- **Quick Start**: Read `START_HERE.md` (in this folder)
+- **Quick Start**: Read on below (the "Quick Start (3 Steps)" section)
 - **Docker Desktop GUI**: See `docs/DOCKER_DESKTOP_GUIDE.md`
 - **Detailed Setup**: See `docs/README_DOCKER.md`
 
 ### Special Features
-- **IOPaint (AI Image Editing)**: See `docs/IOPAINT_GUIDE.md`
+- **AI Workers (IOPaint + DeepMosaic)**: See `docs/IOPAINT_GUIDE.md`
 - **Automatic Startup**: See `docs/STARTUP_SCRIPTS.md`
-- **Project Overview**: See `docs/OVERVIEW.md`
 
 ### For Developers
-- **Development Update**: See `docs/DEV_UPDATE.md`
 - **All Documentation**: Browse the `docs/` folder
 
 ---
@@ -97,10 +92,14 @@ python start.py
 docker compose up -d
 ```
 
-### Start with IOPaint (AI Image Editor)
+### Start with AI workers (IOPaint + DeepMosaic)
 ```bash
-docker compose --profile iopaint up -d
+docker compose --profile ai up -d --build
 ```
+
+This enables both IOPaint (port 8080) and DeepMosaic (port 8081). The main
+Social-Hunt container stays on secure Pillow 12 (no torch) and reaches the
+workers over the internal docker network. See `docs/IOPAINT_GUIDE.md`.
 
 ### Stop Everything
 ```bash
@@ -146,7 +145,8 @@ The admin token can be set in two places:
 
 ### Ports
 - **Social-Hunt**: http://localhost:8000
-- **IOPaint**: http://localhost:8080 (when enabled)
+- **IOPaint**: http://localhost:8080 (when `--profile ai` is enabled)
+- **DeepMosaic**: http://localhost:8081/status (when `--profile ai` is enabled)
 
 To change ports, edit `docker-compose.yml`:
 ```yaml
@@ -179,8 +179,8 @@ ports:
 ```
 
 ### Need More Help?
-- Check `START_HERE.md` for quick troubleshooting
 - See `docs/DOCKER_DESKTOP_GUIDE.md` for GUI help
+- See `docs/README_DOCKER.md` for detailed setup
 - Review logs: `docker compose logs`
 
 ---
@@ -193,7 +193,7 @@ ports:
 - **Data Persistence**: Settings and results are saved between restarts
 - **SSL Support**: Built-in HTTPS configuration available
 - **Reverse Proxy**: Optional Nginx/Apache integration
-- **IOPaint Integration**: Optional AI-powered image editing
+- **AI Workers**: Optional IOPaint (interactive inpainting) and DeepMosaic (automated mosaic removal) via `--profile ai`
 
 ---
 
@@ -209,7 +209,7 @@ The `docker-compose.yml` already uses this image, so you don't need to build any
 
 ## 🆘 Need Help?
 
-1. **Read the Quick Start**: `START_HERE.md`
+1. **Read the Quick Start**: the "Quick Start (3 Steps)" section above
 2. **Check Documentation**: Browse the `docs/` folder
 3. **View Logs**: `docker compose logs`
 4. **GitHub Issues**: https://github.com/AfterPacket/Social-Hunt/issues
@@ -222,7 +222,7 @@ The `docker-compose.yml` already uses this image, so you don't need to build any
 - ✅ Organized folder structure (docs/, scripts/)
 - ✅ Comprehensive documentation
 - ✅ Docker Hub integration
-- ✅ IOPaint support for AI image editing
+- ✅ IOPaint + DeepMosaic AI workers (isolated via `--profile ai`)
 - ✅ Easy one-click/one-command startup
 
 ---

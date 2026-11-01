@@ -1,8 +1,14 @@
 ﻿.venv/
+.venv-iopaint/
+.venv-deepmosaic/
 __pycache__/
 *.pyc
 *.log
 .env
+
+# Third-party AI worker repos — cloned on demand by scripts/setup-ai.ps1
+# or `git submodule update --init DeepMosaics`. Do not commit their contents.
+DeepMosaics/
 
 # Local Data & Persistence - Keep structure but ignore contents
 data/*
